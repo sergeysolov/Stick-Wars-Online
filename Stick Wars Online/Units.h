@@ -3,15 +3,15 @@
 #include "TextureHolder.h"
 #include "MapObject.h"
 
-constexpr float X_MAP_MIN = -150;
-constexpr float X_MAP_MAX = 2100 * 3 + 150;
-constexpr float Y_MAP_MIN = 530;
-constexpr float Y_MAP_MAX = 700;
+constexpr float x_map_min = -150;
+constexpr float x_map_max = 2100 * 3 + 150;
+constexpr float y_map_min = 530;
+constexpr float y_map_max = 700;
 
-constexpr int MINER_WAIT_TIME = 8000;
-constexpr int MINER_COST = 250;
-constexpr int SWARDSMAN_WAIT_TIME = 5000;
-constexpr int SWARDSMAN_COST = 250;
+constexpr int miner_wait_time = 8000;
+constexpr int miner_cost = 250;
+constexpr int swardsman_wait_time = 5000;
+constexpr int swardsman_cost = 250;
 
 
 //ÍÓ ×Å ÍÀÐÎÄ ÏÎÃÍÀËÈ ÍÀÕÓÉ (¨ÁÀÍÛÉ Â ÐÎÒ) -> ÂÑÅ
@@ -31,44 +31,43 @@ class Unit : public MapObject
 public:
 	enum AnimatonType
 	{
-		none,
-		walk,
-		die,
-		attack
+		no_animation,
+		walk_animation,
+		die_animation,
+		attack_animation
 	};
 	
 protected:
-	float _health;
-	const float _max_health;
-	float _armor;
-	float _speed;
-	float _damage;
-	float _damage_speed;
-	float _attack_distance;
-	const float _vertical_speed = 0.25;
-	int _spawn_time;
-
+	float health_;
+	const float max_health_;
+	float armor_;
+	float speed_;
+	float damage_;
+	float damage_speed_;
+	float attack_distance_;
+	const float vertical_speed_ = 0.25;
+	int spawn_time_;
 	
-	AnimatonType _animation_type = none;
+	AnimatonType animation_type_ = no_animation;
 
-	sf::RectangleShape _health_bar;
-	static int const _max_healthbar_size = 70;
-	bool _killed = false;
+	sf::RectangleShape health_bar_;
+	static int constexpr max_healthbar_size = 70;
+	bool killed_ = false;
 
-	int _prev_direction = 1;
-	bool _do_damage = false;
+	int prev_direction_ = 1;
+	bool do_damage_ = false;
 
-	Target _target = Target::defend;
-	std::pair<int, sf::Vector2f> _stand_place = { 0,  { 1E+15f, 1E+15f } };
+	Target target_ = Target::defend;
+	std::pair<int, sf::Vector2f> stand_place_ = { 0,  { 1E+15f, 1E+15f } };
 
-	void _update_health_bar();
-	virtual void _set_y_scale() override;
+	void update_health_bar();
+	void set_y_scale() override;
 public:
 
-	constexpr static int ANIMATION_STEP = 70;
+	constexpr static int animation_step = 70;
 	std::shared_ptr<Unit> target_unit;
 
-	Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float _health, float init_y, float _speed, float _damage, float _damage_speed, float _attack_distance, AnimationParams _animation_params);
+	Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float health, float init_y, float speed, float damage, float damage_speed, float attack_distance, AnimationParams animation_params);
 
 	Target get_target() const;
 	float get_speed() const;
@@ -81,8 +80,8 @@ public:
 	bool animation_complete();
 	void show_animation();
 	
-	virtual void move_sprite(sf::Vector2i vc) override;
-	virtual void set_screen_place(int camera_position) override;
+	void move_sprite(sf::Vector2i vc) override;
+	void set_screen_place(int camera_position) override;
 	virtual void move(sf::Vector2i direction, sf::Time time);
 	virtual void commit_attack();
 	virtual bool can_do_damage();
@@ -91,9 +90,9 @@ public:
 	virtual void kill();
 	bool is_killed();
 
-	virtual void draw(sf::RenderWindow& window) const override;
+	void draw(sf::RenderWindow& window) const override;
 	
-	std::pair<int ,sf::Vector2f> get_stand_place() const;
+	std::pair<int, sf::Vector2f> get_stand_place() const;
 	std::pair<int, sf::Vector2f> extract_stand_place();
 	void set_stand_place(std::map<int, sf::Vector2f>& places);
 	void set_target(Target target);
@@ -110,7 +109,7 @@ public:
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
 	Miner(sf::Vector2f spawnpoint, TextureHolder& holder, ID id);
-	virtual int get_places_requres() const override;
+	int get_places_requres() const override;
 
 	static Unit* MyMiner(sf::Vector2f spawnpoint, TextureHolder& holder);
 
@@ -125,7 +124,7 @@ public:
 	const static int places_requres = 1;
 
 	Swordsman(sf::Vector2f spawnpoint, TextureHolder& holder, ID id);
-	virtual int get_places_requres() const override;
+	int get_places_requres() const override;
 
 	static Unit* MySwordsman(sf::Vector2f spawnpoint, TextureHolder& holder);
 

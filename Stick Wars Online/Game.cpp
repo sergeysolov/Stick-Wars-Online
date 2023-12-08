@@ -3,75 +3,75 @@
 #include <functional>
 #include <cmath>
 
-void Game::_draw()
+void Game::draw()
 {
-	_main_window.clear();
-	_main_window.draw(_background_sprite);
-	_main_window.draw(_gold_sprite);
-	_main_window.draw(_money_count_text);
+	main_window_.clear();
+	main_window_.draw(background_sprite_);
+	main_window_.draw(gold_sprite_);
+	main_window_.draw(money_count_text_);
 
-	_miner_buy_button->draw(_main_window);
-	_swordsman_buy_button->draw(_main_window);
-	_in_attack_button->draw(_main_window);
-	_defend_button->draw(_main_window);
+	miner_buy_button_->draw(main_window_);
+	swordsman_buy_button_->draw(main_window_);
+	in_attack_button_->draw(main_window_);
+	defend_button_->draw(main_window_);
 
-	_main_window.draw(_stick_man);
-	_main_window.draw(_army_count_text);
-	_main_window.draw(_camera_position_text);
+	main_window_.draw(stick_man_);
+	main_window_.draw(army_count_text_);
+	main_window_.draw(camera_position_text_);
 
-	for (const auto mine : _gold_mines)
-		mine->draw(_main_window);
+	for (const auto mine : gold_mines_)
+		mine->draw(main_window_);
 
-	for (const auto army : _armies)
+	for (const auto army : armies_)
 		for (const auto unit : army)
 			if (not unit->is_alive())
-				unit->draw(_main_window);
+				unit->draw(main_window_);
 
-	for (const auto enemy : _enemy_army)
+	for (const auto enemy : enemy_army_)
 		if (not enemy->is_alive())
-			enemy->draw(_main_window);
+			enemy->draw(main_window_);
 
-	for (const auto army : _armies)
+	for (const auto army : armies_)
 		for (const auto unit : army)
 			if (unit->is_alive())
-				unit->draw(_main_window);
+				unit->draw(main_window_);
 
-	for (const auto enemy : _enemy_army)
+	for (const auto enemy : enemy_army_)
 		if(enemy->is_alive())
-			enemy->draw(_main_window);
+			enemy->draw(main_window_);
 	
 }
 
-void Game::_process_events()
+void Game::process_events()
 {
-	std::function<void(sf::Event, bool)> Key_Manage = [&](sf::Event event, bool isPressed)
+	auto Key_Manage = [&](sf::Event event, bool isPressed)
 	{
 		if (event.key.code == sf::Keyboard::D)
-			_isPressed_D = isPressed;
+			is_pressed_d_ = isPressed;
 		if (event.key.code == sf::Keyboard::A)
-			_isPressed_A = isPressed;
+			is_pressed_a_ = isPressed;
 		if (event.key.code == sf::Keyboard::W)
-			_isPressed_W = isPressed;
+			is_pressed_w_ = isPressed;
 		if (event.key.code == sf::Keyboard::S)
-			_isPressed_S = isPressed;
+			is_pressed_s_ = isPressed;
 		if (event.key.code == sf::Keyboard::K)
-			_isPressed_K = isPressed;
+			is_pressed_k_ = isPressed;
 		if (event.key.code == sf::Keyboard::Left)
-			_is_Pressed_Left_Arrow = isPressed;
+			is_pressed_left_arrow_ = isPressed;
 		if (event.key.code == sf::Keyboard::Right)
-			_is_Pressed_Right_Arrow = isPressed;
+			is_pressed_right_arrow_ = isPressed;
 		if (event.key.code == sf::Keyboard::Space)
-			_isPressed_Space = isPressed;
+			is_pressed_space_ = isPressed;
 		if (event.key.code == sf::Keyboard::LShift)
-			_isPressed_Shift = isPressed;
+			is_pressed_shift_ = isPressed;
 		if (event.key.code == sf::Keyboard::Escape)
-			_main_window.close();
+			main_window_.close();
 	};
 
 	sf::Event event;
 
-	_isMouse_Left_Button_Clicked = false;
-	while (_main_window.pollEvent(event))
+	is_mouse_left_button_clicked_ = false;
+	while (main_window_.pollEvent(event))
 	{
 		switch (event.type)
 		{
@@ -84,177 +84,178 @@ void Game::_process_events()
 		case sf::Event::MouseButtonReleased:
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
-				_isMouse_Left_Button_Clicked = true;
-				_mouse_position = sf::Mouse::getPosition();
+				is_mouse_left_button_clicked_ = true;
+				mouse_position_ = sf::Mouse::getPosition();
 			}
 			break;
 		case sf::Event::Closed:
-			_main_window.close();
+			main_window_.close();
 		default:
 			break;
 		}
 	}
 }
 
-void Game::_handle_inputs(sf::Time deltatime)
+void Game::handle_inputs(sf::Time deltatime)
 {
-	if (_controlled_unit != nullptr and _controlled_unit->is_alive())
+	// process behaviour of controlled unit
+	if (controlled_unit_ != nullptr and controlled_unit_->is_alive())
 	{
-		sf::Vector2i direction = { static_cast<int>(_isPressed_D) - static_cast<int>(_isPressed_A),
-		static_cast<int>(_isPressed_S) - static_cast<int>(_isPressed_W) };
+		const sf::Vector2i direction = { static_cast<int>(is_pressed_d_) - static_cast<int>(is_pressed_a_),
+		static_cast<int>(is_pressed_s_) - static_cast<int>(is_pressed_w_) };
 
 		if (direction.x != 0 or direction.y != 0)
 		{
-			_controlled_unit->move(direction, sf::Time(sf::milliseconds(deltatime.asMilliseconds() * 1.5f)));
-			int shift = (_controlled_unit->get_sprite().getPosition().x + 15 - _main_window.getSize().x / 2) / 15;
-			_move_camera(shift);
+			controlled_unit_->move(direction, sf::Time(sf::milliseconds(deltatime.asMilliseconds() * 1.5f)));
+			const int shift = (controlled_unit_->get_sprite().getPosition().x + 15 - main_window_.getSize().x / 2) / 15;
+			move_camera(shift);
 		}
-		else if (_isPressed_Space)
-			_controlled_unit->commit_attack();
-		else if (_isPressed_K)
-			_controlled_unit->couse_damage(1E+10);
+		else if (is_pressed_space_)
+			controlled_unit_->commit_attack();
+		else if (is_pressed_k_)
+			controlled_unit_->couse_damage(1E+10);
 
 	}
 
-	if (_isMouse_Left_Button_Clicked)
+	//process mouse clicks
+	if (is_mouse_left_button_clicked_)
 	{
-		if (_miner_buy_button->get_sprite().getGlobalBounds().contains(_mouse_position.x, _mouse_position.y)
-			and _money >= _miner_buy_button->get_unit_cost())
+		if (miner_buy_button_->get_sprite().getGlobalBounds().contains(mouse_position_.x, mouse_position_.y)
+			and money_ >= miner_buy_button_->get_unit_cost())
 		{
-			if (_army_count + Miner::places_requres <= total_defend_places)
+			if (army_count_ + Miner::places_requres <= total_defend_places)
 			{
-				_add_money(-1 * _miner_buy_button->get_unit_cost());
-				_units_queue.emplace(Miner::MyMiner(spawnpoint, _texture_holder));
-				_army_count += Miner::places_requres;
-				_miner_buy_button->press();
+				add_money(-1 * miner_buy_button_->get_unit_cost());
+				units_queue_.emplace(Miner::MyMiner(spawnpoint, texture_holder_));
+				army_count_ += Miner::places_requres;
+				miner_buy_button_->press();
 			}
 		}
-		else if (_swordsman_buy_button->get_sprite().getGlobalBounds().contains(_mouse_position.x, _mouse_position.y)
-			and _money >= _swordsman_buy_button->get_unit_cost())
+		else if (swordsman_buy_button_->get_sprite().getGlobalBounds().contains(mouse_position_.x, mouse_position_.y)
+			and money_ >= swordsman_buy_button_->get_unit_cost())
 		{
-			if (_army_count + Swordsman::places_requres <= total_defend_places)
+			if (army_count_ + Swordsman::places_requres <= total_defend_places)
 			{
-				_add_money(-1 * _swordsman_buy_button->get_unit_cost());
-				_units_queue.emplace(Swordsman::MySwordsman(spawnpoint, _texture_holder));
-				_army_count += Swordsman::places_requres;
-				_swordsman_buy_button->press();
+				add_money(-1 * swordsman_buy_button_->get_unit_cost());
+				units_queue_.emplace(Swordsman::MySwordsman(spawnpoint, texture_holder_));
+				army_count_ += Swordsman::places_requres;
+				swordsman_buy_button_->press();
 			}
 		}
-		else if (_defend_button->get_sprite().getGlobalBounds().contains(_mouse_position.x, _mouse_position.y))
-			_set_army_target(_armies[0], Target::defend);
-		else if (_in_attack_button->get_sprite().getGlobalBounds().contains(_mouse_position.x, _mouse_position.y))
-			_set_army_target(_armies[0], Target::attack);
+		else if (defend_button_->get_sprite().getGlobalBounds().contains(mouse_position_.x, mouse_position_.y))
+			set_army_target(armies_[0], Target::defend);
+		else if (in_attack_button_->get_sprite().getGlobalBounds().contains(mouse_position_.x, mouse_position_.y))
+			set_army_target(armies_[0], Target::attack);
 		else
 		{
 			bool changed_controlled_unit = false;
-			for (const auto unit : _armies[0])
-				if (unit->is_alive() and unit->get_sprite().getGlobalBounds().contains(_mouse_position.x, _mouse_position.y))
+			for (const auto& unit : armies_[0])
+				if (unit->is_alive() and unit->get_sprite().getGlobalBounds().contains(mouse_position_.x, mouse_position_.y))
 				{
-					_controlled_unit = unit;
+					controlled_unit_ = unit;
 					changed_controlled_unit = true;
 					break;
 				}
 			if (not changed_controlled_unit)
-				_controlled_unit = nullptr;
+				controlled_unit_ = nullptr;
 		}
 
 	}
-	if (_is_Pressed_Left_Arrow or _is_Pressed_Right_Arrow)
+	if (is_pressed_left_arrow_ or is_pressed_right_arrow_)
 	{
-		int direction = -static_cast<int> (_is_Pressed_Left_Arrow) + static_cast<int> (_is_Pressed_Right_Arrow);
-		int shift = direction * deltatime.asMilliseconds() * 3;
-		_move_camera(shift);
+		const int direction = -static_cast<int> (is_pressed_left_arrow_) + static_cast<int> (is_pressed_right_arrow_);
+		const int shift = direction * deltatime.asMilliseconds() * 3;
+		move_camera(shift);
 	}
 }
 
-void Game::_process_internal_actions(sf::Time deltatime)
+void Game::process_internal_actions(sf::Time deltatime)
 {
-	_timer_money_increment += deltatime.asMilliseconds();
-	if (_timer_money_increment >= _time_money_increment)
+	timer_money_increment_ += deltatime.asMilliseconds();
+	if (timer_money_increment_ >= time_money_increment_)
 	{
-		_timer_money_increment -= _time_money_increment;
-		_add_money(_count_money_increment);
+		timer_money_increment_ -= time_money_increment_;
+		add_money(count_money_increment_);
 	}
-	std::string temp_str = std::to_string(_army_count) + "/" + std::to_string(total_defend_places);
-	_army_count_text.setString(temp_str);
+	const std::string temp_str = std::to_string(army_count_) + "/" + std::to_string(total_defend_places);
+	army_count_text_.setString(temp_str);
 	
-	if (not _units_queue.empty())
+	if (not units_queue_.empty())
 	{
-		if (dynamic_cast<Miner*> (_units_queue.front().get()) != nullptr)
-			_miner_buy_button->process_button(deltatime.asMilliseconds());
-		else if (dynamic_cast<Swordsman*> (_units_queue.front().get()) != nullptr)
-			_swordsman_buy_button->process_button(deltatime.asMilliseconds());
+		if (dynamic_cast<Miner*> (units_queue_.front().get()) != nullptr)
+			miner_buy_button_->process_button(deltatime.asMilliseconds());
+		else if (dynamic_cast<Swordsman*> (units_queue_.front().get()) != nullptr)
+			swordsman_buy_button_->process_button(deltatime.asMilliseconds());
 
-		_cumulative_spawn_time += deltatime.asMilliseconds();
-		if (_cumulative_spawn_time >= _units_queue.front()->get_spawn_time())
+		cumulative_spawn_time_ += deltatime.asMilliseconds();
+		if (cumulative_spawn_time_ >= units_queue_.front()->get_spawn_time())
 		{
-			_add_unit(_units_queue.front());
-			_cumulative_spawn_time -= _units_queue.front()->get_spawn_time();
-			_units_queue.pop();
+			add_unit(units_queue_.front());
+			cumulative_spawn_time_ -= units_queue_.front()->get_spawn_time();
+			units_queue_.pop();
 		}
 	}
 	else
 	{
-		_miner_buy_button->process_button(deltatime.asMilliseconds());
-		_swordsman_buy_button->process_button(deltatime.asMilliseconds());
+		miner_buy_button_->process_button(deltatime.asMilliseconds());
+		swordsman_buy_button_->process_button(deltatime.asMilliseconds());
 	}
 
-	for (auto it = _gold_mines.begin(); it != _gold_mines.end();)
+	for (auto it = gold_mines_.begin(); it != gold_mines_.end();)
 	{
 		if (it->get()->empty())
-			it = _gold_mines.erase(it);
+			it = gold_mines_.erase(it);
 		else
 			++it;
 	}
-	for (const auto goldmine : _gold_mines)
-		goldmine->set_screen_place(_camera_position);
+	for (const auto goldmine : gold_mines_)
+		goldmine->set_screen_place(camera_position_);
 	
 
 	//My army processing
-	for (const auto unit : _armies[0])
+	for (const auto unit : armies_[0])
 	{
-		_process_unit(unit, _enemy_army, _defend_places, deltatime, true);
+		process_unit(unit, enemy_army_, defend_places_, deltatime, true);
 	}
 
 
 	//Enemy army processing
-	if (enemy_programm == 0)
+	if (enemy_behaviour == 0)
 	{
-		_cumulative_enemy_spawn_time += deltatime.asMilliseconds();
-		if (_cumulative_enemy_spawn_time >= invoke_enemy_time and _enemy_army_count < _max_enemy_army_size)
+		cumulative_enemy_spawn_time_ += deltatime.asMilliseconds();
+		if (cumulative_enemy_spawn_time_ >= invoke_enemy_time and enemy_army_count_ < max_enemy_army_size_)
 		{
-			_cumulative_enemy_spawn_time -= invoke_enemy_time;
-			_add_enemy_unit(std::shared_ptr<Unit>(Swordsman::EnemySwordsman(enemy_spawnpoint, _texture_holder)));
+			cumulative_enemy_spawn_time_ -= invoke_enemy_time;
+			add_enemy_unit(std::shared_ptr<Unit>(Swordsman::EnemySwordsman(enemy_spawnpoint, texture_holder_)));
 		}
 		if (random(0.00005))
 		{
-			_set_army_target(_enemy_army, Target::attack);
+			set_army_target(enemy_army_, Target::attack);
 		}
 		else if (random(0.00005))
 		{
-			_set_army_target(_enemy_army, Target::defend);
+			set_army_target(enemy_army_, Target::defend);
 		}
 		if (random(0.00005))
 		{
-			for (int i = 0; i < 3 and _enemy_army_count < _max_enemy_army_size; ++i)
+			for (int i = 0; i < 3 and enemy_army_count_ < max_enemy_army_size_; ++i)
 			{
-				_add_enemy_unit(std::shared_ptr<Unit>(Swordsman::EnemySwordsman(enemy_spawnpoint, _texture_holder)));
+				add_enemy_unit(std::shared_ptr<Unit>(Swordsman::EnemySwordsman(enemy_spawnpoint, texture_holder_)));
 			}
 		}
-
 	}
 
-	for (const auto enemy : _enemy_army)
+	for (const auto enemy : enemy_army_)
 	{
-		_process_unit(enemy, _armies[0], _enemy_defend_places, deltatime, false);
+		process_unit(enemy, armies_[0], enemy_defend_places_, deltatime, false);
 	}
 }
 
-std::pair<bool, float> Game::_check_can_mine(const Miner* miner, const GoldMine* goldmine)
+std::pair<bool, float> Game::check_can_mine(const Miner* miner, const GoldMine* goldmine)
 {
-	auto dist_vector = _calculate_distances_to_mine(miner, goldmine);
-	float dx = dist_vector.x;
-	float dy = dist_vector.y;
+	const auto [dx, dy] = calculate_distances_to_mine(miner, goldmine);
+	//const float dx = dist_vector.x;
+	//const float dy = dist_vector.y;
 
 	//float scale_factor = (a * miner->get_coords().y + b);
 	//scale_factor *= scale_factor;
@@ -266,14 +267,14 @@ std::pair<bool, float> Game::_check_can_mine(const Miner* miner, const GoldMine*
 	return {can_mine, distance};
 }
 
-sf::Vector2f Game::_calculate_distances_to_mine(const Miner* miner, const GoldMine* goldmine)
+sf::Vector2f Game::calculate_distances_to_mine(const Miner* miner, const GoldMine* goldmine)
 {
 	float dx = goldmine->get_coords().x - (miner->get_coords().x + miner->get_direction() * 50);
 	float dy = (goldmine->get_coords().y + goldmine->get_sprite().getTextureRect().getSize().y + 30) - (miner->get_coords().y + miner->get_sprite().getTextureRect().getSize().y);
 	return { dx, dy };
 }
 
-sf::Vector2i Game::_calculate_direction_to_unit(const Unit* unit, const Unit* target_unit)
+sf::Vector2i Game::calculate_direction_to_unit(const Unit* unit, const Unit* target_unit)
 {
 	float dx = target_unit->get_coords().x - unit->get_coords().x;
 	float dy = target_unit->get_coords().y - unit->get_coords().y;
@@ -281,9 +282,9 @@ sf::Vector2i Game::_calculate_direction_to_unit(const Unit* unit, const Unit* ta
 	return direction;
 }
 
-void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army, std::map<int, sf::Vector2f>& defend_places, sf::Time deltatime, bool unit_from_my_army)
+void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army, std::map<int, sf::Vector2f>& defend_places, sf::Time deltatime, const bool unit_from_my_army)
 {
-	unit->set_screen_place(_camera_position);
+	unit->set_screen_place(camera_position_);
 	if (not unit->animation_complete())
 	{
 		unit->add_time(deltatime.asMilliseconds());
@@ -297,9 +298,9 @@ void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr
 			defend_places.insert(stand_place);
 
 		if (unit_from_my_army)
-			_army_count -= unit->get_places_requres();
+			army_count_ -= unit->get_places_requres();
 		else
-			_enemy_army_count -= unit->get_places_requres();
+			enemy_army_count_ -= unit->get_places_requres();
 	}
 	if (not defend_places.empty() and unit->get_stand_place().first > defend_places.begin()->first)
 	{
@@ -315,33 +316,33 @@ void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr
 	{
 		if (dynamic_cast<Miner*>(unit.get()) != nullptr)
 		{
-			auto nearest_goldmine = _gold_mines.end();
-			float nearest_distance = 1E+15;
-			for (auto it = _gold_mines.begin(); it != _gold_mines.end(); ++it)
+			auto nearest_goldmine = gold_mines_.end();
+			float nearest_distance = 1E+15f;
+			for (auto it = gold_mines_.begin(); it != gold_mines_.end(); ++it)
 			{
-				auto res = _check_can_mine(static_cast<Miner*> (unit.get()), it->get());
-				if (res.first and res.second < nearest_distance)
+				const auto [can_mine,dist] = check_can_mine(static_cast<const Miner*>(unit.get()), it->get());
+				if (can_mine and dist < nearest_distance)
 				{
-					nearest_distance = res.second;
+					nearest_distance = dist;
 					nearest_goldmine = it;
 				}
 			}
-			if (nearest_goldmine != _gold_mines.end() and unit_from_my_army)
-				_add_money(nearest_goldmine->get()->mine(unit->get_damage()));
+			if (nearest_goldmine != gold_mines_.end() and unit_from_my_army)
+				add_money(nearest_goldmine->get()->mine(unit->get_damage()));
 		}
 		else if (not enemy_army.empty())
-			_damage_processing(unit, enemy_army);
+			damage_processing(unit, enemy_army);
 	}
 
-	if (unit == _controlled_unit)
+	if (unit == controlled_unit_)
 		return;
 
-	if (dynamic_cast<Miner*>(unit.get()) != nullptr and not _gold_mines.empty())
+	if (dynamic_cast<Miner*>(unit.get()) != nullptr and not gold_mines_.empty())
 	{
 		Miner* miner = static_cast<Miner*> (unit.get());
 		if (miner->attached_goldmine != nullptr)
 		{
-			auto res = _check_can_mine(miner, miner->attached_goldmine.get());
+			auto res = check_can_mine(miner, miner->attached_goldmine.get());
 			if (res.first)
 			{
 				if (miner->attached_goldmine->empty())
@@ -351,7 +352,7 @@ void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr
 			}
 			else
 			{
-				sf::Vector2f distance_to_goldmine = _calculate_distances_to_mine(miner, miner->attached_goldmine.get());
+				sf::Vector2f distance_to_goldmine = calculate_distances_to_mine(miner, miner->attached_goldmine.get());
 				if (abs(distance_to_goldmine.x) > 10)
 					miner->move({ distance_to_goldmine.x > 0 ? 1 : -1, 0 }, deltatime);
 				else
@@ -361,10 +362,10 @@ void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr
 		else
 		{
 			float min_dist = 1E+15;
-			auto nearest_goldmine = _gold_mines.end();
-			for (auto it = _gold_mines.begin(); it != _gold_mines.end(); ++it)
+			auto nearest_goldmine = gold_mines_.end();
+			for (auto it = gold_mines_.begin(); it != gold_mines_.end(); ++it)
 			{
-				float dist = _check_can_mine(miner, it->get()).second;
+				float dist = check_can_mine(miner, it->get()).second;
 				if (dist < min_dist)
 				{
 					min_dist = dist;
@@ -376,7 +377,7 @@ void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr
 	}
 	else
 	{
-		int _can_attack = _unit_can_attack(unit, enemy_army);
+		int _can_attack = unit_can_attack(unit, enemy_army);
 		if (_can_attack == 1)
 			unit->commit_attack();
 		else if (_can_attack == -1)
@@ -402,10 +403,10 @@ void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr
 			else if (unit->get_target() == Target::attack)
 			{
 				if (unit->target_unit.get() == nullptr or not unit->target_unit->is_alive())
-					unit->target_unit = _find_nearest_enemy_unit(unit, enemy_army);
+					unit->target_unit = find_nearest_enemy_unit(unit, enemy_army);
 				if (unit->target_unit.get() != nullptr)
 				{
-					auto direction = _calculate_direction_to_unit(unit.get(), unit->target_unit.get());
+					auto direction = calculate_direction_to_unit(unit.get(), unit->target_unit.get());
 					if (direction.x != 0)
 						unit->move({ direction.x, 0 }, deltatime);
 					else
@@ -416,19 +417,19 @@ void Game::_process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr
 	}
 }
 
-std::shared_ptr<Unit> Game::_find_nearest_enemy_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>> army)
+std::shared_ptr<Unit> Game::find_nearest_enemy_unit(const std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>> army) const
 {
 	auto nearest_enemy = army.end();
-	float nearest_distance = 1E+15;
+	float nearest_distance = 1E+15f;
 	for (auto it = army.begin(); it != army.end(); ++it)
 	{
 		if (not it->get()->is_alive())
 			continue;
 
-		float dx = it->get()->get_coords().x - unit->get_coords().x;
-		float dy = it->get()->get_coords().y - unit->get_coords().y;
+		const float dx = it->get()->get_coords().x - unit->get_coords().x;
+		const float dy = it->get()->get_coords().y - unit->get_coords().y;
 
-		float distance = abs(dx) + 2 * abs(dy);
+		const float distance = abs(dx) + 2 * abs(dy);
 
 		if (distance < nearest_distance)
 		{
@@ -441,7 +442,7 @@ std::shared_ptr<Unit> Game::_find_nearest_enemy_unit(std::shared_ptr<Unit> unit,
 	return nullptr;
 }
 
-void Game::_damage_processing(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army)
+void Game::damage_processing(const std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const
 {
 	auto nearest_enemy = enemy_army.end();
 	float nearest_distance = 1E+15;
@@ -451,8 +452,8 @@ void Game::_damage_processing(std::shared_ptr<Unit> unit, std::vector<std::share
 		if (not it->get()->is_alive())
 			continue;
 
-		float dx = it->get()->get_coords().x - unit->get_coords().x;
-		float dy = it->get()->get_coords().y - unit->get_coords().y;
+		const float dx = it->get()->get_coords().x - unit->get_coords().x;
+		const float dy = it->get()->get_coords().y - unit->get_coords().y;
 
 		if (dx > 0 and unit->get_direction() == 1)
 		{
@@ -469,7 +470,7 @@ void Game::_damage_processing(std::shared_ptr<Unit> unit, std::vector<std::share
 				damage_multiplier = 2;
 		}
 
-		float distance = abs(dx) + 2 * abs(dy);
+		const float distance = abs(dx) + 2 * abs(dy);
 
 		if (distance < nearest_distance and damage_multiplier != 0)
 		{
@@ -477,13 +478,13 @@ void Game::_damage_processing(std::shared_ptr<Unit> unit, std::vector<std::share
 			nearest_enemy = it;
 		}
 	}
-	if (unit == _controlled_unit)
+	if (unit == controlled_unit_)
 		damage_multiplier *= 2;
 	if (nearest_enemy != enemy_army.end() and nearest_distance <= unit->get_attack_distance())
 		nearest_enemy->get()->couse_damage(unit->get_damage() * damage_multiplier);
 }
 
-int Game::_unit_can_attack(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const
+int Game::unit_can_attack(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const
 {
 	for (auto it = enemy_army.begin(); it != enemy_army.end(); ++it)
 	{
@@ -501,240 +502,239 @@ int Game::_unit_can_attack(std::shared_ptr<Unit> unit, std::vector<std::shared_p
 	return 0;
 }
 
-void Game::_set_army_target(std::vector<std::shared_ptr<Unit>>& army, Target target)
+void Game::set_army_target(std::vector<std::shared_ptr<Unit>>& army, Target target)
 {
 	for (auto unit : army)
 		unit->set_target(target);
-	if (army == _armies[0])
-		_current_target = target;
+	if (army == armies_[0])
+		current_target_ = target;
 	else
-		_current_enemy_target = target;
+		current_enemy_target_ = target;
 }
 
-void Game::_add_money(int count)
+void Game::add_money(int count)
 {
-	_money += count;
-	_money_count_text.setString(std::to_string(_money).c_str());
+	money_ += count;
+	money_count_text_.setString(std::to_string(money_).c_str());
 }
 
 
 Game::Game(uint16_t width, uint16_t height, const char* title)
-	: _main_window(sf::VideoMode(width, height), title)
+	: main_window_(sf::VideoMode(width, height), title)
 {
 
 }
 
 void Game::init()
 {
-	_texture_holder.append(ID::forest_background, "Images/backgrounds/forest.png");
-	_texture_holder.append(ID::large_forest_background, "Images/backgrounds/large_forest.png");
+	texture_holder_.append(ID::forest_background, "Images/backgrounds/forest.png");
+	texture_holder_.append(ID::large_forest_background, "Images/backgrounds/large_forest.png");
 
-	_texture_holder.append(ID::miner, "Images/units/miner.png");
-	_texture_holder.append(ID::miner_enemy, "Images/units/miner_enemy.png");
-	_texture_holder.append(ID::swordsman, "Images/units/swordsman.png");
-	_texture_holder.append(ID::swordsman_enemy, "Images/units/swordsman_enemy.png");
+	texture_holder_.append(ID::miner, "Images/units/miner.png");
+	texture_holder_.append(ID::miner_enemy, "Images/units/miner_enemy.png");
+	texture_holder_.append(ID::swordsman, "Images/units/swordsman.png");
+	texture_holder_.append(ID::swordsman_enemy, "Images/units/swordsman_enemy.png");
 
-	_texture_holder.append(ID::gold, "Images/attributes/gold.png");
-	_texture_holder.append(ID::miner_buy_button, "Images/attributes/miner_buy_button.png");
-	_texture_holder.append(ID::stick_man, "Images/attributes/stick_man.png");
-	_texture_holder.append(ID::swordsman_buy_button, "Images/attributes/swardsman_buy_button.png");
-	_texture_holder.append(ID::in_attack_button, "Images/attributes/in_attack_button.png");
-	_texture_holder.append(ID::defend_button, "Images/attributes/defend_button.png");
+	texture_holder_.append(ID::gold, "Images/attributes/gold.png");
+	texture_holder_.append(ID::miner_buy_button, "Images/attributes/miner_buy_button.png");
+	texture_holder_.append(ID::stick_man, "Images/attributes/stick_man.png");
+	texture_holder_.append(ID::swordsman_buy_button, "Images/attributes/swardsman_buy_button.png");
+	texture_holder_.append(ID::in_attack_button, "Images/attributes/in_attack_button.png");
+	texture_holder_.append(ID::defend_button, "Images/attributes/defend_button.png");
 
-	_texture_holder.append(ID::goldmine, "Images/objects/goldmine.png");
+	texture_holder_.append(ID::goldmine, "Images/objects/goldmine.png");
 
-	_background_sprite.setTexture(_texture_holder.getTexture(ID::large_forest_background));	
-	_background_sprite.setTextureRect({ start_camera_position, 0 ,2100, 1050 });
-	_gold_sprite.setTexture(_texture_holder.getTexture(ID::gold));
-	_gold_sprite.setPosition({ 20, 20 });
-	_gold_sprite.setScale({ 0.1, 0.1 });
+	background_sprite_.setTexture(texture_holder_.getTexture(ID::large_forest_background));	
+	background_sprite_.setTextureRect({ start_camera_position, 0 ,2100, 1050 });
+	gold_sprite_.setTexture(texture_holder_.getTexture(ID::gold));
+	gold_sprite_.setPosition({ 20, 20 });
+	gold_sprite_.setScale({ 0.1, 0.1 });
 
-	_textfont.loadFromFile("Images/fonts/textfont.ttf");
-	_money_count_text.setFont(_textfont);
-	_money_count_text.setPosition(20, 70);
-	_add_money(1000);
+	text_font_.loadFromFile("Images/fonts/textfont.ttf");
+	money_count_text_.setFont(text_font_);
+	money_count_text_.setPosition(20, 70);
+	add_money(1000);
 
-	_stick_man.setTexture(_texture_holder.getTexture(ID::stick_man));
-	_stick_man.setScale({ 0.25, 0.25 });
-	_stick_man.setPosition({ 35, 120 });
-	_army_count_text.setFont(_textfont);
-	_army_count_text.setPosition({ 25, 170 });
-	_army_count_text.setString("0/" + std::to_string(total_defend_places));
-	_camera_position_text.setFont(_textfont);
-	_camera_position_text.setPosition(1800, 10);
-	_camera_position_text.setString("x: " + std::to_string(_camera_position));
+	stick_man_.setTexture(texture_holder_.getTexture(ID::stick_man));
+	stick_man_.setScale({ 0.25, 0.25 });
+	stick_man_.setPosition({ 35, 120 });
+	army_count_text_.setFont(text_font_);
+	army_count_text_.setPosition({ 25, 170 });
+	army_count_text_.setString("0/" + std::to_string(total_defend_places));
+	camera_position_text_.setFont(text_font_);
+	camera_position_text_.setPosition(1800, 10);
+	camera_position_text_.setString("x: " + std::to_string(camera_position_));
 
 	
-	_miner_buy_button.reset(new UnitBuyButton(MINER_COST, MINER_WAIT_TIME, { 130, 20 }, { 0.15f, 0.15f }, ID::miner_buy_button, _texture_holder, _textfont));
-	_swordsman_buy_button.reset(new UnitBuyButton(SWARDSMAN_COST, SWARDSMAN_WAIT_TIME, { 230, 20 }, { 0.15f, 0.15f }, ID::swordsman_buy_button, _texture_holder, _textfont));
-	_defend_button.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, ID::defend_button, _texture_holder));
-	_in_attack_button.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, ID::in_attack_button, _texture_holder));
+	miner_buy_button_.reset(new UnitBuyButton(miner_cost, miner_wait_time, { 130, 20 }, { 0.15f, 0.15f }, ID::miner_buy_button, texture_holder_, text_font_));
+	swordsman_buy_button_.reset(new UnitBuyButton(swardsman_cost, swardsman_wait_time, { 230, 20 }, { 0.15f, 0.15f }, ID::swordsman_buy_button, texture_holder_, text_font_));
+	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, ID::defend_button, texture_holder_));
+	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, ID::in_attack_button, texture_holder_));
 
-	_armies.push_back(std::vector<std::shared_ptr<Unit>>());
+	armies_.emplace_back();
 
-	//полный приздец
-	_add_unit(Swordsman::MySwordsman({300, 650}, _texture_holder));
-	_army_count += Swordsman::places_requres;
-	_controlled_unit = _armies[0][0];
+	add_unit(Swordsman::MySwordsman({300, 650}, texture_holder_));
+	army_count_ += Swordsman::places_requres;
+	controlled_unit_ = armies_[0][0];
 
 	for (int i = 0; i < total_defend_places; i++)
 	{
-		_defend_places.insert({ i, { defendline_x - (i / 5) * row_width, Y_MAP_MAX - 30 - (i % max_solders_in_row) * (Y_MAP_MAX - Y_MAP_MIN - 50) / max_solders_in_row } });
-		_enemy_defend_places.insert({ total_defend_places - i, {enemy_defendline_x - (i / 5) * row_width, Y_MAP_MAX - 30 - (i % max_solders_in_row) * (Y_MAP_MAX - Y_MAP_MIN - 50) / max_solders_in_row }});
+		defend_places_.insert({ i, { defendline_x - (i / 5) * row_width, y_map_max - 30 - (i % max_solders_in_row) * (y_map_max - y_map_min - 50) / max_solders_in_row } });
+		enemy_defend_places_.insert({ total_defend_places - i, {enemy_defendline_x - (i / 5) * row_width, y_map_max - 30 - (i % max_solders_in_row) * (y_map_max - y_map_min - 50) / max_solders_in_row }});
 	}
 	for (const auto goldmine_position : goldmine_positions)
-		_add_gold_mine(goldmine_position, _texture_holder);
+		add_gold_mine(goldmine_position, texture_holder_);
 
 }
 
 int Game::run()
 {
-	_main_window.setFramerateLimit(120);
-	while (_main_window.isOpen())
+	main_window_.setFramerateLimit(120);
+	while (main_window_.isOpen())
 	{
-		sf::Time deltatime = this->_clock.restart();
-		_process_events();
-		_handle_inputs(deltatime);
-		_process_internal_actions(deltatime);
+		sf::Time deltatime = this->clock_.restart();
+		process_events();
+		handle_inputs(deltatime);
+		process_internal_actions(deltatime);
 		
-		this->_draw();
-		_main_window.display();
+		this->draw();
+		main_window_.display();
 	}
 	return 0;
 }
 
-void Game::_add_unit(std::shared_ptr<Unit> unit)
+void Game::add_unit(std::shared_ptr<Unit> unit)
 {
-	_armies[0].push_back(unit);
+	armies_[0].push_back(unit);
 	//_army_count += unit->get_places_requres();
-	unit->set_target(_current_target);
+	unit->set_target(current_target_);
 }
 
-void Game::_add_unit(Unit* unit)
+void Game::add_unit(Unit* unit)
 {
-	_armies[0].emplace_back(unit);
+	armies_[0].emplace_back(unit);
 	//_army_count += unit->get_places_requres();
-	unit->set_target(_current_target);
+	unit->set_target(current_target_);
 }
 
-int Game::_move_camera(int step)
+int Game::move_camera(const int step)
 {
-	int prev_camera_position = _camera_position;
-	_camera_position += step;
-	if (_camera_position < min_camera_position)
-		_camera_position = -min_camera_position;
-	else if (_camera_position > max_camera_position)
-		_camera_position = max_camera_position;
-	int actual_step = _camera_position - prev_camera_position;
+	const int prev_camera_position = camera_position_;
+	camera_position_ += step;
+	if (camera_position_ < min_camera_position)
+		camera_position_ = -min_camera_position;
+	else if (camera_position_ > max_camera_position)
+		camera_position_ = max_camera_position;
+	const int actual_step = camera_position_ - prev_camera_position;
 	
-	_background_sprite.setTextureRect({ _camera_position, 0, 2100, 1050 });
-	for (const auto army : _armies)
-		for (const auto unit : army)
+	background_sprite_.setTextureRect({ camera_position_, 0, 2100, 1050 });
+	for (const auto& army : armies_)
+		for (const auto& unit : army)
 			unit->move_sprite({ -actual_step, 0 });
 
-	for (const auto enemy : _enemy_army)
+	for (const auto& enemy : enemy_army_)
 		enemy->move_sprite({ -actual_step, 0 });
 
-	_camera_position_text.setString("x: " + std::to_string(_camera_position));
+	camera_position_text_.setString("x: " + std::to_string(camera_position_));
 	return actual_step;
 }
 
-void Game::_add_enemy_unit(std::shared_ptr<Unit> unit)
+void Game::add_enemy_unit(const std::shared_ptr<Unit> unit)
 {
-	unit->set_target(_current_enemy_target);
-	_enemy_army.push_back(unit);
-	_enemy_army_count += unit.get()->get_places_requres();
+	unit->set_target(current_enemy_target_);
+	enemy_army_.push_back(unit);
+	enemy_army_count_ += unit->get_places_requres();
 }
 
-void Game::_add_gold_mine(sf::Vector2f position, TextureHolder& holder)
+void Game::add_gold_mine(const sf::Vector2f position, TextureHolder& holder)
 {
-	_gold_mines.emplace_back(new GoldMine(position, holder));
+	gold_mines_.emplace_back(new GoldMine(position, holder));
 }
 
 Button::Button(sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder)
 {
-	_sprite.setTexture(holder.getTexture(id));
-	_sprite.setPosition(position);
-	_sprite.setScale(scale);
+	sprite_.setTexture(holder.getTexture(id));
+	sprite_.setPosition(position);
+	sprite_.setScale(scale);
 }
 
 const sf::Sprite& Button::get_sprite() const
 {
-	return _sprite;
+	return sprite_;
 }
 
 void Button::draw(sf::RenderWindow& window) const
 {
-	window.draw(_sprite);
+	window.draw(sprite_);
 }
 
 void Button::press()
 {
-	_pressed = true;
+	pressed_ = true;
 }
 
 bool Button::is_pressed()
 {
-	bool temp = _pressed;
-	_pressed = false;
+	const bool temp = pressed_;
+	pressed_ = false;
 	return temp;
 }
 
 UnitBuyButton::UnitBuyButton(int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder, sf::Font& font)
-	: Button(position, scale, id, holder), _unit_cost(unit_cost), _wait_time(wait_time)
+	: Button(position, scale, id, holder), unit_cost_(unit_cost), wait_time_(wait_time)
 {
-	_timebar.setPosition({ position.x + 3, position.y + 100 });
-	_timebar.setFillColor(sf::Color::Cyan);
-	_timebar.setSize({ 0, 0 });
+	timebar_.setPosition({ position.x + 3, position.y + 100 });
+	timebar_.setFillColor(sf::Color::Cyan);
+	timebar_.setSize({ 0, 0 });
 
-	_count_text.setFont(font);
-	_count_text.setFillColor(sf::Color::Black);
-	_count_text.setPosition({ position.x + 10, position.y + 50 });
+	count_text_.setFont(font);
+	count_text_.setFillColor(sf::Color::Black);
+	count_text_.setPosition({ position.x + 10, position.y + 50 });
 
-	_gold_icon.setTexture(holder.getTexture(ID::gold));
-	_gold_icon.setScale({ 0.04, 0.04 });
-	_gold_icon.setPosition({ position.x + 5, position.y + 10 });
+	gold_icon_.setTexture(holder.getTexture(ID::gold));
+	gold_icon_.setScale({ 0.04, 0.04 });
+	gold_icon_.setPosition({ position.x + 5, position.y + 10 });
 
-	_cost_text.setFont(font);
-	_cost_text.setString(std::to_string(unit_cost).c_str());
-	_cost_text.setFillColor(sf::Color::Black);
-	_cost_text.setPosition({ position.x + 40, position.y + 10 });
-	_cost_text.setCharacterSize(20);
+	cost_text_.setFont(font);
+	cost_text_.setString(std::to_string(unit_cost).c_str());
+	cost_text_.setFillColor(sf::Color::Black);
+	cost_text_.setPosition({ position.x + 40, position.y + 10 });
+	cost_text_.setCharacterSize(20);
 }
 
 void UnitBuyButton::draw(sf::RenderWindow& window) const
 {
-	window.draw(_sprite);
-	window.draw(_timebar);
-	window.draw(_gold_icon);
-	window.draw(_cost_text);
-	if(_remaining_time != 0)
-		window.draw(_count_text);
+	window.draw(sprite_);
+	window.draw(timebar_);
+	window.draw(gold_icon_);
+	window.draw(cost_text_);
+	if(remaining_time_ != 0)
+		window.draw(count_text_);
 }
 
 void UnitBuyButton::press()
 {
-	_remaining_time += _wait_time;
+	remaining_time_ += wait_time_;
 	this->process_button(1);
 }
 
 int UnitBuyButton::get_unit_cost() const
 {
-	return _unit_cost;
+	return unit_cost_;
 }
 
-void UnitBuyButton::process_button(int elapsed_time)
+void UnitBuyButton::process_button(const int elapsed_time)
 {
-	if (_remaining_time >= elapsed_time)
-		_remaining_time -= elapsed_time;
+	if (remaining_time_ >= elapsed_time)
+		remaining_time_ -= elapsed_time;
 	else
-		_remaining_time = 0;
+		remaining_time_ = 0;
 
-	std::string temp_str = "x" + std::to_string((int)ceil(static_cast<float>(_remaining_time) / _wait_time));
-	_count_text.setString(temp_str.c_str());
+	std::string temp_str = "x" + std::to_string((int)ceil(static_cast<float>(remaining_time_) / wait_time_));
+	count_text_.setString(temp_str.c_str());
 
-	int remainig_time_for_current_unit = _remaining_time % _wait_time;
-	_timebar.setSize({ _bar_size.x * remainig_time_for_current_unit / _wait_time, _bar_size.y });
+	int remainig_time_for_current_unit = remaining_time_ % wait_time_;
+	timebar_.setSize({ bar_size_.x * remainig_time_for_current_unit / wait_time_, bar_size_.y });
 }
 
 bool random(float probability)
@@ -744,6 +744,6 @@ bool random(float probability)
 	else if (probability >= 1)
 		return true;
 
-	int p = 1 + rand() % 100000;
+	const int p = 1 + rand() % 100000;
 	return p <= static_cast<int>(probability * 100000);
 }

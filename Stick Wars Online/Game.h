@@ -20,9 +20,9 @@ constexpr float row_width = 80;
 
 constexpr float enemy_defendline_x = 2100 * 3 - 600;
 const sf::Vector2f enemy_spawnpoint = { 2100 * 3 + 100, 650 };
-const int invoke_enemy_time = 15000;
+constexpr int invoke_enemy_time = 15000;
 
-static int enemy_programm = 0;
+static int enemy_behaviour = 0;
 
 const std::array<sf::Vector2f, 9> goldmine_positions = { sf::Vector2f{150, 750}, {250, 650}, {350, 690}, {2100 * 3 - 350, 670}, {2100 * 3 - 450, 670}, {2100 * 3 - 550, 800},
 	{700, 650}, {1000, 650}, {1300, 690} };
@@ -32,8 +32,8 @@ bool random(float probability);
 class Button
 {
 protected:
-	sf::Sprite _sprite;
-	bool _pressed = false;
+	sf::Sprite sprite_;
+	bool pressed_ = false;
 public:
 	Button(sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder);
 	const sf::Sprite& get_sprite() const;
@@ -44,17 +44,17 @@ public:
 
 class UnitBuyButton : public Button
 {
-	sf::RectangleShape _timebar;
-	const sf::Vector2f _bar_size = { 85, 5 };
+	sf::RectangleShape timebar_;
+	const sf::Vector2f bar_size_ = { 85, 5 };
 
-	int _remaining_time = 0;
-	const int _wait_time;
+	int remaining_time_ = 0;
+	const int wait_time_;
 
-	sf::Text _count_text;
-	sf::Sprite _gold_icon;
-	sf::Text _cost_text;
+	sf::Text count_text_;
+	sf::Sprite gold_icon_;
+	sf::Text cost_text_;
 	
-	int _unit_cost;
+	int unit_cost_;
 
 public:
 	UnitBuyButton(int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder, sf::Font& font);
@@ -67,83 +67,83 @@ public:
 
 class Game
 {
-	sf::RenderWindow _main_window;
-	TextureHolder _texture_holder;
-	sf::Sprite _background_sprite;
-	sf::Sprite _gold_sprite;
+	sf::RenderWindow main_window_;
+	TextureHolder texture_holder_;
+	sf::Sprite background_sprite_;
+	sf::Sprite gold_sprite_;
 
-	int _camera_position = start_camera_position;
-	sf::Text _camera_position_text;
+	int camera_position_ = start_camera_position;
+	sf::Text camera_position_text_;
 
-	sf::Sprite _stick_man;
-	int _army_count = 0;
-	sf::Text _army_count_text;
+	sf::Sprite stick_man_;
+	int army_count_ = 0;
+	sf::Text army_count_text_;
 	
-	std::unique_ptr<UnitBuyButton> _miner_buy_button = nullptr;
-	std::unique_ptr<UnitBuyButton> _swordsman_buy_button = nullptr;
-	std::unique_ptr<Button> _in_attack_button = nullptr;
-	std::unique_ptr<Button> _defend_button = nullptr;
+	std::unique_ptr<UnitBuyButton> miner_buy_button_ = nullptr;
+	std::unique_ptr<UnitBuyButton> swordsman_buy_button_ = nullptr;
+	std::unique_ptr<Button> in_attack_button_ = nullptr;
+	std::unique_ptr<Button> defend_button_ = nullptr;
 
-	Target _current_target = Target::defend;
+	Target current_target_ = Target::defend;
 
-	sf::Font _textfont;
-	sf::Text _money_count_text;
-	int _money = 0;
+	sf::Font text_font_;
+	sf::Text money_count_text_;
+	int money_ = 0;
 
-	int _timer_money_increment = 0;
-	const int _time_money_increment = 10000;
-	int _count_money_increment = 10;
+	int timer_money_increment_ = 0;
+	const int time_money_increment_ = 10000;
+	int count_money_increment_ = 10;
 
-	std::queue<std::shared_ptr<Unit>> _units_queue;
-	int _cumulative_spawn_time = 0;
-	std::map<int, sf::Vector2f> _defend_places;
-	std::vector<std::vector<std::shared_ptr<Unit>>> _armies;
-	std::shared_ptr<Unit> _controlled_unit = 0;
+	std::queue<std::shared_ptr<Unit>> units_queue_;
+	int cumulative_spawn_time_ = 0;
+	std::map<int, sf::Vector2f> defend_places_;
+	std::vector<std::vector<std::shared_ptr<Unit>>> armies_;
+	std::shared_ptr<Unit> controlled_unit_ = nullptr;
 
-	std::vector<std::shared_ptr<Unit>> _enemy_army;
-	std::map<int, sf::Vector2f> _enemy_defend_places;
-	int _enemy_army_count = 0;
-	Target _current_enemy_target = Target::defend;
-	const int _max_enemy_army_size = total_defend_places;
-	int _cumulative_enemy_spawn_time = 0;
+	std::vector<std::shared_ptr<Unit>> enemy_army_;
+	std::map<int, sf::Vector2f> enemy_defend_places_;
+	int enemy_army_count_ = 0;
+	Target current_enemy_target_ = Target::defend;
+	const int max_enemy_army_size_ = total_defend_places;
+	int cumulative_enemy_spawn_time_ = 0;
 
-	std::vector<std::shared_ptr<GoldMine>> _gold_mines;
+	std::vector<std::shared_ptr<GoldMine>> gold_mines_;
 
-	bool _isPressed_A = false;
-	bool _isPressed_D = false;
-	bool _isPressed_W = false;
-	bool _isPressed_S = false;
-	bool _isPressed_K = false;
-	bool _is_Pressed_Left_Arrow = false;
-	bool _is_Pressed_Right_Arrow = false;
-	bool _isPressed_Space = false;
-	bool _isPressed_Shift = false;
-	bool _isMouse_Left_Button_Clicked = false;
-	sf::Vector2i _mouse_position;
+	bool is_pressed_a_ = false;
+	bool is_pressed_d_ = false;
+	bool is_pressed_w_ = false;
+	bool is_pressed_s_ = false;
+	bool is_pressed_k_ = false;
+	bool is_pressed_left_arrow_ = false;
+	bool is_pressed_right_arrow_ = false;
+	bool is_pressed_space_ = false;
+	bool is_pressed_shift_ = false;
+	bool is_mouse_left_button_clicked_ = false;
+	sf::Vector2i mouse_position_;
 
-	sf::Clock _clock;
+	sf::Clock clock_;
 
-	void _draw();
-	void _process_events();
-	void _handle_inputs(sf::Time deltatime);
-	void _process_internal_actions(sf::Time deltatime);
+	void draw();
+	void process_events();
+	void handle_inputs(sf::Time deltatime);
+	void process_internal_actions(sf::Time deltatime);
 
-	int _move_camera(int step);
+	int move_camera(int step);
 
-	void _add_money(int count);
-	void _add_unit(Unit* unit);
-	void _add_unit(std::shared_ptr<Unit> unit);
+	void add_money(int count);
+	void add_unit(Unit* unit);
+	void add_unit(std::shared_ptr<Unit> unit);
 
-	void _add_enemy_unit(std::shared_ptr<Unit> unit);
-	void _add_gold_mine(sf::Vector2f position, TextureHolder& holder);
-	static std::pair<bool, float> _check_can_mine(const Miner* miner, const GoldMine* goldmine);
-	static sf::Vector2f _calculate_distances_to_mine(const Miner* miner, const GoldMine* goldmine);
-	static sf::Vector2i _calculate_direction_to_unit(const Unit* unit, const Unit* target_unit);
-	void _damage_processing(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army);
-	std::shared_ptr<Unit> _find_nearest_enemy_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>> army);
-	int _unit_can_attack(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const;
-	void _process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army, std::map<int, sf::Vector2f>& defend_places, sf::Time deltatime, bool unit_from_my_army);
-	void _set_army_target(std::vector<std::shared_ptr<Unit>>& army, Target target);
+	void add_enemy_unit(std::shared_ptr<Unit> unit);
+	void add_gold_mine(sf::Vector2f position, TextureHolder& holder);
+	static std::pair<bool, float> check_can_mine(const Miner* miner, const GoldMine* goldmine);
+	static sf::Vector2f calculate_distances_to_mine(const Miner* miner, const GoldMine* goldmine);
+	static sf::Vector2i calculate_direction_to_unit(const Unit* unit, const Unit* target_unit);
+	void damage_processing(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const;
+	std::shared_ptr<Unit> find_nearest_enemy_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>> army) const;
+	int unit_can_attack(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const;
+	void process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army, std::map<int, sf::Vector2f>& defend_places, sf::Time deltatime, bool unit_from_my_army);
+	void set_army_target(std::vector<std::shared_ptr<Unit>>& army, Target target);
 
 public:
 	Game(uint16_t width, uint16_t height, const char* title);

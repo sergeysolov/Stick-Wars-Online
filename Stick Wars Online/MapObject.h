@@ -22,7 +22,7 @@ public:
 		{}
 	};
 
-	MapObject(sf::Vector2f spawnpoint, TextureHolder& holder, ID id, AnimationParams _animation_params);
+	MapObject(sf::Vector2f spawnpoint, TextureHolder& holder, ID id, AnimationParams animation_params);
 
 	const sf::Sprite& get_sprite() const;
 	sf::Vector2f get_coords() const;
@@ -34,14 +34,14 @@ public:
 	int get_cumulative_time() const;
 
 protected:
-	float _x;
-	float _y;
-	sf::Sprite _sprite;
-	AnimationParams _animation_params;
-	uint16_t _current_frame = 0;
-	int _cumulative_time = 0;
+	float x_;
+	float y_;
+	sf::Sprite sprite_;
+	AnimationParams animation_params_;
+	uint16_t current_frame_ = 0;
+	int cumulative_time_ = 0;
 
-	virtual void _set_y_scale();
+	virtual void set_y_scale();
 };
 
 
@@ -54,8 +54,6 @@ public:
 	int mine(int gold_count);
 	bool empty() const;
 protected:
-	const int _max_gold_capacity = 10000;
-	int _gold_capacity = _max_gold_capacity;
-	
-
+	const int max_gold_capacity_ = 10000;
+	int gold_capacity_ = max_gold_capacity_;
 };

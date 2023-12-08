@@ -1,5 +1,5 @@
 #pragma once
-#include <map>
+#include <unordered_map>
 #include <SFML/Graphics.hpp>
 
 enum ID
@@ -31,6 +31,6 @@ public:
 	sf::Texture& getTexture(ID id);
 	
 private:
-	std::map<ID, sf::Texture> _textures;
+	std::unordered_map<ID, sf::Texture> textures_;
 };
 

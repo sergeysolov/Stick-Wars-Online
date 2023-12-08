@@ -2,123 +2,123 @@
 
 sf::Vector2f HEALTHBAR_SHIFT = { -32, 50 };
 
-Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float _health, float _armor, float _speed, float _damage, float _damage_speed, float _attack_distance, AnimationParams _animation_params) :
-	MapObject(spawnpoint, holder, id, _animation_params), _health(_health), _max_health(_health), _armor(_armor), _speed(_speed), _damage(_damage), _damage_speed(_damage_speed), _attack_distance(_attack_distance)
+Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float health, float _armor, float speed, float damage, float damage_speed, float attack_distance, AnimationParams animation_params) :
+	MapObject(spawnpoint, holder, id, animation_params), health_(health), max_health_(health), armor_(_armor), speed_(speed), damage_(damage), damage_speed_(damage_speed), attack_distance_(attack_distance)
 {
-	_health_bar.setPosition({ _x + HEALTHBAR_SHIFT.x, _y + HEALTHBAR_SHIFT.y});
-	_health_bar.setSize({ _max_healthbar_size, 3 });
-	_health_bar.setFillColor(sf::Color::Magenta);
+	health_bar_.setPosition({ x_ + HEALTHBAR_SHIFT.x, y_ + HEALTHBAR_SHIFT.y});
+	health_bar_.setSize({ max_healthbar_size, 3 });
+	health_bar_.setFillColor(sf::Color::Magenta);
 }
 
 void Unit::show_animation()
 {
-	if (_cumulative_time > ANIMATION_STEP)
+	if (cumulative_time_ > animation_step)
 	{
-		_cumulative_time -= ANIMATION_STEP;
-		(_current_frame += 1) %= _animation_params.total_frames;
+		cumulative_time_ -= animation_step;
+		(current_frame_ += 1) %= animation_params_.total_frames;
 
-		if (_current_frame == 0)
-			_cumulative_time = 0;
+		if (current_frame_ == 0)
+			cumulative_time_ = 0;
 
 		int y_shift = 0;
 
-		if (_animation_type == AnimatonType::attack)
+		if (animation_type_ == AnimatonType::attack_animation)
 		{
-			y_shift = _animation_params.frame_height;
-			if (_current_frame == 7)
-				_do_damage = true;
+			y_shift = animation_params_.frame_height;
+			if (current_frame_ == 7)
+				do_damage_ = true;
 		}
 
-		if (_animation_type == AnimatonType::die)
-			y_shift = _animation_params.frame_height * 2;
+		if (animation_type_ == AnimatonType::die_animation)
+			y_shift = animation_params_.frame_height * 2;
 		
-		_sprite.setTextureRect({ _animation_params.init_position.x + _animation_params.frame_width * _current_frame, _animation_params.init_position.y + y_shift, _animation_params.frame_width, _animation_params.frame_height });
+		sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
 	}
 }
 
 void Unit::couse_damage(float _damage)
 {
-	_health -= _damage / _armor;
-	_update_health_bar();
-	if (_health <= 0)
+	health_ -= _damage / armor_;
+	update_health_bar();
+	if (health_ <= 0)
 		kill();
 }
 
 bool Unit::is_alive() const
 {
-	return _health > 0;
+	return health_ > 0;
 }
 
 float Unit::get_speed() const
 {
-	return _speed;
+	return speed_;
 }
 
 int Unit::get_spawn_time() const
 {
-	return _spawn_time;
+	return spawn_time_;
 }
 
-void Unit::_update_health_bar()
+void Unit::update_health_bar()
 {
-	float _health_bar_size = (_health / _max_health) * _max_healthbar_size;
-	if(_health < 0)
+	float _health_bar_size = (health_ / max_health_) * max_healthbar_size;
+	if(health_ < 0)
 		_health_bar_size = 0;
-	_health_bar.setSize({ _health_bar_size, _health_bar.getSize().y });
+	health_bar_.setSize({ _health_bar_size, health_bar_.getSize().y });
 }
 
-void Unit::_set_y_scale()
+void Unit::set_y_scale()
 {
-	float scale_factor = (a * _sprite.getPosition().y + b);
-	_sprite.setScale({ scale_factor * _prev_direction * _animation_params.scale.x, scale_factor * _animation_params.scale.y });
+	float scale_factor = (a * sprite_.getPosition().y + b);
+	sprite_.setScale({ scale_factor * prev_direction_ * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
 }
 
 Target Unit::get_target() const
 {
-	return _target;
+	return target_;
 }
 
 bool Unit::animation_complete()
 {
-	if (_current_frame == _animation_params.total_frames - 1)
+	if (current_frame_ == animation_params_.total_frames - 1)
 	{
-		if (_animation_type == AnimatonType::die)
+		if (animation_type_ == AnimatonType::die_animation)
 		{
-			_health = 0;
+			health_ = 0;
 			return true;
 		}
-		if (_animation_type == AnimatonType::attack)
+		if (animation_type_ == AnimatonType::attack_animation)
 		{
-			_animation_type = AnimatonType::none;
+			animation_type_ = AnimatonType::no_animation;
 			return true;
 		}
 	}
-	if (_cumulative_time > 0)
+	if (cumulative_time_ > 0)
 		return false;
 	return true;
 }
 
 std::pair<int, sf::Vector2f> Unit::get_stand_place() const
 {
-	return _stand_place;
+	return stand_place_;
 }
 
 std::pair<int, sf::Vector2f> Unit::extract_stand_place()
 {
-	auto temp = _stand_place;
-	_stand_place = { 0,  { 1E+15f, 1E+15f } };
+	auto temp = stand_place_;
+	stand_place_ = { 0,  { 1E+15f, 1E+15f } };
 	return temp;
 }
 
 void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
 {
-	_stand_place = *places.begin();
+	stand_place_ = *places.begin();
 	places.erase(places.begin());
 }
 
 void Unit::set_target(Target target)
 {
-	_target = target;
+	target_ = target;
 }
 
 int Unit::get_places_requres() const
@@ -128,23 +128,23 @@ int Unit::get_places_requres() const
 
 int Unit::get_direction() const
 {
-	return _prev_direction;
+	return prev_direction_;
 }
 
 float Unit::get_attack_distance() const
 {
-	return _attack_distance;
+	return attack_distance_;
 }
 
 float Unit::get_damage() const
 {
-	return _damage;
+	return damage_;
 }
 
 void Unit::set_screen_place(int camera_position)
 {
-	_sprite.setPosition({ _x - camera_position, _y });
-	_health_bar.setPosition({ _x - camera_position + HEALTHBAR_SHIFT.x, _y + HEALTHBAR_SHIFT.y});
+	sprite_.setPosition({ x_ - camera_position, y_ });
+	health_bar_.setPosition({ x_ - camera_position + HEALTHBAR_SHIFT.x, y_ + HEALTHBAR_SHIFT.y});
 }
 
 
@@ -152,88 +152,88 @@ void Unit::set_screen_place(int camera_position)
 
 void Unit::move_sprite(sf::Vector2i vc)
 {
-	_sprite.move((float)vc.x, (float)vc.y );
-	_health_bar.move((float)vc.x, (float)vc.y);
+	sprite_.move((float)vc.x, (float)vc.y );
+	health_bar_.move((float)vc.x, (float)vc.y);
 }
 
 void Unit::move(sf::Vector2i direction, sf::Time time)
 {
-	float x_offset = direction.x * time.asMilliseconds() * _speed;
-	float y_offset = direction.y * time.asMilliseconds() * _vertical_speed;
-	float new_x = x_offset + _x;
-	float new_y = y_offset + _y;
+	float x_offset = direction.x * time.asMilliseconds() * speed_;
+	float y_offset = direction.y * time.asMilliseconds() * vertical_speed_;
+	float new_x = x_offset + x_;
+	float new_y = y_offset + y_;
 
-	if (new_x > X_MAP_MIN and new_x < X_MAP_MAX and new_y > Y_MAP_MIN and new_y < Y_MAP_MAX)
+	if (new_x > x_map_min and new_x < x_map_max and new_y > y_map_min and new_y < y_map_max)
 	{
-		_x += x_offset;
-		_y += y_offset;
-		_sprite.move({ x_offset, y_offset });
-		_health_bar.move({ x_offset, y_offset });
+		x_ += x_offset;
+		y_ += y_offset;
+		sprite_.move({ x_offset, y_offset });
+		health_bar_.move({ x_offset, y_offset });
 	}
 
-	if (direction.x != 0 and direction.x != _prev_direction)
+	if (direction.x != 0 and direction.x != prev_direction_)
 	{
-		_prev_direction = direction.x;
-		_sprite.scale(-1, 1);
+		prev_direction_ = direction.x;
+		sprite_.scale(-1, 1);
 	}
-	_set_y_scale();
+	set_y_scale();
 
-	if (_animation_type != AnimatonType::walk)
-		_current_frame = 0;
-	_animation_type = AnimatonType::walk;
-	_cumulative_time++;
+	if (animation_type_ != AnimatonType::walk_animation)
+		current_frame_ = 0;
+	animation_type_ = AnimatonType::walk_animation;
+	cumulative_time_++;
 }
 
 void Unit::kill()
 {
 	//_health = 0;
 	//_update_health_bar();
-	if (_animation_type != AnimatonType::die)
+	if (animation_type_ != AnimatonType::die_animation)
 	{
-		_current_frame = 0;
+		current_frame_ = 0;
 	}
-	_cumulative_time++;
-	_animation_type = AnimatonType::die;
-	_killed = true;
+	cumulative_time_++;
+	animation_type_ = AnimatonType::die_animation;
+	killed_ = true;
 }
 
 bool Unit::is_killed()
 {
-	bool temp = _killed;
-	_killed = false;
+	bool temp = killed_;
+	killed_ = false;
 	return temp;
 }
 
 bool Unit::can_do_damage()
 {
-	bool temp = _do_damage;
-	_do_damage = false;
+	bool temp = do_damage_;
+	do_damage_ = false;
 	return temp;
 }
 
 void Unit::draw(sf::RenderWindow& window) const
 {
-	window.draw(_sprite);
-	window.draw(_health_bar);
+	window.draw(sprite_);
+	window.draw(health_bar_);
 }
 
 void Unit::commit_attack()
 {
-	if (_animation_type != AnimatonType::attack)
+	if (animation_type_ != AnimatonType::attack_animation)
 	{
-		_current_frame = 0;
+		current_frame_ = 0;
 	}
-	_cumulative_time++;
-	_animation_type = AnimatonType::attack;
+	cumulative_time_++;
+	animation_type_ = AnimatonType::attack_animation;
 }
 
 Miner::Miner(sf::Vector2f spawnpoint, TextureHolder& holder, ID id) : 
-	Unit(holder, id, spawnpoint, _health=100, _armor=1, _speed=0.2f, _damage=5, _damage_speed=1.0f, _attack_distance=150,
+	Unit(holder, id, spawnpoint, health_=100, armor_=1, speed_=0.2f, damage_=5, damage_speed_=1.0f, attack_distance_=150,
 		{ {-300, 2}, 700, 1280, 13, {-0.4, 0.4 } })
 {
 	//_animation_params = { {0, 0}, 402, 246, 12, { 0.4, 0.4 } };
 	
-	_spawn_time = MINER_WAIT_TIME;
+	spawn_time_ = miner_wait_time;
 }
 
 int Miner::get_places_requres() const
@@ -252,10 +252,10 @@ Unit* Miner::EnemyMiner(sf::Vector2f spawnpoint, TextureHolder& holder)
 }
 
 Swordsman::Swordsman(sf::Vector2f spawnpoint, TextureHolder& holder, ID id)
-	: Unit(holder, id, spawnpoint, _health=300, _armor=1, _speed=0.3f, _damage=30, _damage_speed=3.0f, _attack_distance=170,
+	: Unit(holder, id, spawnpoint, health_=300, armor_=1, speed_=0.3f, damage_=30, damage_speed_=3.0f, attack_distance_=170,
 		{ {-300, 20}, 700, 1280, 13, {-0.4, 0.4} })
 {
-	_spawn_time = SWARDSMAN_WAIT_TIME;
+	spawn_time_ = swardsman_wait_time;
 }
 
 int Swordsman::get_places_requres() const
