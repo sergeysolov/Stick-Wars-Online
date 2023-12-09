@@ -126,7 +126,7 @@ void Game::handle_inputs(sf::Time deltatime)
 			if (army_count_ + Miner::places_requres <= total_defend_places)
 			{
 				add_money(-1 * miner_buy_button_->get_unit_cost());
-				units_queue_.emplace(Miner::MyMiner(spawnpoint, texture_holder_));
+				units_queue_.emplace(Miner::MakeMiner(spawnpoint, texture_holder_));
 				army_count_ += Miner::places_requres;
 				miner_buy_button_->press();
 			}
@@ -137,7 +137,7 @@ void Game::handle_inputs(sf::Time deltatime)
 			if (army_count_ + Swordsman::places_requres <= total_defend_places)
 			{
 				add_money(-1 * swordsman_buy_button_->get_unit_cost());
-				units_queue_.emplace(Swordsman::MySwordsman(spawnpoint, texture_holder_));
+				units_queue_.emplace(Swordsman::MakeSwordsman(spawnpoint, texture_holder_));
 				army_count_ += Swordsman::places_requres;
 				swordsman_buy_button_->press();
 			}
@@ -190,7 +190,8 @@ void Game::process_internal_actions(sf::Time deltatime)
 		cumulative_spawn_time_ += deltatime.asMilliseconds();
 		if (cumulative_spawn_time_ >= units_queue_.front()->get_spawn_time())
 		{
-			add_unit(units_queue_.front());
+			armies_[0].push_back(units_queue_.front());
+			units_queue_.front()->set_target(current_target_);
 			cumulative_spawn_time_ -= units_queue_.front()->get_spawn_time();
 			units_queue_.pop();
 		}
@@ -208,12 +209,12 @@ void Game::process_internal_actions(sf::Time deltatime)
 		else
 			++it;
 	}
-	for (const auto goldmine : gold_mines_)
+	for (const auto& goldmine : gold_mines_)
 		goldmine->set_screen_place(camera_position_);
 	
 
 	//My army processing
-	for (const auto unit : armies_[0])
+	for (const auto& unit : armies_[0])
 	{
 		process_unit(unit, enemy_army_, defend_places_, deltatime, true);
 	}
@@ -228,15 +229,15 @@ void Game::process_internal_actions(sf::Time deltatime)
 			cumulative_enemy_spawn_time_ -= invoke_enemy_time;
 			add_enemy_unit(std::shared_ptr<Unit>(Swordsman::EnemySwordsman(enemy_spawnpoint, texture_holder_)));
 		}
-		if (random(0.00005))
+		if (random(0.00005f))
 		{
 			set_army_target(enemy_army_, Target::attack);
 		}
-		else if (random(0.00005))
+		else if (random(0.00005f))
 		{
 			set_army_target(enemy_army_, Target::defend);
 		}
-		if (random(0.00005))
+		if (random(0.00005f))
 		{
 			for (int i = 0; i < 3 and enemy_army_count_ < max_enemy_army_size_; ++i)
 			{
@@ -245,7 +246,7 @@ void Game::process_internal_actions(sf::Time deltatime)
 		}
 	}
 
-	for (const auto enemy : enemy_army_)
+	for (const auto& enemy : enemy_army_)
 	{
 		process_unit(enemy, armies_[0], enemy_defend_places_, deltatime, false);
 	}
@@ -259,27 +260,36 @@ std::pair<bool, float> Game::check_can_mine(const Miner* miner, const GoldMine* 
 
 	//float scale_factor = (a * miner->get_coords().y + b);
 	//scale_factor *= scale_factor;
-	float distance = sqrt(dx * dx + 24 * dy * dy);
+	const float dist = sqrt(dx * dx + dy * dy);
 
 	bool can_mine = false;
-	if (((dx > 0 and miner->get_direction() == 1) or (dx < 0 and miner->get_direction() == -1) or distance < 70) and distance <= miner->get_attack_distance())
+	if (((dx > 0 and miner->get_direction() == 1) or (dx < 0 and miner->get_direction() == -1)) and abs(dy) <= miner->get_attack_distance() and abs(dx) <= miner->get_attack_distance())
 		can_mine = true;
-	return {can_mine, distance};
+	return {can_mine, dist};
 }
 
 sf::Vector2f Game::calculate_distances_to_mine(const Miner* miner, const GoldMine* goldmine)
 {
-	float dx = goldmine->get_coords().x - (miner->get_coords().x + miner->get_direction() * 50);
-	float dy = (goldmine->get_coords().y + goldmine->get_sprite().getTextureRect().getSize().y + 30) - (miner->get_coords().y + miner->get_sprite().getTextureRect().getSize().y);
+	const float dx = goldmine->get_coords().x - miner->get_coords().x;
+	const float dy = 15 * (goldmine->get_coords().y - (miner->get_coords().y) - 145);
 	return { dx, dy };
 }
 
-sf::Vector2i Game::calculate_direction_to_unit(const Unit* unit, const Unit* target_unit)
+sf::Vector2i Game::calculate_direction_to_unit(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& target_unit)
 {
-	float dx = target_unit->get_coords().x - unit->get_coords().x;
-	float dy = target_unit->get_coords().y - unit->get_coords().y;
-	sf::Vector2i direction = { dx > 0 ? 1 : -1, dy > 0 ? 1 : -1 };
+	const float dx = target_unit->get_coords().x - unit->get_coords().x;
+	const float dy = target_unit->get_coords().y - unit->get_coords().y;
+	const int x_direction = dx > 0 ? 1 : -1;
+	const int y_direction = dy > 0 ? 1 : -1;
+	const sf::Vector2i direction = { abs(dx) > 3 ? x_direction : 0, abs(dy) > 3 ? y_direction : 0};
 	return direction;
+}
+
+sf::Vector2f Game::calculate_dx_dy_between_units(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& target_unit)
+{
+	const float dx = target_unit->get_coords().x - unit->get_coords().x;
+	const float dy = target_unit->get_coords().y - unit->get_coords().y;
+	return { dx, 5 * dy };
 }
 
 void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army, std::map<int, sf::Vector2f>& defend_places, sf::Time deltatime, const bool unit_from_my_army)
@@ -302,6 +312,7 @@ void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::share
 		else
 			enemy_army_count_ -= unit->get_places_requres();
 	}
+	//Give stand place with less number to unit if place become free
 	if (not defend_places.empty() and unit->get_stand_place().first > defend_places.begin()->first)
 	{
 		auto stand_place = unit->extract_stand_place();
@@ -312,6 +323,7 @@ void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::share
 	if (not unit->is_alive())
 		return;
 
+	// Process attack action
 	if (unit->can_do_damage())
 	{
 		if (dynamic_cast<Miner*>(unit.get()) != nullptr)
@@ -337,13 +349,14 @@ void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::share
 	if (unit == controlled_unit_)
 		return;
 
+	//Process logic of bots
 	if (dynamic_cast<Miner*>(unit.get()) != nullptr and not gold_mines_.empty())
 	{
-		Miner* miner = static_cast<Miner*> (unit.get());
+		const auto miner = static_cast<Miner*> (unit.get());
 		if (miner->attached_goldmine != nullptr)
 		{
-			auto res = check_can_mine(miner, miner->attached_goldmine.get());
-			if (res.first)
+			const auto [can_mine, dist] = check_can_mine(miner, miner->attached_goldmine.get());
+			if (can_mine)
 			{
 				if (miner->attached_goldmine->empty())
 					miner->attached_goldmine = nullptr;
@@ -352,7 +365,7 @@ void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::share
 			}
 			else
 			{
-				sf::Vector2f distance_to_goldmine = calculate_distances_to_mine(miner, miner->attached_goldmine.get());
+				const sf::Vector2f distance_to_goldmine = calculate_distances_to_mine(miner, miner->attached_goldmine.get());
 				if (abs(distance_to_goldmine.x) > 10)
 					miner->move({ distance_to_goldmine.x > 0 ? 1 : -1, 0 }, deltatime);
 				else
@@ -365,7 +378,7 @@ void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::share
 			auto nearest_goldmine = gold_mines_.end();
 			for (auto it = gold_mines_.begin(); it != gold_mines_.end(); ++it)
 			{
-				float dist = check_can_mine(miner, it->get()).second;
+				const float dist = check_can_mine(miner, it->get()).second;
 				if (dist < min_dist)
 				{
 					min_dist = dist;
@@ -377,12 +390,12 @@ void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::share
 	}
 	else
 	{
-		int _can_attack = unit_can_attack(unit, enemy_army);
-		if (_can_attack == 1)
+		const int can_attack = unit_can_attack(unit, enemy_army);
+		if (can_attack == 1)
 			unit->commit_attack();
-		else if (_can_attack == -1)
+		else if (can_attack == -1)
 		{
-			unit->move({ -1, 0 }, sf::Time(sf::milliseconds(1)));
+			unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
 			unit->commit_attack();
 		}
 		else
@@ -392,32 +405,39 @@ void Game::process_unit(const std::shared_ptr<Unit> unit, std::vector<std::share
 				if (unit->get_stand_place().second.x > 1E+10)
 					unit->set_stand_place(defend_places);
 
-				float distance_x = unit->get_stand_place().second.x - unit->get_coords().x;
-				float distance_y = unit->get_stand_place().second.y - unit->get_coords().y;
+				const float distance_x = unit->get_stand_place().second.x - unit->get_coords().x;
+				const float distance_y = unit->get_stand_place().second.y - unit->get_coords().y;
 				if (abs(distance_x) + abs(distance_y) > 5)
 				{
-					sf::Vector2i direction = { distance_x > 0 ? 1 : -1, distance_y > 0 ? 1 : -1 };
+					const sf::Vector2i direction = { distance_x > 0 ? 1 : -1, distance_y > 0 ? 1 : -1 };
 					unit->move(direction, deltatime);
+				}
+				else
+				{
+					if(unit_from_my_army)
+					{
+						if (unit->get_direction() < 0)
+							unit->move({1, 0}, sf::Time(sf::milliseconds(1)));
+					}
+					else
+					{
+						if (unit->get_direction() > 0)
+							unit->move({ -1, 0 }, sf::Time(sf::milliseconds(1)));
+					}
 				}
 			}
 			else if (unit->get_target() == Target::attack)
 			{
-				if (unit->target_unit.get() == nullptr or not unit->target_unit->is_alive())
+				if (unit->target_unit == nullptr or not unit->target_unit->is_alive())
 					unit->target_unit = find_nearest_enemy_unit(unit, enemy_army);
-				if (unit->target_unit.get() != nullptr)
-				{
-					auto direction = calculate_direction_to_unit(unit.get(), unit->target_unit.get());
-					if (direction.x != 0)
-						unit->move({ direction.x, 0 }, deltatime);
-					else
-						unit->move(direction, deltatime);
-				}	
+				if (unit->target_unit != nullptr)
+					unit->move(calculate_direction_to_unit(unit, unit->target_unit), deltatime);
 			}
 		}
 	}
 }
 
-std::shared_ptr<Unit> Game::find_nearest_enemy_unit(const std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>> army) const
+std::shared_ptr<Unit> Game::find_nearest_enemy_unit(const std::shared_ptr<Unit>& unit, std::vector<std::shared_ptr<Unit>> army) const
 {
 	auto nearest_enemy = army.end();
 	float nearest_distance = 1E+15f;
@@ -442,18 +462,17 @@ std::shared_ptr<Unit> Game::find_nearest_enemy_unit(const std::shared_ptr<Unit> 
 	return nullptr;
 }
 
-void Game::damage_processing(const std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const
+void Game::damage_processing(const std::shared_ptr<Unit>& unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const
 {
 	auto nearest_enemy = enemy_army.end();
-	float nearest_distance = 1E+15;
+	sf::Vector2f nearest_distance = { 1E+15, 1E+15 };
 	float damage_multiplier = 0;
 	for (auto it = enemy_army.begin(); it != enemy_army.end(); ++it)
 	{
 		if (not it->get()->is_alive())
 			continue;
 
-		const float dx = it->get()->get_coords().x - unit->get_coords().x;
-		const float dy = it->get()->get_coords().y - unit->get_coords().y;
+		const auto [dx, dy] = calculate_dx_dy_between_units(unit, *it);
 
 		if (dx > 0 and unit->get_direction() == 1)
 		{
@@ -470,41 +489,40 @@ void Game::damage_processing(const std::shared_ptr<Unit> unit, std::vector<std::
 				damage_multiplier = 2;
 		}
 
-		const float distance = abs(dx) + 2 * abs(dy);
+		const float distance = abs(dx) + abs(dy);
 
-		if (distance < nearest_distance and damage_multiplier != 0)
+		if (distance < abs(nearest_distance.x) + abs(nearest_distance.y) and damage_multiplier != 0)
 		{
-			nearest_distance = distance;
+			nearest_distance = {dx, dy };
 			nearest_enemy = it;
 		}
 	}
 	if (unit == controlled_unit_)
 		damage_multiplier *= 2;
-	if (nearest_enemy != enemy_army.end() and nearest_distance <= unit->get_attack_distance())
+	if (nearest_enemy != enemy_army.end() and abs(nearest_distance.x) <= unit->get_attack_distance() and abs(nearest_distance.y) <= unit->get_attack_distance())
 		nearest_enemy->get()->couse_damage(unit->get_damage() * damage_multiplier);
 }
 
-int Game::unit_can_attack(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const
+int Game::unit_can_attack(const std::shared_ptr<Unit>& unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const
 {
 	for (auto it = enemy_army.begin(); it != enemy_army.end(); ++it)
 	{
-		int side = 0;
-		if (not it->get()->is_alive())
-			continue;
+		if (it->get()->is_alive())
+		{
+			int side = 0;
+			const auto [dx, dy] = calculate_dx_dy_between_units(unit, *it);
 
-		float dx = it->get()->get_coords().x - unit->get_coords().x;
-		float dy = it->get()->get_coords().y - unit->get_coords().y;
-
-		side = (dx > 0 ? 1 : -1) * unit->get_direction();
-		if (abs(dx) + 2 * abs(dy) <= unit->get_attack_distance())
-			return side;
+			side = (dx > 0 ? 1 : -1) * unit->get_direction();
+			if (abs(dx) <= unit->get_attack_distance() and abs(dy) <= unit->get_attack_distance())
+				return side;
+		}	
 	}
 	return 0;
 }
 
-void Game::set_army_target(std::vector<std::shared_ptr<Unit>>& army, Target target)
+void Game::set_army_target(const std::vector<std::shared_ptr<Unit>>& army, const Target target)
 {
-	for (auto unit : army)
+	for (const auto& unit : army)
 		unit->set_target(target);
 	if (army == armies_[0])
 		current_target_ = target;
@@ -512,14 +530,14 @@ void Game::set_army_target(std::vector<std::shared_ptr<Unit>>& army, Target targ
 		current_enemy_target_ = target;
 }
 
-void Game::add_money(int count)
+void Game::add_money(const int count)
 {
 	money_ += count;
 	money_count_text_.setString(std::to_string(money_).c_str());
 }
 
 
-Game::Game(uint16_t width, uint16_t height, const char* title)
+Game::Game(const uint16_t width, const uint16_t height, const char* title)
 	: main_window_(sf::VideoMode(width, height), title)
 {
 
@@ -573,8 +591,11 @@ void Game::init()
 
 	armies_.emplace_back();
 
-	add_unit(Swordsman::MySwordsman({300, 650}, texture_holder_));
-	army_count_ += Swordsman::places_requres;
+
+	// Add first unit of the game to player controll
+	armies_[0].emplace_back(Miner::MakeMiner({ 300, 650 }, texture_holder_));
+	army_count_ += Miner::places_requres;
+
 	controlled_unit_ = armies_[0][0];
 
 	for (int i = 0; i < total_defend_places; i++)
@@ -603,20 +624,6 @@ int Game::run()
 	return 0;
 }
 
-void Game::add_unit(std::shared_ptr<Unit> unit)
-{
-	armies_[0].push_back(unit);
-	//_army_count += unit->get_places_requres();
-	unit->set_target(current_target_);
-}
-
-void Game::add_unit(Unit* unit)
-{
-	armies_[0].emplace_back(unit);
-	//_army_count += unit->get_places_requres();
-	unit->set_target(current_target_);
-}
-
 int Game::move_camera(const int step)
 {
 	const int prev_camera_position = camera_position_;
@@ -628,18 +635,12 @@ int Game::move_camera(const int step)
 	const int actual_step = camera_position_ - prev_camera_position;
 	
 	background_sprite_.setTextureRect({ camera_position_, 0, 2100, 1050 });
-	for (const auto& army : armies_)
-		for (const auto& unit : army)
-			unit->move_sprite({ -actual_step, 0 });
-
-	for (const auto& enemy : enemy_army_)
-		enemy->move_sprite({ -actual_step, 0 });
 
 	camera_position_text_.setString("x: " + std::to_string(camera_position_));
 	return actual_step;
 }
 
-void Game::add_enemy_unit(const std::shared_ptr<Unit> unit)
+void Game::add_enemy_unit(const std::shared_ptr<Unit>& unit)
 {
 	unit->set_target(current_enemy_target_);
 	enemy_army_.push_back(unit);

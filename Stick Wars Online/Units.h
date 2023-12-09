@@ -8,10 +8,10 @@ constexpr float x_map_max = 2100 * 3 + 150;
 constexpr float y_map_min = 530;
 constexpr float y_map_max = 700;
 
-constexpr int miner_wait_time = 8000;
+constexpr int miner_wait_time = 6000;
 constexpr int miner_cost = 250;
-constexpr int swardsman_wait_time = 5000;
-constexpr int swardsman_cost = 250;
+constexpr int swardsman_wait_time = 3500;
+constexpr int swardsman_cost = 150;
 
 
 //ÍÓ ×Å ÍÀÐÎÄ ÏÎÃÍÀËÈ ÍÀÕÓÉ (¨ÁÀÍÛÉ Â ÐÎÒ) -> ÂÑÅ
@@ -111,7 +111,7 @@ public:
 	Miner(sf::Vector2f spawnpoint, TextureHolder& holder, ID id);
 	int get_places_requres() const override;
 
-	static Unit* MyMiner(sf::Vector2f spawnpoint, TextureHolder& holder);
+	static Unit* MakeMiner(sf::Vector2f spawnpoint, TextureHolder& holder);
 
 	static Unit* EnemyMiner(sf::Vector2f spawnpoint, TextureHolder& holder);
 };
@@ -119,14 +119,14 @@ public:
 
 class Swordsman : public Unit
 {
-	
+	//static constexpr ID texture_id = ID:: 
 public:
 	const static int places_requres = 1;
 
 	Swordsman(sf::Vector2f spawnpoint, TextureHolder& holder, ID id);
 	int get_places_requres() const override;
 
-	static Unit* MySwordsman(sf::Vector2f spawnpoint, TextureHolder& holder);
+	static Unit* MakeSwordsman(sf::Vector2f spawnpoint, TextureHolder& holder);
 
 	static Unit* EnemySwordsman(sf::Vector2f spawnpoint, TextureHolder& holder);
 };

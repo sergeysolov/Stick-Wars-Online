@@ -160,8 +160,8 @@ void Unit::move(sf::Vector2i direction, sf::Time time)
 {
 	float x_offset = direction.x * time.asMilliseconds() * speed_;
 	float y_offset = direction.y * time.asMilliseconds() * vertical_speed_;
-	float new_x = x_offset + x_;
-	float new_y = y_offset + y_;
+	const float new_x = x_offset + x_;
+	const float new_y = y_offset + y_;
 
 	if (new_x > x_map_min and new_x < x_map_max and new_y > y_map_min and new_y < y_map_max)
 	{
@@ -199,14 +199,14 @@ void Unit::kill()
 
 bool Unit::is_killed()
 {
-	bool temp = killed_;
+	const bool temp = killed_;
 	killed_ = false;
 	return temp;
 }
 
 bool Unit::can_do_damage()
 {
-	bool temp = do_damage_;
+	const bool temp = do_damage_;
 	do_damage_ = false;
 	return temp;
 }
@@ -241,7 +241,7 @@ int Miner::get_places_requres() const
 	return places_requres;
 }
 
-Unit* Miner::MyMiner(sf::Vector2f spawnpoint, TextureHolder& holder)
+Unit* Miner::MakeMiner(sf::Vector2f spawnpoint, TextureHolder& holder)
 {
 	return new Miner(spawnpoint, holder, ID::miner);
 }
@@ -263,7 +263,7 @@ int Swordsman::get_places_requres() const
 	return places_requres;
 }
 
-Unit* Swordsman::MySwordsman(sf::Vector2f spawnpoint, TextureHolder& holder)
+Unit* Swordsman::MakeSwordsman(sf::Vector2f spawnpoint, TextureHolder& holder)
 {
 	return new Swordsman(spawnpoint, holder, ID::swordsman);
 }

@@ -24,8 +24,8 @@ constexpr int invoke_enemy_time = 15000;
 
 static int enemy_behaviour = 0;
 
-const std::array<sf::Vector2f, 9> goldmine_positions = { sf::Vector2f{150, 750}, {250, 650}, {350, 690}, {2100 * 3 - 350, 670}, {2100 * 3 - 450, 670}, {2100 * 3 - 550, 800},
-	{700, 650}, {1000, 650}, {1300, 690} };
+const std::array<sf::Vector2f, 9> goldmine_positions = { sf::Vector2f{150, 750}, {250, 670}, {350, 690}, {2100 * 3 - 350, 670}, {2100 * 3 - 450, 670}, {2100 * 3 - 550, 800},
+	{700, 670}, {1000, 670}, {1300, 690} };
 
 bool random(float probability);
 
@@ -131,19 +131,18 @@ class Game
 	int move_camera(int step);
 
 	void add_money(int count);
-	void add_unit(Unit* unit);
-	void add_unit(std::shared_ptr<Unit> unit);
 
-	void add_enemy_unit(std::shared_ptr<Unit> unit);
+	void add_enemy_unit(const std::shared_ptr<Unit>& unit);
 	void add_gold_mine(sf::Vector2f position, TextureHolder& holder);
 	static std::pair<bool, float> check_can_mine(const Miner* miner, const GoldMine* goldmine);
 	static sf::Vector2f calculate_distances_to_mine(const Miner* miner, const GoldMine* goldmine);
-	static sf::Vector2i calculate_direction_to_unit(const Unit* unit, const Unit* target_unit);
-	void damage_processing(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const;
-	std::shared_ptr<Unit> find_nearest_enemy_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>> army) const;
-	int unit_can_attack(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const;
+	static sf::Vector2i calculate_direction_to_unit(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& target_unit);
+	static sf::Vector2f calculate_dx_dy_between_units(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& target_unit);
+	void damage_processing(const std::shared_ptr<Unit>& unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const;
+	std::shared_ptr<Unit> find_nearest_enemy_unit(const std::shared_ptr<Unit>& unit, std::vector<std::shared_ptr<Unit>> army) const;
+	int unit_can_attack(const std::shared_ptr<Unit>& unit, std::vector<std::shared_ptr<Unit>>& enemy_army) const;
 	void process_unit(std::shared_ptr<Unit> unit, std::vector<std::shared_ptr<Unit>>& enemy_army, std::map<int, sf::Vector2f>& defend_places, sf::Time deltatime, bool unit_from_my_army);
-	void set_army_target(std::vector<std::shared_ptr<Unit>>& army, Target target);
+	void set_army_target(const std::vector<std::shared_ptr<Unit>>& army, Target target);
 
 public:
 	Game(uint16_t width, uint16_t height, const char* title);

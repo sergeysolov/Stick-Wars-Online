@@ -54,6 +54,6 @@ public:
 	int mine(int gold_count);
 	bool empty() const;
 protected:
-	const int max_gold_capacity_ = 10000;
+	const int max_gold_capacity_ = 3000;
 	int gold_capacity_ = max_gold_capacity_;
 };
