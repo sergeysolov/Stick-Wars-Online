@@ -16,20 +16,23 @@ enum ID
 
 	goldmine,
 
-	miner,
-	miner_enemy,
-	swordsman,
-	swordsman_enemy
+	my_statue,
+	enemy_statue,
+
+	my_miner,
+	enemy_miner,
+	my_swordsman,
+	enemy_swordsman
 };
 
 
 class TextureHolder
 {
-public:
 	void append(ID id, const char* filepath);
-	
-	sf::Texture& getTexture(ID id);
-	
+public:
+	sf::Texture& get_texture(ID id);
+
+	void load_textures();
 private:
 	std::unordered_map<ID, sf::Texture> textures_;
 };

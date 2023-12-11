@@ -1,5 +1,6 @@
 #pragma once
 #include "TextureHolder.h"
+#include "Attributes.h"
 #include <SFML/Graphics.hpp>
 
 constexpr float a = 13.0f / 4000, b = -15.0f / 16;
@@ -23,12 +24,12 @@ public:
 	};
 
 	MapObject(sf::Vector2f spawnpoint, TextureHolder& holder, ID id, AnimationParams animation_params);
+	virtual ~MapObject() = default;
 
 	const sf::Sprite& get_sprite() const;
 	sf::Vector2f get_coords() const;
-	virtual void move_sprite(sf::Vector2i vc);
-	virtual void set_screen_place(int camera_position);
-	void add_time(int deltatime);
+	virtual void move_sprite(sf::Vector2f offset);
+	virtual void set_screen_place(float camera_position);
 	virtual void draw(sf::RenderWindow& window) const;
 	const AnimationParams& get_animation_params() const;
 	int get_cumulative_time() const;
@@ -45,15 +46,31 @@ protected:
 };
 
 
+
 class GoldMine : public MapObject
 {
-
 public:
 	GoldMine(sf::Vector2f position, TextureHolder& holder);
 
 	int mine(int gold_count);
 	bool empty() const;
+	const int max_gold_capacity = 3000;
 protected:
-	const int max_gold_capacity_ = 3000;
-	int gold_capacity_ = max_gold_capacity_;
+	int gold_capacity_ = max_gold_capacity;
+};
+
+
+
+class Statue : public MapObject
+{
+	const float max_health_;
+	float health_;
+	HealthBar health_bar_;
+public:
+	constexpr static float my_max_health = 10000.0f;
+	constexpr static float enemy_max_health = 12000.0f;
+	Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_health);
+	void cause_damage(float damage);
+	void draw(sf::RenderWindow& window) const override;
+	void set_screen_place(float camera_position) override;
 };

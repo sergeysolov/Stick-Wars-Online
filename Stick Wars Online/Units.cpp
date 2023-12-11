@@ -1,45 +1,44 @@
 #include "Units.h"
 
-sf::Vector2f HEALTHBAR_SHIFT = { -32, 50 };
+Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
+	MapObject(spawnpoint, holder, id, animation_params), health_(health), max_health_(health), speed_(speed), damage_(damage),
+	attack_distance_(attack_distance), spawn_time_(spawn_time), health_bar_(max_health_, health_, spawnpoint)
+{	}
 
-Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float health, float _armor, float speed, float damage, float damage_speed, float attack_distance, AnimationParams animation_params) :
-	MapObject(spawnpoint, holder, id, animation_params), health_(health), max_health_(health), armor_(_armor), speed_(speed), damage_(damage), damage_speed_(damage_speed), attack_distance_(attack_distance)
+void Unit::show_animation(const int delta_time)
 {
-	health_bar_.setPosition({ x_ + HEALTHBAR_SHIFT.x, y_ + HEALTHBAR_SHIFT.y});
-	health_bar_.setSize({ max_healthbar_size, 3 });
-	health_bar_.setFillColor(sf::Color::Magenta);
-}
-
-void Unit::show_animation()
-{
-	if (cumulative_time_ > animation_step)
+	if(not animation_complete())
 	{
-		cumulative_time_ -= animation_step;
-		(current_frame_ += 1) %= animation_params_.total_frames;
-
-		if (current_frame_ == 0)
-			cumulative_time_ = 0;
-
-		int y_shift = 0;
-
-		if (animation_type_ == AnimatonType::attack_animation)
+		cumulative_time_ += delta_time;
+		if (cumulative_time_ > animation_step)
 		{
-			y_shift = animation_params_.frame_height;
-			if (current_frame_ == 7)
-				do_damage_ = true;
-		}
+			cumulative_time_ -= animation_step;
+			(current_frame_ += 1) %= animation_params_.total_frames;
 
-		if (animation_type_ == AnimatonType::die_animation)
-			y_shift = animation_params_.frame_height * 2;
-		
-		sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
+			if (current_frame_ == 0)
+				cumulative_time_ = 0;
+
+			int y_shift = 0;
+
+			if (animation_type_ == attack_animation)
+			{
+				y_shift = animation_params_.frame_height;
+				if (current_frame_ == 7)
+					do_damage_flag_ = true;
+			}
+
+			if (animation_type_ == die_animation)
+				y_shift = animation_params_.frame_height * 2;
+
+			sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
+		}
 	}
 }
 
-void Unit::couse_damage(float _damage)
+void Unit::cause_damage(const float damage)
 {
-	health_ -= _damage / armor_;
-	update_health_bar();
+	health_ = std::max(health_ - damage, 0.f);
+	health_bar_.update();
 	if (health_ <= 0)
 		kill();
 }
@@ -59,17 +58,9 @@ int Unit::get_spawn_time() const
 	return spawn_time_;
 }
 
-void Unit::update_health_bar()
-{
-	float _health_bar_size = (health_ / max_health_) * max_healthbar_size;
-	if(health_ < 0)
-		_health_bar_size = 0;
-	health_bar_.setSize({ _health_bar_size, health_bar_.getSize().y });
-}
-
 void Unit::set_y_scale()
 {
-	float scale_factor = (a * sprite_.getPosition().y + b);
+	const float scale_factor = (a * sprite_.getPosition().y + b);
 	sprite_.setScale({ scale_factor * prev_direction_ * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
 }
 
@@ -82,14 +73,11 @@ bool Unit::animation_complete()
 {
 	if (current_frame_ == animation_params_.total_frames - 1)
 	{
-		if (animation_type_ == AnimatonType::die_animation)
-		{
-			health_ = 0;
+		if (animation_type_ == die_animation)
 			return true;
-		}
-		if (animation_type_ == AnimatonType::attack_animation)
+		if (animation_type_ == attack_animation)
 		{
-			animation_type_ = AnimatonType::no_animation;
+			animation_type_ = no_animation;
 			return true;
 		}
 	}
@@ -116,14 +104,9 @@ void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
 	places.erase(places.begin());
 }
 
-void Unit::set_target(Target target)
+void Unit::set_target(const Target target)
 {
 	target_ = target;
-}
-
-int Unit::get_places_requres() const
-{
-	return 0;
 }
 
 int Unit::get_direction() const
@@ -141,19 +124,17 @@ float Unit::get_damage() const
 	return damage_;
 }
 
-void Unit::set_screen_place(int camera_position)
+void Unit::set_screen_place(const float camera_position)
 {
 	sprite_.setPosition({ x_ - camera_position, y_ });
-	health_bar_.setPosition({ x_ - camera_position + HEALTHBAR_SHIFT.x, y_ + HEALTHBAR_SHIFT.y});
+	health_bar_.set_position ({ x_ - camera_position, y_});
 }
 
 
-
-
-void Unit::move_sprite(sf::Vector2i vc)
+void Unit::move_sprite(const sf::Vector2f offset)
 {
-	sprite_.move((float)vc.x, (float)vc.y );
-	health_bar_.move((float)vc.x, (float)vc.y);
+	MapObject::move_sprite(offset);
+	health_bar_.move({ static_cast<float>(offset.x), static_cast<float>(offset.y) });
 }
 
 void Unit::move(sf::Vector2i direction, sf::Time time)
@@ -178,98 +159,78 @@ void Unit::move(sf::Vector2i direction, sf::Time time)
 	}
 	set_y_scale();
 
-	if (animation_type_ != AnimatonType::walk_animation)
+	if (animation_type_ != walk_animation)
 		current_frame_ = 0;
-	animation_type_ = AnimatonType::walk_animation;
+	animation_type_ = walk_animation;
 	cumulative_time_++;
 }
 
 void Unit::kill()
 {
-	//_health = 0;
-	//_update_health_bar();
-	if (animation_type_ != AnimatonType::die_animation)
+	if (animation_type_ != die_animation)
 	{
 		current_frame_ = 0;
 	}
 	cumulative_time_++;
-	animation_type_ = AnimatonType::die_animation;
-	killed_ = true;
+	animation_type_ = die_animation;
+	dead_ = true;
 }
 
-bool Unit::is_killed()
+bool Unit::was_killed()
 {
-	const bool temp = killed_;
-	killed_ = false;
+	const bool temp = dead_;
+	dead_ = false;
 	return temp;
 }
 
 bool Unit::can_do_damage()
 {
-	const bool temp = do_damage_;
-	do_damage_ = false;
+	const bool temp = do_damage_flag_;
+	do_damage_flag_ = false;
 	return temp;
 }
 
 void Unit::draw(sf::RenderWindow& window) const
 {
 	window.draw(sprite_);
-	window.draw(health_bar_);
+	health_bar_.draw(window);
 }
 
 void Unit::commit_attack()
 {
-	if (animation_type_ != AnimatonType::attack_animation)
+	if (animation_type_ != attack_animation)
 	{
 		current_frame_ = 0;
 	}
 	cumulative_time_++;
-	animation_type_ = AnimatonType::attack_animation;
+	animation_type_ = attack_animation;
 }
 
-Miner::Miner(sf::Vector2f spawnpoint, TextureHolder& holder, ID id) : 
-	Unit(holder, id, spawnpoint, health_=100, armor_=1, speed_=0.2f, damage_=5, damage_speed_=1.0f, attack_distance_=150,
-		{ {-300, 2}, 700, 1280, 13, {-0.4, 0.4 } })
-{
-	//_animation_params = { {0, 0}, 402, 246, 12, { 0.4, 0.4 } };
-	
-	spawn_time_ = miner_wait_time;
-}
+Miner::Miner(sf::Vector2f spawnpoint, TextureHolder& holder, ID id)
+	: Unit(holder, id, spawnpoint, max_health, speed, damage, attack_distance, wait_time, animation_params)
+{	}
 
 int Miner::get_places_requres() const
 {
 	return places_requres;
 }
 
-Unit* Miner::MakeMiner(sf::Vector2f spawnpoint, TextureHolder& holder)
+ID Miner::get_id() const
 {
-	return new Miner(spawnpoint, holder, ID::miner);
-}
-
-Unit* Miner::EnemyMiner(sf::Vector2f spawnpoint, TextureHolder& holder)
-{
-	return new Miner(spawnpoint, holder, ID::miner_enemy);
+	return texture_id;
 }
 
 Swordsman::Swordsman(sf::Vector2f spawnpoint, TextureHolder& holder, ID id)
-	: Unit(holder, id, spawnpoint, health_=300, armor_=1, speed_=0.3f, damage_=30, damage_speed_=3.0f, attack_distance_=170,
-		{ {-300, 20}, 700, 1280, 13, {-0.4, 0.4} })
-{
-	spawn_time_ = swardsman_wait_time;
-}
+	: Unit(holder, id, spawnpoint, max_health, speed, damage, attack_distance, wait_time, animation_params)
+{	}
 
 int Swordsman::get_places_requres() const
 {
 	return places_requres;
 }
 
-Unit* Swordsman::MakeSwordsman(sf::Vector2f spawnpoint, TextureHolder& holder)
+ID Swordsman::get_id() const
 {
-	return new Swordsman(spawnpoint, holder, ID::swordsman);
-}
-
-Unit* Swordsman::EnemySwordsman(sf::Vector2f spawnpoint, TextureHolder& holder)
-{
-	return new Swordsman(spawnpoint, holder, ID::swordsman_enemy);
+	return texture_id;
 }
 
