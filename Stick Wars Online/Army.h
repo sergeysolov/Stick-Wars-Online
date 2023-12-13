@@ -13,6 +13,7 @@ class Army
 {
 	constexpr static int max_soldiers_in_row = 5;
 	constexpr static float row_width = 80;
+	constexpr static int dead_unit_time_to_delete = 60000;
 
 public:
 	enum ArmyTarget
@@ -38,6 +39,7 @@ public:
 	[[nodiscard]] int get_alive_units_count() const;
 
 	void draw(sf::RenderWindow& window) const;
+	void set_screen_place(float camera_position) const;
 
 	int process(const Army& enemy_army, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
 
@@ -53,6 +55,7 @@ protected:
 	
 	std::map<int, sf::Vector2f> defend_places_;
 	std::vector<std::shared_ptr<Unit>> units_;
+	std::vector<std::pair<std::shared_ptr<Unit>, int>> dead_units_;
 
 	int alive_units_count_ = 0;
 };

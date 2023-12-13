@@ -39,6 +39,7 @@ protected:
 	std::pair<int, sf::Vector2f> stand_place_ = { 0,  { 1E+15f, 1E+15f } };
 
 	void set_y_scale() override;
+	bool animation_complete();
 public:
 	constexpr static int animation_step = 70;
 	constexpr static float trigger_attack_radius = 500.f;
@@ -54,8 +55,8 @@ public:
 	float get_attack_distance() const;
 	float get_damage() const;
 	virtual int get_places_requires() const = 0;
-	
-	bool animation_complete();
+	float get_max_health() const;
+
 	void show_animation(int delta_time);
 	
 	void move_sprite(sf::Vector2f offset) override;

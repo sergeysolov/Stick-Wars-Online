@@ -14,6 +14,8 @@ enum ID
 	in_attack_button,
 	defend_button,
 
+	star,
+
 	goldmine,
 
 	my_statue,

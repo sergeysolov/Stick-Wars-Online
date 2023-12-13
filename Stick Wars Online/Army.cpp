@@ -1,6 +1,7 @@
 ﻿#include "Army.h"
 
 #include <random>
+#include <ranges>
 
 Army::Army(const float army_defend_line, const bool is_ally_army) : is_ally_army_(is_ally_army)
 {
@@ -41,20 +42,28 @@ int Army::get_alive_units_count() const
 
 void Army::draw(sf::RenderWindow& window) const
 {
-	for (const auto& unit : units_)
-		if (not unit->is_alive())
-			unit->draw(window);
+	for (const auto& unit : dead_units_ | std::views::keys)
+		unit->draw(window);
 
 	for (const auto& unit : units_)
-		if (unit->is_alive())
-			unit->draw(window);
+		unit->draw(window);
+}
+
+void Army::set_screen_place(const float camera_position) const
+{
+	for (const auto& unit : units_)
+		unit->set_screen_place(camera_position);
+
+	for (const auto& dead_unit : dead_units_ | std::views::keys)
+		dead_unit->set_screen_place(camera_position);
 }
 
 int Army::process(const Army& enemy_army, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, const sf::Time delta_time)
 {
 	int gold_count_mined = 0;
-	for (const auto& unit : units_)
+	for (auto it = units_.begin(); it != units_.end();)
 	{
+		auto& unit = *it;
 		unit->show_animation(delta_time.asMilliseconds());
 
 		// process unit if it was killed
@@ -64,6 +73,10 @@ int Army::process(const Army& enemy_army, const std::shared_ptr<Unit>& controlle
 			if (stand_place.first >= 0)
 				defend_places_.insert(stand_place);
 			alive_units_count_ -= unit->get_places_requires();
+
+			dead_units_.emplace_back(*it, dead_unit_time_to_delete);
+			it = units_.erase(it);
+			continue;
 		}
 
 		//Give stand place with less number to unit if place become free
@@ -75,12 +88,23 @@ int Army::process(const Army& enemy_army, const std::shared_ptr<Unit>& controlle
 		}
 
 		// Process unit's behaviour
-		if (unit->is_alive())
+		if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
+			gold_count_mined += process_miner(miner, controlled_unit, gold_mines, delta_time);
+		else
+			process_warrior(unit, controlled_unit, enemy_army, delta_time);
+		++it;
+	}
+
+	// process dead units
+	for (auto it = dead_units_.begin(); it != dead_units_.end(); ++it)
+	{
+		it->first->show_animation(delta_time.asMilliseconds());
+		it->second -= delta_time.asMilliseconds();
+		if (it->second <= 0)
 		{
-			if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
-				gold_count_mined += process_miner(miner, controlled_unit, gold_mines, delta_time);
-			else
-				process_warrior(unit, controlled_unit, enemy_army, delta_time);
+			std::swap(*it, dead_units_.back());
+			dead_units_.pop_back();
+			break;
 		}
 	}
 	return gold_count_mined;

@@ -23,7 +23,7 @@ sf::Vector2f MapObject::get_coords() const
 
 void MapObject::move_sprite(const sf::Vector2f offset)
 {
-	sprite_.move(offset.x, offset.y);
+	sprite_.move(offset);
 }
 
 void MapObject::set_screen_place(const float camera_position)
@@ -77,7 +77,7 @@ bool GoldMine::empty() const
 
 Statue::Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_health) :
  MapObject(position, holder, id, animation_params), max_health_(max_health), health_(max_health),
-health_bar_(max_health_, health_, position, {100, 15}) 
+health_bar_(max_health_, health_, position, HealthBar::statue_health_bar_size, HealthBar::statue_health_bar_shift) 
 {
 
 }

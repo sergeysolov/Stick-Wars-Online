@@ -20,6 +20,39 @@ constexpr float start_camera_position = 0;
 
 static int enemy_behaviour = 0;
 
+struct PressedKeys
+{
+	bool a = false;
+	bool d = false;
+	bool w = false;
+	bool s = false;
+	bool k = false;
+	bool left_arrow = false;
+	bool right_arrow = false;
+	bool space = false;
+	bool shift = false;
+	bool mouse_left = false;
+};
+
+class ControlledUnit
+{
+	std::shared_ptr<Unit> unit_;
+	sf::Sprite star_sprite_;
+
+	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
+	inline const static sf::Vector2f star_shift = { -15, -10 };
+	static constexpr float health_increment = 0.2f;
+public:
+	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
+	void release();
+	void draw(sf::RenderWindow& window);
+	void heal() const;
+
+	ControlledUnit(TextureHolder& holder, const std::shared_ptr<Unit>& unit);
+
+	ControlledUnit& operator=(const std::shared_ptr<Unit>& new_unit);
+};
+
 class Game
 {
 	sf::RenderWindow main_window_;
@@ -33,13 +66,14 @@ class Game
 	int money_ = 1000;
 
 	int timer_money_increment_ = 0;
-	const int time_money_increment_ = 10000;
+	static constexpr int time_money_increment = 10000;
 	int count_money_increment_ = 10;
 
 	std::unique_ptr<Statue> my_statue_;
 	std::vector<Army> armies_;
 	std::unique_ptr<SpawnUnitQueue> my_spawn_queue_;
-	std::shared_ptr<Unit> controlled_unit_ = nullptr;
+
+	std::unique_ptr<ControlledUnit> controlled_unit_;
 
 	std::unique_ptr<Statue> enemy_statue_;
 	Army enemy_army_;
@@ -47,17 +81,7 @@ class Game
 
 	std::vector<std::shared_ptr<GoldMine>> gold_mines_;
 
-	bool is_pressed_a_ = false;
-	bool is_pressed_d_ = false;
-	bool is_pressed_w_ = false;
-	bool is_pressed_s_ = false;
-	bool is_pressed_k_ = false;
-	bool is_pressed_left_arrow_ = false;
-	bool is_pressed_right_arrow_ = false;
-	bool is_pressed_space_ = false;
-	bool is_pressed_shift_ = false;
-	bool is_mouse_left_button_clicked_ = false;
-
+	PressedKeys pressed_keys_;
 	sf::Vector2i mouse_position_;
 
 	sf::Clock clock_;

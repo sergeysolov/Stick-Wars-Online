@@ -2,8 +2,13 @@
 
 Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
 	MapObject(spawn_point, holder, id, animation_params), health_(health), max_health_(health), speed_(speed), damage_(damage),
-	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point)
+	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point, HealthBar::unit_health_bar_size, HealthBar::unit_health_bar_shift)
 {	}
+
+float Unit::get_max_health() const
+{
+	return max_health_;
+}
 
 void Unit::show_animation(const int delta_time)
 {
@@ -37,7 +42,7 @@ void Unit::show_animation(const int delta_time)
 
 void Unit::cause_damage(const float damage)
 {
-	health_ = std::max(health_ - damage, 0.f);
+	health_ = std::clamp(health_ - damage, 0.f, max_health_);
 	health_bar_.update();
 	if (health_ <= 0)
 		kill();
@@ -111,8 +116,8 @@ float Unit::get_damage() const
 
 void Unit::set_screen_place(const float camera_position)
 {
-	sprite_.setPosition({ x_ - camera_position, y_ });
-	health_bar_.set_position ({ x_ - camera_position, y_});
+	MapObject::set_screen_place(camera_position);
+	health_bar_.set_position({ x_ - camera_position, y_ });
 }
 
 

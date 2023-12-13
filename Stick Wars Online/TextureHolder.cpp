@@ -28,6 +28,7 @@ void TextureHolder::load_textures()
 	append(swordsman_buy_button, "Images/attributes/swardsman_buy_button.png");
 	append(in_attack_button, "Images/attributes/in_attack_button.png");
 	append(defend_button, "Images/attributes/defend_button.png");
+	append(star, "Images/attributes/star.png");
 
 	append(goldmine, "Images/objects/goldmine.png");
 
