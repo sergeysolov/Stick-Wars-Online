@@ -1,26 +1,17 @@
 #pragma once
+#include <vector>
+#include <memory>
+
 #include <SFML/Graphics.hpp>
+
 #include "TextureHolder.h"
 #include "MapObject.h"
 #include "Attributes.h"
 
-constexpr float x_map_min = -150;
-constexpr float x_map_max = 2100 * 3 + 150;
-constexpr float y_map_min = 530;
-constexpr float y_map_max = 700;
-
-
-enum Target
-{
-	attack,
-	escape,
-	defend,
-};
-
 class Unit : public MapObject
 {	
 public:
-	enum AnimatonType
+	enum AnimationType
 	{
 		no_animation,
 		walk_animation,
@@ -35,9 +26,8 @@ protected:
 	float damage_;
 	float attack_distance_;
 	const float vertical_speed_ = 0.25;
-	int spawn_time_;
 	
-	AnimatonType animation_type_ = no_animation;
+	AnimationType animation_type_ = no_animation;
 
 	HealthBar health_bar_;
 
@@ -46,26 +36,24 @@ protected:
 	int prev_direction_ = 1;
 	bool do_damage_flag_ = false;
 
-	Target target_ = defend;
 	std::pair<int, sf::Vector2f> stand_place_ = { 0,  { 1E+15f, 1E+15f } };
 
 	void set_y_scale() override;
 public:
 	constexpr static int animation_step = 70;
+	constexpr static float trigger_attack_radius = 500.f;
 	std::shared_ptr<Unit> target_unit;
 
-	Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params);
-	virtual ~Unit() = default;
+	Unit(TextureHolder& holder, ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params);
+	~Unit() override = default;
 
 	virtual ID get_id() const = 0;
 
-	Target get_target() const;
 	float get_speed() const;
 	int get_direction() const;
 	float get_attack_distance() const;
 	float get_damage() const;
-	int get_spawn_time() const;
-	virtual int get_places_requres() const = 0;
+	virtual int get_places_requires() const = 0;
 	
 	bool animation_complete();
 	void show_animation(int delta_time);
@@ -85,15 +73,13 @@ public:
 	std::pair<int, sf::Vector2f> get_stand_place() const;
 	std::pair<int, sf::Vector2f> extract_stand_place();
 	void set_stand_place(std::map<int, sf::Vector2f>& places);
-	void set_target(Target target);
-	
 };
 
 class Miner : public Unit
 {
 public:
 	static constexpr ID texture_id = my_miner;
-	const static int places_requres = 1;
+	constexpr static int places_requires = 1;
 	constexpr static float max_health = 100;
 	constexpr static float speed = 0.2f;
 	constexpr static float damage = 200.f;
@@ -104,10 +90,10 @@ public:
 
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
-	Miner(sf::Vector2f spawnpoint, TextureHolder& holder, ID id);
+	Miner(sf::Vector2f spawn_point, TextureHolder& holder, ID id);
 	~Miner() override = default;
 
-	int get_places_requres() const override;
+	int get_places_requires() const override;
 	ID get_id() const override;
 };
 
@@ -116,7 +102,7 @@ class Swordsman : public Unit
 {
 public:
 	static constexpr ID texture_id = my_swordsman;
-	const static int places_requres = 1;
+	constexpr static int places_requires = 1;
 	constexpr static float max_health = 300;
 	constexpr static float speed = 0.3f;
 	constexpr static float damage = 30.f;
@@ -125,9 +111,9 @@ public:
 	constexpr static int cost = 150;
 	inline const static AnimationParams animation_params = { {-300, 20}, 700, 1280, 13, {-0.4f, 0.4f} };
 
-	Swordsman(sf::Vector2f spawnpoint, TextureHolder& holder, ID id);
+	Swordsman(sf::Vector2f spawn_point, TextureHolder& holder, ID id);
 	~Swordsman() override = default;
 
-	int get_places_requres() const override;
+	int get_places_requires() const override;
 	ID get_id() const override;
 };

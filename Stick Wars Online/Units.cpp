@@ -1,8 +1,8 @@
 #include "Units.h"
 
-Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawnpoint, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
-	MapObject(spawnpoint, holder, id, animation_params), health_(health), max_health_(health), speed_(speed), damage_(damage),
-	attack_distance_(attack_distance), spawn_time_(spawn_time), health_bar_(max_health_, health_, spawnpoint)
+Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
+	MapObject(spawn_point, holder, id, animation_params), health_(health), max_health_(health), speed_(speed), damage_(damage),
+	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point)
 {	}
 
 void Unit::show_animation(const int delta_time)
@@ -53,20 +53,10 @@ float Unit::get_speed() const
 	return speed_;
 }
 
-int Unit::get_spawn_time() const
-{
-	return spawn_time_;
-}
-
 void Unit::set_y_scale()
 {
-	const float scale_factor = (a * sprite_.getPosition().y + b);
+	const float scale_factor = ( scale_y_param_a * sprite_.getPosition().y + scale_y_param_b);
 	sprite_.setScale({ scale_factor * prev_direction_ * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
-}
-
-Target Unit::get_target() const
-{
-	return target_;
 }
 
 bool Unit::animation_complete()
@@ -102,11 +92,6 @@ void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
 {
 	stand_place_ = *places.begin();
 	places.erase(places.begin());
-}
-
-void Unit::set_target(const Target target)
-{
-	target_ = target;
 }
 
 int Unit::get_direction() const
@@ -206,13 +191,14 @@ void Unit::commit_attack()
 	animation_type_ = attack_animation;
 }
 
-Miner::Miner(sf::Vector2f spawnpoint, TextureHolder& holder, ID id)
-	: Unit(holder, id, spawnpoint, max_health, speed, damage, attack_distance, wait_time, animation_params)
+Miner::Miner(sf::Vector2f spawn_point, TextureHolder& holder, ID id)
+	: Unit(holder, id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params)
 {	}
 
-int Miner::get_places_requres() const
+
+int Miner::get_places_requires() const
 {
-	return places_requres;
+	return places_requires;
 }
 
 ID Miner::get_id() const
@@ -220,13 +206,13 @@ ID Miner::get_id() const
 	return texture_id;
 }
 
-Swordsman::Swordsman(sf::Vector2f spawnpoint, TextureHolder& holder, ID id)
-	: Unit(holder, id, spawnpoint, max_health, speed, damage, attack_distance, wait_time, animation_params)
+Swordsman::Swordsman(sf::Vector2f spawn_point, TextureHolder& holder, ID id)
+	: Unit(holder, id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params)
 {	}
 
-int Swordsman::get_places_requres() const
+int Swordsman::get_places_requires() const
 {
-	return places_requres;
+	return places_requires;
 }
 
 ID Swordsman::get_id() const

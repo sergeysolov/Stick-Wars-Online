@@ -49,13 +49,13 @@ int MapObject::get_cumulative_time() const
 
 void MapObject::set_y_scale()
 {
-	const float scale_factor = a * sprite_.getPosition().y + b;
+	
+	const float scale_factor = scale_y_param_a * sprite_.getPosition().y + scale_y_param_b;
 	sprite_.setScale({ scale_factor * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
 }
 
 
-GoldMine::GoldMine(sf::Vector2f position, TextureHolder& holder) : MapObject(position, holder, goldmine,
-	AnimationParams({ 0, 0 }, 538, 960, 10, { 0.2f, 0.2f }))
+GoldMine::GoldMine(sf::Vector2f position, TextureHolder& holder) : MapObject(position, holder, goldmine, animation_params)
 {
 
 }
@@ -76,7 +76,7 @@ bool GoldMine::empty() const
 }
 
 Statue::Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_health) :
- MapObject(position, holder, id, AnimationParams({0, 0}, 817, 261, 1, {1.f, 1.f})), max_health_(max_health), health_(max_health),
+ MapObject(position, holder, id, animation_params), max_health_(max_health), health_(max_health),
 health_bar_(max_health_, health_, position, {100, 15}) 
 {
 
