@@ -1,4 +1,5 @@
 ﻿#include "Army.h"
+#include "Game.h"
 
 #include <random>
 #include <ranges>
@@ -58,7 +59,7 @@ void Army::set_screen_place(const float camera_position) const
 		dead_unit->set_screen_place(camera_position);
 }
 
-int Army::process(const Army& enemy_army, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, const sf::Time delta_time)
+int Army::process(const Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, const sf::Time delta_time)
 {
 	int gold_count_mined = 0;
 	for (auto it = units_.begin(); it != units_.end();)
@@ -91,7 +92,7 @@ int Army::process(const Army& enemy_army, const std::shared_ptr<Unit>& controlle
 		if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
 			gold_count_mined += process_miner(miner, controlled_unit, gold_mines, delta_time);
 		else
-			process_warrior(unit, controlled_unit, enemy_army, delta_time);
+			process_warrior(unit, controlled_unit, enemy_army, enemy_statue, delta_time);
 		++it;
 	}
 
@@ -190,7 +191,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	return gold_count_mined;
 }
 
-void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const Army& enemy_army, sf::Time delta_time)
+void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time)
 {
 	auto calculate_dx_dy_between_units = [&](const std::shared_ptr<Unit>& unit_target) -> sf::Vector2f
 		{
@@ -224,42 +225,52 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 		};
 
 	int is_enemy_nearby_to_attack = 0; //no enemy
-	sf::Vector2f nearest_distance = { 1E+15f, 1E+15f }; //inf, inf
+	sf::Vector2f distance_to_nearest_enemy = { 1E+15f, 1E+15f }; //inf, inf
 
 	if (find_nearest_enemy_unit() != enemy_army.get_units().end())
 	{
-		nearest_distance = calculate_dx_dy_between_units(*nearest_enemy);
-		auto [dx, dy] = nearest_distance;
+		distance_to_nearest_enemy = calculate_dx_dy_between_units(*nearest_enemy);
+		auto [dx, dy] = distance_to_nearest_enemy;
 
 		if (abs(dx) <= unit->get_attack_distance() and abs(dy) <= unit->get_attack_distance())
 			is_enemy_nearby_to_attack = (dx > 0 ? 1 : -1) * unit->get_direction();
 	}
 
+	//const int direction_to_enemy_statue = (enemy_statue->get_coords().x - unit->get_coords().x > 0 ? 1 : -1) * unit->get_direction();
+	const sf::Vector2f distance_to_statue = { enemy_statue->get_coords().x - unit->get_coords().x, 3 * (enemy_statue->get_coords().y + 180 - unit->get_coords().y) };
+	int can_attack_statue = 0;
+	if (abs(distance_to_statue.x) <= unit->get_attack_distance() and abs(distance_to_statue.y) <= unit->get_attack_distance())
+		can_attack_statue = (enemy_statue->get_coords().x - unit->get_coords().x > 0 ? 1 : -1) * unit->get_direction();
 
 	// process causing damage
-	if (unit->can_do_damage() and is_enemy_nearby_to_attack)
+	if (unit->can_do_damage())
 	{
-		float damage_multiplier = 0;
-		const auto [dx, dy] = nearest_distance;
-		if (dx > 0 and unit->get_direction() == 1)
+		if(is_enemy_nearby_to_attack == 1)
 		{
-			if (unit->get_direction() + nearest_enemy->get()->get_direction() == 0)
-				damage_multiplier = 1;
-			else if (unit->get_direction() + nearest_enemy->get()->get_direction() == 2)
-				damage_multiplier = 2;
-		}
-		else if (dx < 0 and unit->get_direction() == -1)
-		{
-			if (unit->get_direction() + nearest_enemy->get()->get_direction() == 0)
-				damage_multiplier = 1;
-			else if (unit->get_direction() + nearest_enemy->get()->get_direction() == -2)
-				damage_multiplier = 2;
-		}
+			float damage_multiplier = 0;
+			const auto [dx, dy] = distance_to_nearest_enemy;
+			if (dx > 0 and unit->get_direction() == 1)
+			{
+				if (unit->get_direction() + nearest_enemy->get()->get_direction() == 0)
+					damage_multiplier = 1;
+				else if (unit->get_direction() + nearest_enemy->get()->get_direction() == 2)
+					damage_multiplier = 2;
+			}
+			else if (dx < 0 and unit->get_direction() == -1)
+			{
+				if (unit->get_direction() + nearest_enemy->get()->get_direction() == 0)
+					damage_multiplier = 1;
+				else if (unit->get_direction() + nearest_enemy->get()->get_direction() == -2)
+					damage_multiplier = 2;
+			}
 
-		if (unit == controlled_unit)
-			damage_multiplier *= 2;
+			if (unit == controlled_unit)
+				damage_multiplier *= ControlledUnit::damage_boost_factor;
 
-		nearest_enemy->get()->cause_damage(unit->get_damage() * damage_multiplier);
+			nearest_enemy->get()->cause_damage(unit->get_damage() * damage_multiplier);
+		}
+  		else if(can_attack_statue == 1)
+  			enemy_statue->cause_damage(unit->get_damage());
 	}
 
 	if (unit == controlled_unit)
@@ -275,7 +286,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 
 	if (army_target_ == defend)
 	{
-		if (abs(nearest_distance.x) < Unit::trigger_attack_radius and abs(nearest_distance.y / 5) < Unit::trigger_attack_radius) // y / 5
+		if (abs(distance_to_nearest_enemy.x) < Unit::trigger_attack_radius and abs(distance_to_nearest_enemy.y / 5) < Unit::trigger_attack_radius) // y / 5
 		{
 			if (unit->target_unit == nullptr)
 				unit->target_unit = *nearest_enemy;
@@ -308,8 +319,32 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			}
 		}
 	}
-	else if (army_target_ == attack and unit->target_unit == nullptr and nearest_enemy != enemy_army.get_units().end())
-		unit->target_unit = *nearest_enemy;
+	else if (army_target_ == attack)
+	{
+		if(unit->target_unit == nullptr and nearest_enemy != enemy_army.get_units().end())
+			unit->target_unit = *nearest_enemy;
+
+		if (can_attack_statue)
+		{
+			if (can_attack_statue < 0)
+				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
+			unit->commit_attack();
+			return;
+		}
+
+		const float dist_to_enemy = abs(distance_to_nearest_enemy.x) + abs(distance_to_nearest_enemy.y);
+		const float dist_to_statue = abs(distance_to_statue.x) + abs(distance_to_statue.y);
+
+		if (dist_to_statue < dist_to_enemy)
+		{
+			const auto [dx, dy] = distance_to_statue;
+			const int x_direction = dx > 0 ? 1 : -1;
+			const int y_direction = dy > 0 ? 1 : -1;
+			const sf::Vector2i direction = { abs(dx) > 3 ? x_direction : 0, abs(dy) > 3 and abs(dx) < 200 ? y_direction : 0 };
+			unit->move(direction, delta_time);
+			return;
+		}
+	}
 
 	if (unit->target_unit != nullptr)
 	{

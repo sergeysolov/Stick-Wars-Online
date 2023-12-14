@@ -42,7 +42,11 @@ class ControlledUnit
 	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
 	inline const static sf::Vector2f star_shift = { -15, -10 };
 	static constexpr float health_increment = 0.2f;
+	
 public:
+	static constexpr float speed_boost_factor = 2.0f;
+	static constexpr float damage_boost_factor = 100.f;
+
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
 	void release();
 	void draw(sf::RenderWindow& window);
@@ -61,7 +65,7 @@ class Game
 
 	float camera_position_ = start_camera_position;
 
-	std::unique_ptr<UserInterface> user_interface_ = nullptr;
+	std::unique_ptr<UserInterface> user_interface_;
 
 	int money_ = 1000;
 
@@ -69,13 +73,13 @@ class Game
 	static constexpr int time_money_increment = 10000;
 	int count_money_increment_ = 10;
 
-	std::unique_ptr<Statue> my_statue_;
+	std::shared_ptr<Statue> my_statue_;
 	std::vector<Army> armies_;
 	std::unique_ptr<SpawnUnitQueue> my_spawn_queue_;
 
 	std::unique_ptr<ControlledUnit> controlled_unit_;
 
-	std::unique_ptr<Statue> enemy_statue_;
+	std::shared_ptr<Statue> enemy_statue_;
 	Army enemy_army_;
 	std::unique_ptr<SpawnUnitQueue> enemy_spawn_queue_;
 

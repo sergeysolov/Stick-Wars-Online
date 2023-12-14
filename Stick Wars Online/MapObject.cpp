@@ -79,12 +79,13 @@ Statue::Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_he
  MapObject(position, holder, id, animation_params), max_health_(max_health), health_(max_health),
 health_bar_(max_health_, health_, position, HealthBar::statue_health_bar_size, HealthBar::statue_health_bar_shift) 
 {
-
+	if (id == enemy_statue)
+		sprite_.scale({ -1.f, 1.f });
 }
 
 void Statue::cause_damage(const float damage)
 {
-	health_ = std::max(health_ - damage, 0.f);
+	health_ = std::clamp(health_ - damage, 0.f, max_health_);
 	health_bar_.update();
 }
 

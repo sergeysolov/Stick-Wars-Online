@@ -41,13 +41,13 @@ public:
 	void draw(sf::RenderWindow& window) const;
 	void set_screen_place(float camera_position) const;
 
-	int process(const Army& enemy_army, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
+	int process(const Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
 
 	[[nodiscard]] bool is_ally() const;
 
 protected:
 	int process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const;
-	void process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const Army& enemy_army, sf::Time delta_time);
+	void process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time);
 
 	bool is_ally_army_;
 

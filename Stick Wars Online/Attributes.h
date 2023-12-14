@@ -44,7 +44,7 @@ public:
 	}
 	void draw(sf::RenderWindow& window) const
 	{
-		if(health_ > 0)
+		if(health_ > 0 and abs(health_ - max_health_) > 1e-5)
 		{
 			window.draw(total_health_bar_);
 			window.draw(health_bar_);

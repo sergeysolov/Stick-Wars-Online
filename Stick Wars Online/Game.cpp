@@ -108,7 +108,7 @@ void Game::process_events()
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
 				pressed_keys_.mouse_left = true;
-				mouse_position_ = sf::Mouse::getPosition();
+				mouse_position_ = sf::Mouse::getPosition(main_window_);
 			}
 			break;
 		case sf::Event::Closed:
@@ -131,7 +131,7 @@ void Game::handle_inputs(const sf::Time delta_time)
 
 			if (direction.x != 0 or direction.y != 0)
 			{
-				const sf::Time effective_move_time = sf::milliseconds(2 * delta_time.asMilliseconds());
+				const sf::Time effective_move_time = sf::milliseconds(ControlledUnit::speed_boost_factor * delta_time.asMilliseconds());
 				controlled_unit_->get_unit()->move(direction, effective_move_time);
 				const float shift = (controlled_unit_->get_unit()->get_sprite().getPosition().x + 15 - static_cast<float>(main_window_.getSize().x) / 2.f) / 15;
 				move_camera(shift);
@@ -202,7 +202,7 @@ void Game::process_internal_actions(const sf::Time delta_time)
 
 	//My army processing
 	my_spawn_queue_->process(delta_time);
-	money_ += armies_[0].process(enemy_army_, controlled_unit_->get_unit(), gold_mines_, delta_time);
+	money_ += armies_[0].process(enemy_army_, enemy_statue_, controlled_unit_->get_unit(), gold_mines_, delta_time);
 
 	//Enemy army processing
 	enemy_spawn_queue_->process(delta_time);
@@ -210,7 +210,7 @@ void Game::process_internal_actions(const sf::Time delta_time)
 	if (enemy_behaviour == 0)
 		process_enemy_spawn_queue(*enemy_spawn_queue_, texture_holder_);
 
-	enemy_army_.process(armies_[0], nullptr, gold_mines_, delta_time);
+	enemy_army_.process(armies_[0], my_statue_, nullptr, gold_mines_, delta_time);
 }
 
 
@@ -222,9 +222,8 @@ Game::Game(const uint16_t width, const uint16_t height, const char* title)
 	background_sprite_.setTexture(texture_holder_.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
 
-	my_statue_ = std::make_unique<Statue>(Statue::my_statue_position, texture_holder_, my_statue, Statue::my_max_health);
-	enemy_statue_ = std::make_unique<Statue>(Statue::enemy_statue_position, texture_holder_, enemy_statue, Statue::enemy_max_health);
-
+	my_statue_ = std::make_shared<Statue>(Statue::my_statue_position, texture_holder_, my_statue, Statue::my_max_health);
+	enemy_statue_ = std::make_shared<Statue>(Statue::enemy_statue_position, texture_holder_, enemy_statue, Statue::enemy_max_health);
 	//My army
 	armies_.emplace_back(Army::defend_line_1, true);
 
