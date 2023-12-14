@@ -133,7 +133,7 @@ void Game::handle_inputs(const sf::Time delta_time)
 			{
 				const sf::Time effective_move_time = sf::milliseconds(ControlledUnit::speed_boost_factor * delta_time.asMilliseconds());
 				controlled_unit_->get_unit()->move(direction, effective_move_time);
-				const float shift = (controlled_unit_->get_unit()->get_sprite().getPosition().x + 15 - static_cast<float>(main_window_.getSize().x) / 2.f) / 15;
+				const float shift = (controlled_unit_->get_unit()->get_coords().x + 15 - main_window_.getSize().x / 2 - camera_position_) / 15;
 				move_camera(shift);
 			}
 			else if (pressed_keys_.space)
@@ -198,8 +198,6 @@ void Game::process_internal_actions(const sf::Time delta_time)
 
 	user_interface_->update(delta_time);
 
-	set_objects_screen_place();
-
 	//My army processing
 	my_spawn_queue_->process(delta_time);
 	money_ += armies_[0].process(enemy_army_, enemy_statue_, controlled_unit_->get_unit(), gold_mines_, delta_time);
@@ -211,6 +209,8 @@ void Game::process_internal_actions(const sf::Time delta_time)
 		process_enemy_spawn_queue(*enemy_spawn_queue_, texture_holder_);
 
 	enemy_army_.process(armies_[0], my_statue_, nullptr, gold_mines_, delta_time);
+
+	set_objects_screen_place();
 }
 
 

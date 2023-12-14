@@ -32,7 +32,6 @@ public:
 
 	const sf::Sprite& get_sprite() const;
 	sf::Vector2f get_coords() const;
-	virtual void move_sprite(sf::Vector2f offset);
 	virtual void set_screen_place(float camera_position);
 	virtual void draw(sf::RenderWindow& window) const;
 	const AnimationParams& get_animation_params() const;
@@ -55,8 +54,8 @@ protected:
 class GoldMine : public MapObject
 {
 public:
-	inline const static std::array<sf::Vector2f, 9> goldmine_positions = { sf::Vector2f{150, 750}, {250, 670}, {350, 690}, {map_frame_width * 3 - 350, 670}, {map_frame_width * 3 - 450, 670}, {map_frame_width * 3 - 550, 800},
-	{700, 670}, {1000, 670}, {1300, 690} };
+	inline const static std::array<sf::Vector2f, 9> goldmine_positions = { sf::Vector2f{250, 750}, {350, 670}, {700, 790}, {map_frame_width * 3 - 350, 670}, {map_frame_width * 3 - 450, 670}, {map_frame_width * 3 - 550, 800},
+	{800, 670}, {1100, 670}, {1400, 690} };
 
 	const inline static AnimationParams animation_params = AnimationParams({ 0, 0 }, 538, 960, 10, { 0.2f, 0.2f });
 
@@ -75,7 +74,7 @@ class Statue : public MapObject
 {
 	const float max_health_;
 	float health_;
-	HealthBar health_bar_;
+	Bar<float> health_bar_;
 public:
 	inline const static AnimationParams animation_params = AnimationParams({ 0, 0 }, 817, 261, 1, { 1.f, 1.f });
 	constexpr static float my_max_health = 5000.0f;

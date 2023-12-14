@@ -2,7 +2,7 @@
 
 Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
 	MapObject(spawn_point, holder, id, animation_params), health_(health), max_health_(health), speed_(speed), damage_(damage),
-	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point, HealthBar::unit_health_bar_size, HealthBar::unit_health_bar_shift)
+	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
 {	}
 
 float Unit::get_max_health() const
@@ -120,27 +120,13 @@ void Unit::set_screen_place(const float camera_position)
 	health_bar_.set_position({ x_ - camera_position, y_ });
 }
 
-
-void Unit::move_sprite(const sf::Vector2f offset)
+void Unit::move(const sf::Vector2i direction, const sf::Time time)
 {
-	MapObject::move_sprite(offset);
-	health_bar_.move({ static_cast<float>(offset.x), static_cast<float>(offset.y) });
-}
+	x_ = std::clamp(x_ + direction.x * time.asMilliseconds() * speed_, x_map_min, x_map_max);
+	y_ = std::clamp(y_ + direction.y * time.asMilliseconds() * vertical_speed_, y_map_min, y_map_max);
 
-void Unit::move(sf::Vector2i direction, sf::Time time)
-{
-	float x_offset = direction.x * time.asMilliseconds() * speed_;
-	float y_offset = direction.y * time.asMilliseconds() * vertical_speed_;
-	const float new_x = x_offset + x_;
-	const float new_y = y_offset + y_;
-
-	if (new_x > x_map_min and new_x < x_map_max and new_y > y_map_min and new_y < y_map_max)
-	{
-		x_ += x_offset;
-		y_ += y_offset;
-		sprite_.move({ x_offset, y_offset });
-		health_bar_.move({ x_offset, y_offset });
-	}
+	sprite_.setPosition({x_, y_ });
+	health_bar_.set_position({ x_, y_ });
 
 	if (direction.x != 0 and direction.x != prev_direction_)
 	{
@@ -182,8 +168,9 @@ bool Unit::can_do_damage()
 
 void Unit::draw(sf::RenderWindow& window) const
 {
-	window.draw(sprite_);
-	health_bar_.draw(window);
+	MapObject::draw(window);
+	if(is_alive() and abs(health_ - max_health_) > 1e-5)
+		health_bar_.draw(window);
 }
 
 void Unit::commit_attack()
@@ -197,8 +184,49 @@ void Unit::commit_attack()
 }
 
 Miner::Miner(sf::Vector2f spawn_point, TextureHolder& holder, ID id)
-	: Unit(holder, id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params)
-{	}
+	: Unit(holder, id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params),
+	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_health_bar_size, Bar<int>::miner_gold_count_bar_shift, Bar<int>::miner_gold_bat_color)
+{
+	
+}
+
+void Miner::draw(sf::RenderWindow& window) const
+{
+	Unit::draw(window);
+	if(is_alive())
+		gold_count_bar_.draw(window);
+}
+
+void Miner::set_screen_place(const float camera_position)
+{
+	Unit::set_screen_place(camera_position);
+	gold_count_bar_.set_position({ x_ - camera_position, y_ });
+}
+
+void Miner::move(const sf::Vector2i direction, const sf::Time time)
+{
+	Unit::move(direction, time);
+	gold_count_bar_.set_position({ x_, y_ });
+}
+
+void Miner::fill_bag(const int gold_count)
+{
+	gold_count_in_bag_ = std::min(gold_count_in_bag_ + gold_count, gold_bag_capacity);
+	gold_count_bar_.update();
+}
+
+bool Miner::is_bag_filled() const
+{
+	return gold_bag_capacity == gold_count_in_bag_;
+}
+
+int Miner::flush_bag()
+{
+	const int gold_count = gold_count_in_bag_;
+	gold_count_in_bag_ = 0;
+	gold_count_bar_.update();
+	return gold_count;
+}
 
 
 int Miner::get_places_requires() const

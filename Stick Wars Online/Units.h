@@ -29,7 +29,7 @@ protected:
 	
 	AnimationType animation_type_ = no_animation;
 
-	HealthBar health_bar_;
+	Bar<float> health_bar_;
 
 	bool dead_ = false;
 
@@ -58,8 +58,7 @@ public:
 	float get_max_health() const;
 
 	void show_animation(int delta_time);
-	
-	void move_sprite(sf::Vector2f offset) override;
+
 	void set_screen_place(float camera_position) override;
 	virtual void move(sf::Vector2i direction, sf::Time time);
 	virtual void commit_attack();
@@ -78,21 +77,33 @@ public:
 
 class Miner : public Unit
 {
+	int gold_count_in_bag_ = 0;
+	Bar<int> gold_count_bar_;
 public:
 	static constexpr ID texture_id = my_miner;
 	constexpr static int places_requires = 1;
 	constexpr static float max_health = 100;
 	constexpr static float speed = 0.2f;
-	constexpr static float damage = 200.f;
+	constexpr static float damage = 20.f;
 	constexpr static float attack_distance = 150.0f;
 	constexpr static int wait_time = 6000;
 	constexpr static int cost = 250;
+	constexpr static int gold_bag_capacity = 200;
 	inline const static AnimationParams animation_params = { {-300, 2}, 700, 1280, 13, {-0.4f, 0.4f } };
 
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
 	Miner(sf::Vector2f spawn_point, TextureHolder& holder, ID id);
 	~Miner() override = default;
+
+	void draw(sf::RenderWindow& window) const override;
+	void set_screen_place(float camera_position) override;
+
+	void move(sf::Vector2i direction, sf::Time time) override;
+
+	void fill_bag(int gold_count);
+	bool is_bag_filled() const;
+	int flush_bag();
 
 	int get_places_requires() const override;
 	ID get_id() const override;

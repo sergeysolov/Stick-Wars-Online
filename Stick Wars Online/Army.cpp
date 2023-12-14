@@ -121,8 +121,6 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	if (gold_mines.empty())
 		return 0;
 
-	int gold_count_mined = 0;
-
 	auto check_can_mine = [&](const GoldMine* goldmine) -> std::pair<bool, sf::Vector2f>
 		{
 			const float dx = goldmine->get_coords().x - miner->get_coords().x;
@@ -153,17 +151,20 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 		};
 
 	if (miner->can_do_damage() and check_can_mine(find_nearest_goldmine()->get()).first)
-	{
-		gold_count_mined = find_nearest_goldmine()->get()->mine(static_cast<int>(miner->get_damage()));
+		miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(miner->get_damage())));
 
-		// Will not work in multiplayer correctly
-		if (not is_ally())
-			gold_count_mined = 0;
-	}
+	int gold_count_mined = 0;
+	if (miner->get_coords().x <= x_map_min + 100)
+		gold_count_mined = miner->flush_bag();
 
 	if (miner != controlled_unit.get())
 	{
-		if (miner->attached_goldmine != nullptr)
+		if (miner->is_bag_filled())
+		{
+			int x_direction = is_ally() ? -1 : 1;
+			miner->move({ x_direction, 0 }, delta_time);
+		}
+		else if (miner->attached_goldmine != nullptr)
 		{
 			const auto [can_mine, distance_to_goldmine] = check_can_mine(miner->attached_goldmine.get());
 			if (can_mine)

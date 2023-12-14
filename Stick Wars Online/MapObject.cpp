@@ -21,11 +21,6 @@ sf::Vector2f MapObject::get_coords() const
 	return { x_, y_ };
 }
 
-void MapObject::move_sprite(const sf::Vector2f offset)
-{
-	sprite_.move(offset);
-}
-
 void MapObject::set_screen_place(const float camera_position)
 {
 	sprite_.setPosition({ x_ - camera_position, y_ });
@@ -77,7 +72,7 @@ bool GoldMine::empty() const
 
 Statue::Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_health) :
  MapObject(position, holder, id, animation_params), max_health_(max_health), health_(max_health),
-health_bar_(max_health_, health_, position, HealthBar::statue_health_bar_size, HealthBar::statue_health_bar_shift) 
+health_bar_(max_health_, health_, position, Bar<float>::statue_health_bar_size, Bar<float>::statue_health_bar_shift, Bar<float>::health_bar_color) 
 {
 	if (id == enemy_statue)
 		sprite_.scale({ -1.f, 1.f });
