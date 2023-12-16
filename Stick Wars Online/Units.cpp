@@ -1,7 +1,7 @@
 #include "Units.h"
 
 Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
-	MapObject(spawn_point, holder, id, animation_params), health_(health), max_health_(health), speed_(speed), damage_(damage),
+	MapObject(spawn_point, holder, id, animation_params), health_(health), max_health_(health), max_speed_x_(speed), damage_(damage),
 	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
 {	}
 
@@ -23,7 +23,7 @@ void Unit::show_animation(const int delta_time)
 			if (current_frame_ == 0)
 				cumulative_time_ = 0;
 
-			int y_shift = 0;
+			int y_shift = 0; // if walk_animation
 
 			if (animation_type_ == attack_animation)
 			{
@@ -40,9 +40,11 @@ void Unit::show_animation(const int delta_time)
 	}
 }
 
-void Unit::cause_damage(const float damage)
+
+void Unit::cause_damage(const float damage, const int direction)
 {
 	health_ = std::clamp(health_ - damage, 0.f, max_health_);
+	push(direction);
 	health_bar_.update();
 	if (health_ <= 0)
 		kill();
@@ -53,7 +55,7 @@ bool Unit::is_alive() const
 	return health_ > 0;
 }
 
-float Unit::get_speed() const
+sf::Vector2f Unit::get_speed() const
 {
 	return speed_;
 }
@@ -73,7 +75,7 @@ bool Unit::animation_complete()
 		if (animation_type_ == attack_animation)
 		{
 			animation_type_ = no_animation;
-			return true;
+			return false;
 		}
 	}
 	if (cumulative_time_ > 0)
@@ -120,36 +122,78 @@ void Unit::set_screen_place(const float camera_position)
 	health_bar_.set_position({ x_ - camera_position, y_ });
 }
 
+void Unit::process_move(const sf::Time time)
+{
+	const float dx = time.asMilliseconds() * speed_.x;
+	const float dy = time.asMilliseconds() * speed_.y;
+
+	constexpr float min_shift = 0.05f;
+
+	if(abs(dx) > min_shift or abs(dy) > min_shift)
+	{
+		x_ = std::clamp(x_ + dx, x_map_min, x_map_max);
+		y_ = std::clamp(y_ + dy, y_map_min, y_map_max);
+
+		sprite_.setPosition({ x_, y_ });
+		health_bar_.set_position({ x_, y_ });
+
+		set_y_scale();
+
+		if (animation_type_ != walk_animation)
+			current_frame_ = 0;
+		animation_type_ = walk_animation;
+		cumulative_time_++;
+	}
+
+	constexpr float floor_speed_val = 0.1f;
+
+	if(not was_move_.first)
+	{
+		if (abs(speed_.x) < floor_speed_val)
+			speed_.x = 0.0f;
+		else
+			speed_.x -= speed_.x / abs(speed_.x) * acceleration * time.asMilliseconds();
+	}
+
+	if(not was_move_.second)
+	{
+		if (abs(speed_.y) < floor_speed_val)
+			speed_.y = 0.0f;
+		else
+			speed_.y -= speed_.y / abs(speed_.y) * acceleration * time.asMilliseconds();
+	}
+	was_move_ = {false, false};
+}
+
 void Unit::move(const sf::Vector2i direction, const sf::Time time)
 {
-	x_ = std::clamp(x_ + direction.x * time.asMilliseconds() * speed_, x_map_min, x_map_max);
-	y_ = std::clamp(y_ + direction.y * time.asMilliseconds() * vertical_speed_, y_map_min, y_map_max);
+	if(animation_type_ == attack_animation and current_frame_ < 8) // Can not move while attack
+		return;
 
-	sprite_.setPosition({x_, y_ });
-	health_bar_.set_position({ x_, y_ });
+	was_move_ = { direction.x != 0, direction.y != 0 };
+
+	speed_.x = std::clamp(speed_.x + time.asMilliseconds() * acceleration * direction.x, -max_speed_x_, max_speed_x_);
+	speed_.y = std::clamp(speed_.y + time.asMilliseconds() * acceleration * direction.y, -max_speed_y, max_speed_y);
 
 	if (direction.x != 0 and direction.x != prev_direction_)
 	{
 		prev_direction_ = direction.x;
 		sprite_.scale(-1, 1);
 	}
-	set_y_scale();
-
-	if (animation_type_ != walk_animation)
-		current_frame_ = 0;
-	animation_type_ = walk_animation;
-	cumulative_time_++;
 }
 
 void Unit::kill()
 {
 	if (animation_type_ != die_animation)
-	{
 		current_frame_ = 0;
-	}
-	cumulative_time_++;
 	animation_type_ = die_animation;
+	cumulative_time_++;
 	dead_ = true;
+}
+
+void Unit::push(const int direction)
+{
+	speed_.x = std::clamp(speed_.x + direction * 0.3f, -0.8f, 0.8f);
 }
 
 bool Unit::was_killed()
@@ -166,35 +210,39 @@ bool Unit::can_do_damage()
 	return temp;
 }
 
-void Unit::draw(sf::RenderWindow& window) const
+void Unit::draw(DrawQueue& queue) const
 {
-	MapObject::draw(window);
-	if(is_alive() and abs(health_ - max_health_) > 1e-5)
-		health_bar_.draw(window);
+	if (is_alive())
+	{
+		queue.emplace(alive_units, &sprite_);
+		if (abs(health_ - max_health_) > 1e-5)
+			health_bar_.draw(queue);
+	}
+	else
+		queue.emplace(dead_units,&sprite_);
 }
 
 void Unit::commit_attack()
 {
 	if (animation_type_ != attack_animation)
-	{
 		current_frame_ = 0;
-	}
-	cumulative_time_++;
 	animation_type_ = attack_animation;
+
+	cumulative_time_++;
 }
 
 Miner::Miner(sf::Vector2f spawn_point, TextureHolder& holder, ID id)
 	: Unit(holder, id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params),
-	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_health_bar_size, Bar<int>::miner_gold_count_bar_shift, Bar<int>::miner_gold_bat_color)
+	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_health_bar_size, Bar<int>::miner_gold_count_bar_shift, Bar<int>::miner_gold_bar_color)
 {
 	
 }
 
-void Miner::draw(sf::RenderWindow& window) const
+void Miner::draw(DrawQueue& queue) const
 {
-	Unit::draw(window);
+	Unit::draw(queue);
 	if(is_alive())
-		gold_count_bar_.draw(window);
+		gold_count_bar_.draw(queue);
 }
 
 void Miner::set_screen_place(const float camera_position)

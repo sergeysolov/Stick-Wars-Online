@@ -3,6 +3,7 @@
 #include "TextureHolder.h"
 #include "Attributes.h"
 #include <SFML/Graphics.hpp>
+#include "DrawQueue.h"
 
 constexpr float map_frame_width = 2100;
 
@@ -33,7 +34,7 @@ public:
 	const sf::Sprite& get_sprite() const;
 	sf::Vector2f get_coords() const;
 	virtual void set_screen_place(float camera_position);
-	virtual void draw(sf::RenderWindow& window) const;
+	virtual void draw(DrawQueue& queue) const;
 	const AnimationParams& get_animation_params() const;
 	int get_cumulative_time() const;
 
@@ -54,8 +55,16 @@ protected:
 class GoldMine : public MapObject
 {
 public:
-	inline const static std::array<sf::Vector2f, 9> goldmine_positions = { sf::Vector2f{250, 750}, {350, 670}, {700, 790}, {map_frame_width * 3 - 350, 670}, {map_frame_width * 3 - 450, 670}, {map_frame_width * 3 - 550, 800},
-	{800, 670}, {1100, 670}, {1400, 690} };
+	inline const static std::array<sf::Vector2f, 9> goldmine_positions = 
+		{ sf::Vector2f{250, 750},
+		{350, 670},
+		{700, 790},
+		{800, 670},
+		{1100, 670},
+		{1400, 690},
+		{map_frame_width * 3 - 550, 800},
+		{map_frame_width * 3 - 450, 670},
+		{map_frame_width * 3 - 350, 670},};
 
 	const inline static AnimationParams animation_params = AnimationParams({ 0, 0 }, 538, 960, 10, { 0.2f, 0.2f });
 
@@ -86,6 +95,6 @@ public:
 	Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_health);
 
 	void cause_damage(float damage);
-	void draw(sf::RenderWindow& window) const override;
+	void draw(DrawQueue& queue) const override;
 	void set_screen_place(float camera_position) override;
 };

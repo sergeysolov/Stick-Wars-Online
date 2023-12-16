@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClInclude Include="Army.h" />
     <ClInclude Include="Attributes.h" />
+    <ClInclude Include="DrawQueue.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="MapObject.h" />
     <ClInclude Include="TextureHolder.h" />

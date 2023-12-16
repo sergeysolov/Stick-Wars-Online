@@ -13,20 +13,20 @@ void ControlledUnit::release()
 	unit_ = nullptr;
 }
 
-void ControlledUnit::draw(sf::RenderWindow& window)
+void ControlledUnit::draw(DrawQueue& queue)
 {
 	if (unit_ != nullptr)
 	{
 		star_sprite_.setPosition(unit_->get_sprite().getPosition());
 		star_sprite_.move(star_shift);
-		window.draw(star_sprite_);
+		queue.emplace(attributes_layer_1, &star_sprite_);
 	}
 }
 
 void ControlledUnit::heal() const
 {
 	if (unit_ != nullptr)
-		unit_->cause_damage(-unit_->get_max_health() * health_increment);
+		unit_->cause_damage(-unit_->get_max_health() * heal_factor, 0);
 }
 
 
@@ -47,22 +47,29 @@ void Game::draw()
 {
 	main_window_.clear();
 
-	main_window_.draw(background_sprite_);
+	draw_queue_.emplace(background, &background_sprite_);
 
-	my_statue_->draw(main_window_);
-	enemy_statue_->draw(main_window_);
+	my_statue_->draw(draw_queue_);
+	enemy_statue_->draw(draw_queue_);
 
 	for (const auto& gold_mine : gold_mines_)
-		gold_mine->draw(main_window_);
+		gold_mine->draw(draw_queue_);
+
+	enemy_army_.draw(draw_queue_);
 
 	for (const auto& ally_army : armies_)
-		ally_army.draw(main_window_);
+		ally_army.draw(draw_queue_);
 
-	controlled_unit_->draw(main_window_);
+	controlled_unit_->draw(draw_queue_);
 
-	enemy_army_.draw(main_window_);
+	user_interface_->draw(draw_queue_);
 
-	user_interface_->draw(main_window_);
+	while (not draw_queue_.empty())
+	{
+		main_window_.draw(*draw_queue_.top().object);
+		draw_queue_.pop();
+	}
+
 }
 
 void Game::process_events()
@@ -131,15 +138,15 @@ void Game::handle_inputs(const sf::Time delta_time)
 
 			if (direction.x != 0 or direction.y != 0)
 			{
-				const sf::Time effective_move_time = sf::milliseconds(ControlledUnit::speed_boost_factor * delta_time.asMilliseconds());
-				controlled_unit_->get_unit()->move(direction, effective_move_time);
+				//const sf::Time effective_move_time = sf::milliseconds(ControlledUnit::speed_boost_factor * delta_time.asMilliseconds());
+				controlled_unit_->get_unit()->move(direction, delta_time);
 				const float shift = (controlled_unit_->get_unit()->get_coords().x + 15 - main_window_.getSize().x / 2 - camera_position_) / 15;
 				move_camera(shift);
 			}
 			else if (pressed_keys_.space)
 				controlled_unit_->get_unit()->commit_attack();
 			else if (pressed_keys_.k)
-				controlled_unit_->get_unit()->cause_damage(1E+10);
+				controlled_unit_->get_unit()->cause_damage(1E+10, 0);
 		}
 		else
 			controlled_unit_->release();

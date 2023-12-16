@@ -12,9 +12,9 @@ const sf::Sprite& Button::get_sprite() const
 	return sprite_;
 }
 
-void Button::draw(sf::RenderWindow& window) const
+void Button::draw(DrawQueue& queue) const
 {
-	window.draw(sprite_);
+	queue.emplace(interface_layer_0, &sprite_);
 }
 
 bool Button::check_mouse_pressed(const sf::Vector2i mouse_position) const
@@ -56,14 +56,15 @@ UnitBuyButton::UnitBuyButton(ID unit_id, int unit_cost, int wait_time, sf::Vecto
 	cost_text_.setCharacterSize(20);
 }
 
-void UnitBuyButton::draw(sf::RenderWindow& window) const
+void UnitBuyButton::draw(DrawQueue& queue) const
 {
-	window.draw(sprite_);
-	window.draw(time_bar_);
-	window.draw(gold_icon_);
-	window.draw(cost_text_);
+	Button::draw(queue);
+	queue.emplace(interface_layer_0, &time_bar_);
+	queue.emplace(interface_layer_1, &gold_icon_);
+	queue.emplace(interface_layer_1, &cost_text_);
+
 	if (remaining_time_ != 0)
-		window.draw(count_text_);
+		queue.emplace(interface_layer_1, &count_text_);
 }
 
 void UnitBuyButton::press()
@@ -191,18 +192,18 @@ void UserInterface::update(const sf::Time delta_time)
 	money_count_text_.setString(std::to_string(money_));
 }
 
-void UserInterface::draw(sf::RenderWindow& window) const
+void UserInterface::draw(DrawQueue& queue) const
 {
-	window.draw(gold_sprite_);
-	window.draw(money_count_text_);
+	queue.emplace(interface_layer_0, &gold_sprite_);
+	queue.emplace(interface_layer_0, &money_count_text_);
 
 	for (const auto& unit_button : unit_buy_buttons_)
-		unit_button->draw(window);
+		unit_button->draw(queue);
 
-	in_attack_button_->draw(window);
-	defend_button_->draw(window);
+	in_attack_button_->draw(queue);
+	defend_button_->draw(queue);
 
-	window.draw(stick_man_);
-	window.draw(army_count_text_);
-	window.draw(camera_position_text_);
+	queue.emplace(interface_layer_0, &stick_man_);
+	queue.emplace(interface_layer_0, &army_count_text_);
+	queue.emplace(interface_layer_0, &camera_position_text_);
 }

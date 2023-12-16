@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics/RectangleShape.hpp>
+#include "DrawQueue.h"
 
 template <typename  T>
 class Bar
@@ -21,7 +22,7 @@ public:
 	inline const static sf::Vector2f miner_gold_count_bar_shift = { -32, 35 };
 
 	inline const static sf::Color health_bar_color = sf::Color{255, 0, 100};
-	inline const static sf::Color miner_gold_bat_color = sf::Color{210, 160, 30};
+	inline const static sf::Color miner_gold_bar_color = sf::Color{210, 160, 30};
 
 	Bar(const T& max_value, const T& value, const sf::Vector2f position, const sf::Vector2f size, const sf::Vector2f shift, const sf::Color color) :
 	max_value_(max_value), value_(value), max_size_(size.x), shift_(shift)
@@ -49,9 +50,9 @@ public:
 		total_bar_.setPosition({ position.x + shift_.x, position.y + shift_.y });
 		bar_.setPosition({ position.x + shift_.x, position.y + shift_.y });
 	}
-	void draw(sf::RenderWindow& window) const
+	void draw(DrawQueue& queue) const
 	{
-		window.draw(total_bar_);
-		window.draw(bar_);
+		queue.emplace(attributes_layer_0, &total_bar_);
+		queue.emplace(attributes_layer_1, &bar_);
 	}
 };

@@ -9,6 +9,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "DrawQueue.h"
 #include "TextureHolder.h"
 #include "Units.h"
 #include "Army.h"
@@ -32,6 +33,7 @@ struct PressedKeys
 	bool space = false;
 	bool shift = false;
 	bool mouse_left = false;
+	
 };
 
 class ControlledUnit
@@ -41,15 +43,15 @@ class ControlledUnit
 
 	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
 	inline const static sf::Vector2f star_shift = { -15, -10 };
-	static constexpr float health_increment = 0.2f;
+	static constexpr float heal_factor = 0.2f;
 	
 public:
-	static constexpr float speed_boost_factor = 2.0f;
-	static constexpr float damage_boost_factor = 100.f;
+	static constexpr float speed_boost_factor = 1.5f;
+	static constexpr float damage_boost_factor = 2.f;
 
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
 	void release();
-	void draw(sf::RenderWindow& window);
+	void draw(DrawQueue& queue);
 	void heal() const;
 
 	ControlledUnit(TextureHolder& holder, const std::shared_ptr<Unit>& unit);
@@ -60,6 +62,7 @@ public:
 class Game
 {
 	sf::RenderWindow main_window_;
+	DrawQueue draw_queue_;
 	TextureHolder texture_holder_;
 	sf::Sprite background_sprite_;
 
@@ -67,7 +70,7 @@ class Game
 
 	std::unique_ptr<UserInterface> user_interface_;
 
-	int money_ = 1000;
+	int money_ = 400;
 
 	int timer_money_increment_ = 0;
 	static constexpr int time_money_increment = 10000;

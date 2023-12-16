@@ -27,9 +27,9 @@ void MapObject::set_screen_place(const float camera_position)
 }
 
 
-void MapObject::draw(sf::RenderWindow& window) const
+void MapObject::draw(DrawQueue& queue) const
 {
-	window.draw(sprite_);
+	queue.emplace(map_object, &sprite_);
 }
 
 const MapObject::AnimationParams& MapObject::get_animation_params() const
@@ -84,10 +84,10 @@ void Statue::cause_damage(const float damage)
 	health_bar_.update();
 }
 
-void Statue::draw(sf::RenderWindow& window) const
+void Statue::draw(DrawQueue& queue) const
 {
-	MapObject::draw(window);
-	health_bar_.draw(window);
+	MapObject::draw(queue);
+	health_bar_.draw(queue);
 }
 
 void Statue::set_screen_place(const float camera_position)

@@ -13,7 +13,7 @@ public:
 	virtual ~Button() = default;
 	Button(sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder);
 	const sf::Sprite& get_sprite() const;
-	virtual void draw(sf::RenderWindow& window) const;
+	virtual void draw(DrawQueue& queue) const;
 	bool check_mouse_pressed(sf::Vector2i mouse_position) const;
 	virtual void press();
 	bool is_pressed();
@@ -38,7 +38,7 @@ public:
 	inline static const sf::Vector2f spawn_point = { -100, 650 };
 
 	UnitBuyButton(ID unit_id, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder, const sf::Font& font);
-	void draw(sf::RenderWindow& window) const override;
+	void draw(DrawQueue& queue) const override;
 	int get_unit_cost() const;
 	ID get_unit_id() const;
 	void press() override;
@@ -68,7 +68,7 @@ public:
 
 	bool process_left_mouse_button_press(sf::Vector2i mouse_position) const;
 	void update(sf::Time delta_time);
-	void draw(sf::RenderWindow& window) const;
+	void draw(DrawQueue& queue) const;
 
 protected:
 	int& money_;

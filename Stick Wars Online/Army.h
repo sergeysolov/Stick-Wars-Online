@@ -38,7 +38,7 @@ public:
 
 	[[nodiscard]] int get_alive_units_count() const;
 
-	void draw(sf::RenderWindow& window) const;
+	void draw(DrawQueue& queue) const;
 	void set_screen_place(float camera_position) const;
 
 	int process(const Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);

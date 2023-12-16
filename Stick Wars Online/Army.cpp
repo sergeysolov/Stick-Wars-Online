@@ -41,13 +41,13 @@ int Army::get_alive_units_count() const
 	return alive_units_count_;
 }
 
-void Army::draw(sf::RenderWindow& window) const
+void Army::draw(DrawQueue& queue) const
 {
 	for (const auto& unit : dead_units_ | std::views::keys)
-		unit->draw(window);
+		unit->draw(queue);
 
 	for (const auto& unit : units_)
-		unit->draw(window);
+		unit->draw(queue);
 }
 
 void Army::set_screen_place(const float camera_position) const
@@ -75,10 +75,16 @@ int Army::process(const Army& enemy_army, const std::shared_ptr<Statue>& enemy_s
 				defend_places_.insert(stand_place);
 			alive_units_count_ -= unit->get_places_requires();
 
+			if(const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
+				miner->attached_goldmine.reset();
+
+
 			dead_units_.emplace_back(*it, dead_unit_time_to_delete);
 			it = units_.erase(it);
 			continue;
 		}
+
+		unit->process_move(delta_time * (unit == controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
 
 		//Give stand place with less number to unit if place become free
 		if (not defend_places_.empty() and unit->get_stand_place().first > defend_places_.begin()->first)
@@ -154,7 +160,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 		miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(miner->get_damage())));
 
 	int gold_count_mined = 0;
-	if (miner->get_coords().x <= x_map_min + 100)
+	if (miner->get_coords().x <= x_map_min + 200)
 		gold_count_mined = miner->flush_bag();
 
 	if (miner != controlled_unit.get())
@@ -184,7 +190,16 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 				miner->attached_goldmine.reset();
 		}
 		else
-			miner->attached_goldmine = *find_nearest_goldmine();
+		{
+			for (const auto& goldmine : gold_mines)
+			{
+				if(goldmine.use_count() == 1)
+				{
+					miner->attached_goldmine = goldmine;
+					break;
+				}
+			}
+		}
 	}
 	if (find_nearest_goldmine()->get()->empty())
 		gold_mines.erase(find_nearest_goldmine());
@@ -198,7 +213,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 		{
 			const float dx = unit_target->get_coords().x - unit->get_coords().x;
 			const float dy = unit_target->get_coords().y - unit->get_coords().y;
-			return { dx, 5 * dy }; // y * 5
+			return { dx, 5 * dy };
 		};
 
 	auto nearest_enemy = enemy_army.get_units().end();
@@ -268,7 +283,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			if (unit == controlled_unit)
 				damage_multiplier *= ControlledUnit::damage_boost_factor;
 
-			nearest_enemy->get()->cause_damage(unit->get_damage() * damage_multiplier);
+			nearest_enemy->get()->cause_damage(unit->get_damage() * damage_multiplier, unit->get_direction());
 		}
   		else if(can_attack_statue == 1)
   			enemy_statue->cause_damage(unit->get_damage());
@@ -277,13 +292,14 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 	if (unit == controlled_unit)
 		return;
 
-	if (is_enemy_nearby_to_attack)
-	{
-		if (is_enemy_nearby_to_attack < 0)
-			unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
-		unit->commit_attack();
-		return;
-	}
+	if(find_nearest_enemy_unit() != enemy_army.get_units().end())
+		if (abs(distance_to_nearest_enemy.x) + 450 * find_nearest_enemy_unit()->get()->get_speed().x * (distance_to_nearest_enemy.x > 0 ? 1 : -1) <= unit->get_attack_distance() and abs(distance_to_nearest_enemy.y) <= unit->get_attack_distance())
+		{
+			if (is_enemy_nearby_to_attack < 0)
+				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
+			unit->commit_attack();
+			return;
+		}
 
 	if (army_target_ == defend)
 	{
@@ -300,11 +316,10 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 
 			const float distance_x = unit->get_stand_place().second.x - unit->get_coords().x;
 			const float distance_y = unit->get_stand_place().second.y - unit->get_coords().y;
-			if (abs(distance_x) + abs(distance_y) > 5)
-			{
-				const sf::Vector2i direction = { distance_x > 0 ? 1 : -1, distance_y > 0 ? 1 : -1 };
-				unit->move(direction, delta_time);
-			}
+			const int x_direction = abs(distance_x) > 10 ? (distance_x > 0 ? 1 : -1) : 0;
+			const int y_direction = abs(distance_y) > 10 ? (distance_y > 0 ? 1 : -1) : 0;
+			if (x_direction != 0 or y_direction != 0)
+				unit->move({ x_direction, y_direction }, delta_time);
 			else
 			{
 				if (is_ally())
