@@ -30,10 +30,10 @@ void ControlledUnit::heal() const
 }
 
 
-ControlledUnit::ControlledUnit(TextureHolder& holder, const std::shared_ptr<Unit>& unit)
+ControlledUnit::ControlledUnit(const std::shared_ptr<Unit>& unit)
 {
 	unit_ = unit;
-	star_sprite_.setTexture(holder.get_texture(star));
+	star_sprite_.setTexture(texture_holder.get_texture(star));
 	star_sprite_.setScale(star_scale);
 }
 
@@ -69,7 +69,6 @@ void Game::draw()
 		main_window_.draw(*draw_queue_.top().object);
 		draw_queue_.pop();
 	}
-
 }
 
 void Game::process_events()
@@ -126,7 +125,7 @@ void Game::process_events()
 	}
 }
 
-void Game::handle_inputs(const sf::Time delta_time)
+void Game::handle_input(const sf::Time delta_time)
 {
 	// process behaviour of controlled unit
 	if (controlled_unit_->get_unit() != nullptr)
@@ -191,7 +190,7 @@ void Game::set_objects_screen_place() const
 	enemy_statue_->set_screen_place(camera_position_);
 }
 
-void Game::process_internal_actions(const sf::Time delta_time)
+void Game::update(const sf::Time delta_time)
 {
 	// handle money increment
 	timer_money_increment_ += delta_time.asMilliseconds();
@@ -213,7 +212,7 @@ void Game::process_internal_actions(const sf::Time delta_time)
 	enemy_spawn_queue_->process(delta_time);
 
 	if (enemy_behaviour == 0)
-		process_enemy_spawn_queue(*enemy_spawn_queue_, texture_holder_);
+		process_enemy_spawn_queue(*enemy_spawn_queue_);
 
 	enemy_army_.process(armies_[0], my_statue_, nullptr, gold_mines_, delta_time);
 
@@ -224,13 +223,12 @@ void Game::process_internal_actions(const sf::Time delta_time)
 Game::Game(const uint16_t width, const uint16_t height, const char* title)
 	: main_window_(sf::VideoMode(width, height), title), enemy_army_(Army::enemy_defend_line, false)
 {
-	texture_holder_.load_textures();
 
-	background_sprite_.setTexture(texture_holder_.get_texture(large_forest_background));
+	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
 
-	my_statue_ = std::make_shared<Statue>(Statue::my_statue_position, texture_holder_, my_statue, Statue::my_max_health);
-	enemy_statue_ = std::make_shared<Statue>(Statue::enemy_statue_position, texture_holder_, enemy_statue, Statue::enemy_max_health);
+	my_statue_ = std::make_shared<Statue>(Statue::my_statue_position, my_statue, Statue::my_max_health);
+	enemy_statue_ = std::make_shared<Statue>(Statue::enemy_statue_position, enemy_statue, Statue::enemy_max_health);
 	//My army
 	armies_.emplace_back(Army::defend_line_1, true);
 
@@ -240,15 +238,15 @@ Game::Game(const uint16_t width, const uint16_t height, const char* title)
 
 	// Add first unit of the game to player control
 
-	auto unit_to_control = std::make_shared<Swordsman>(sf::Vector2f{ 300, 650 }, texture_holder_, my_swordsman);
-	controlled_unit_ = std::make_unique<ControlledUnit>(texture_holder_, unit_to_control);
+	auto unit_to_control = std::make_shared<Swordsman>(sf::Vector2f{ 300, 650 }, my_swordsman);
+	controlled_unit_ = std::make_unique<ControlledUnit>(unit_to_control);
 	armies_[0].add_unit(unit_to_control);
 
 	// Add goldmines
 	for (const auto goldmine_position : GoldMine::goldmine_positions)
-		gold_mines_.emplace_back(new GoldMine(goldmine_position, texture_holder_));
+		gold_mines_.emplace_back(new GoldMine(goldmine_position));
 
-	user_interface_ = std::make_unique<UserInterface>(texture_holder_, money_, camera_position_, armies_[0], *my_spawn_queue_);
+	user_interface_ = std::make_unique<UserInterface>(money_, camera_position_, armies_[0], *my_spawn_queue_);
 }
 
 int Game::run()
@@ -258,8 +256,8 @@ int Game::run()
 	{
 		const sf::Time delta_time = this->clock_.restart();
 		process_events();
-		handle_inputs(delta_time);
-		process_internal_actions(delta_time);
+		handle_input(delta_time);
+		update(delta_time);
 		draw();
 		main_window_.display();
 	}

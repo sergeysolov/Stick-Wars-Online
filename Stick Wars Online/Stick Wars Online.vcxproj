@@ -135,6 +135,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MapObject.cpp" />
+    <ClCompile Include="StatusManager.cpp" />
     <ClCompile Include="TextureHolder.cpp" />
     <ClCompile Include="Units.cpp" />
     <ClCompile Include="UserInterface.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="DrawQueue.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="MapObject.h" />
+    <ClInclude Include="StatusManager.h" />
     <ClInclude Include="TextureHolder.h" />
     <ClInclude Include="Units.h" />
     <ClInclude Include="UserInterface.h" />

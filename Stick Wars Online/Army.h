@@ -76,9 +76,9 @@ public:
 	[[nodiscard]] int get_free_places() const;
 
 	[[nodiscard]] int get_army_count() const;
-	[[nodiscard]] std::optional<ID> get_front_unit_id() const;
+	[[nodiscard]] std::optional<texture_ID> get_front_unit_id() const;
 
-	friend void process_enemy_spawn_queue(SpawnUnitQueue&, TextureHolder&);
+	friend void process_enemy_spawn_queue(SpawnUnitQueue&);
 };
 
 bool random(float probability);

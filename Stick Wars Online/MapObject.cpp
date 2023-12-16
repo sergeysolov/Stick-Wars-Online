@@ -1,10 +1,10 @@
 #include "MapObject.h"
 #include "MapObject.h"
 
-MapObject::MapObject(sf::Vector2f spawnpoint, TextureHolder& holder, ID id, AnimationParams animation_params)
+MapObject::MapObject(sf::Vector2f spawnpoint, texture_ID id, AnimationParams animation_params)
 	: x_(spawnpoint.x), y_(spawnpoint.y), animation_params_(animation_params)
 {
-	sprite_.setTexture(holder.get_texture(id));
+	sprite_.setTexture(texture_holder.get_texture(id));
 	sprite_.setTextureRect(sf::IntRect(animation_params.init_position.x, animation_params.init_position.y, animation_params.frame_width, animation_params.frame_height));
 	sprite_.setOrigin({ static_cast<float>(animation_params.frame_width) / 2, 0 });
 	sprite_.setPosition({ x_, y_ });
@@ -50,7 +50,7 @@ void MapObject::set_y_scale()
 }
 
 
-GoldMine::GoldMine(sf::Vector2f position, TextureHolder& holder) : MapObject(position, holder, goldmine, animation_params)
+GoldMine::GoldMine(sf::Vector2f position) : MapObject(position, goldmine, animation_params)
 {
 
 }
@@ -70,8 +70,8 @@ bool GoldMine::empty() const
 	return gold_capacity_ == 0;
 }
 
-Statue::Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_health) :
- MapObject(position, holder, id, animation_params), max_health_(max_health), health_(max_health),
+Statue::Statue(sf::Vector2f position, texture_ID id, float max_health) :
+ MapObject(position, id, animation_params), max_health_(max_health), health_(max_health),
 health_bar_(max_health_, health_, position, Bar<float>::statue_health_bar_size, Bar<float>::statue_health_bar_shift, Bar<float>::health_bar_color) 
 {
 	if (id == enemy_statue)

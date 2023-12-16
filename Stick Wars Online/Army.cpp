@@ -409,7 +409,7 @@ int SpawnUnitQueue::get_army_count() const
 	return army_.get_alive_units_count() + units_queue_.size();
 }
 
-std::optional<ID> SpawnUnitQueue::get_front_unit_id() const
+std::optional<texture_ID> SpawnUnitQueue::get_front_unit_id() const
 {
 	if (units_queue_.empty())
 		return {};
@@ -429,14 +429,14 @@ bool random(const float probability)
 	return distribution(generator) < probability;
 }
 
-void process_enemy_spawn_queue(SpawnUnitQueue& queue, TextureHolder& holder)
+void process_enemy_spawn_queue(SpawnUnitQueue& queue)
 {
 	static const sf::Vector2f enemy_spawn_point = { map_frame_width * 3 + 100, 650 };
 	static constexpr int invoke_enemy_time = 10000;
 
 	if (queue.units_queue_.empty() and queue.get_free_places() >= Swordsman::places_requires)
 	{
-		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, holder, enemy_swordsman), invoke_enemy_time);
+		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), invoke_enemy_time);
 	}
 	if (random(0.0001f))
 	{
@@ -449,6 +449,6 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, TextureHolder& holder)
 	if (random(0.0002f))
 	{
 		for (int i = 0; i < 3 and queue.get_free_places() >= Swordsman::places_requires; ++i)
-			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, holder, enemy_swordsman), 500);
+			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);
 	}
 }

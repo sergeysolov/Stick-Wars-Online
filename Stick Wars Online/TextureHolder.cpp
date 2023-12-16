@@ -1,19 +1,26 @@
 #include "TextureHolder.h"
 
-void TextureHolder::append(const ID id, const char* filepath)
+void TextureHolder::append(const texture_ID id, const char* filepath)
 {
 	sf::Texture temp;
 	temp.loadFromFile(filepath);
 	textures_[id] = temp;
 }
 
-sf::Texture& TextureHolder::get_texture(const ID id)
+sf::Texture& TextureHolder::get_texture(const texture_ID id)
 {
 	return textures_[id];
 }
 
+TextureHolder::TextureHolder()
+{
+	load_textures();
+}
+
 void TextureHolder::load_textures()
 {
+	append(intro, "Images/backgrounds/intro.png");
+
 	append(forest_background, "Images/backgrounds/forest.png");
 	append(large_forest_background, "Images/backgrounds/large_forest.png");
 

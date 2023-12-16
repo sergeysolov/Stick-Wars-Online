@@ -11,7 +11,7 @@ protected:
 	bool pressed_ = false;
 public:
 	virtual ~Button() = default;
-	Button(sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder);
+	Button(sf::Vector2f position, sf::Vector2f scale, texture_ID id);
 	const sf::Sprite& get_sprite() const;
 	virtual void draw(DrawQueue& queue) const;
 	bool check_mouse_pressed(sf::Vector2i mouse_position) const;
@@ -32,15 +32,15 @@ class UnitBuyButton : public Button
 	sf::Text cost_text_;
 
 	int unit_cost_;
-	ID unit_id_;
+	texture_ID unit_id_;
 
 public:
 	inline static const sf::Vector2f spawn_point = { -100, 650 };
 
-	UnitBuyButton(ID unit_id, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder, const sf::Font& font);
+	UnitBuyButton(texture_ID unit_id, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, texture_ID id, const sf::Font& font);
 	void draw(DrawQueue& queue) const override;
 	int get_unit_cost() const;
-	ID get_unit_id() const;
+	texture_ID get_unit_id() const;
 	void press() override;
 	void process_button(int elapsed_time);
 };
@@ -64,7 +64,7 @@ class UserInterface
 	bool process_unit_buy_buttons(sf::Vector2i mouse_position) const;
 public:
 
-	UserInterface(TextureHolder& holder, int& money, const float& camera_position, Army& army, SpawnUnitQueue& spawn_queue);
+	UserInterface(int& money, const float& camera_position, Army& army, SpawnUnitQueue& spawn_queue);
 
 	bool process_left_mouse_button_press(sf::Vector2i mouse_position) const;
 	void update(sf::Time delta_time);
@@ -75,6 +75,5 @@ protected:
 	const float& camera_position_;
 	Army& army_;
 	SpawnUnitQueue& spawn_queue_;
-	TextureHolder& texture_holder_;
 };
 

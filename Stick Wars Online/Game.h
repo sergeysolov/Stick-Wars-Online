@@ -54,7 +54,7 @@ public:
 	void draw(DrawQueue& queue);
 	void heal() const;
 
-	ControlledUnit(TextureHolder& holder, const std::shared_ptr<Unit>& unit);
+	ControlledUnit(const std::shared_ptr<Unit>& unit);
 
 	ControlledUnit& operator=(const std::shared_ptr<Unit>& new_unit);
 };
@@ -63,7 +63,6 @@ class Game
 {
 	sf::RenderWindow main_window_;
 	DrawQueue draw_queue_;
-	TextureHolder texture_holder_;
 	sf::Sprite background_sprite_;
 
 	float camera_position_ = start_camera_position;
@@ -93,10 +92,10 @@ class Game
 
 	sf::Clock clock_;
 
-	void draw();
 	void process_events();
-	void handle_inputs(sf::Time delta_time);
-	void process_internal_actions(sf::Time delta_time);
+	void handle_input(sf::Time delta_time);
+	void update(sf::Time delta_time);
+	void draw();
 
 	void move_camera(float step);
 	void set_objects_screen_place() const;

@@ -28,7 +28,7 @@ public:
 		{}
 	};
 
-	MapObject(sf::Vector2f spawnpoint, TextureHolder& holder, ID id, AnimationParams animation_params);
+	MapObject(sf::Vector2f spawnpoint, texture_ID id, AnimationParams animation_params);
 	virtual ~MapObject() = default;
 
 	const sf::Sprite& get_sprite() const;
@@ -68,7 +68,7 @@ public:
 
 	const inline static AnimationParams animation_params = AnimationParams({ 0, 0 }, 538, 960, 10, { 0.2f, 0.2f });
 
-	GoldMine(sf::Vector2f position, TextureHolder& holder);
+	GoldMine(sf::Vector2f position);
 
 	int mine(int gold_count);
 	bool empty() const;
@@ -92,7 +92,7 @@ public:
 	inline const static sf::Vector2f my_statue_position = { 500, 450 };
 	inline const static sf::Vector2f enemy_statue_position = { map_frame_width * 3 - 800, 450 };
 
-	Statue(sf::Vector2f position, TextureHolder& holder, ID id, float max_health);
+	Statue(sf::Vector2f position, texture_ID id, float max_health);
 
 	void cause_damage(float damage);
 	void draw(DrawQueue& queue) const override;

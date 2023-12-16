@@ -1,7 +1,7 @@
 #include "Units.h"
 
-Unit::Unit(TextureHolder& holder, ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
-	MapObject(spawn_point, holder, id, animation_params), health_(health), max_health_(health), max_speed_x_(speed), damage_(damage),
+Unit::Unit(texture_ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
+	MapObject(spawn_point, id, animation_params), health_(health), max_health_(health), max_speed_x_(speed), damage_(damage),
 	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
 {	}
 
@@ -231,8 +231,8 @@ void Unit::commit_attack()
 	cumulative_time_++;
 }
 
-Miner::Miner(sf::Vector2f spawn_point, TextureHolder& holder, ID id)
-	: Unit(holder, id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params),
+Miner::Miner(sf::Vector2f spawn_point, texture_ID id)
+	: Unit(id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params),
 	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_health_bar_size, Bar<int>::miner_gold_count_bar_shift, Bar<int>::miner_gold_bar_color)
 {
 	
@@ -282,13 +282,13 @@ int Miner::get_places_requires() const
 	return places_requires;
 }
 
-ID Miner::get_id() const
+texture_ID Miner::get_id() const
 {
 	return texture_id;
 }
 
-Swordsman::Swordsman(sf::Vector2f spawn_point, TextureHolder& holder, ID id)
-	: Unit(holder, id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params)
+Swordsman::Swordsman(sf::Vector2f spawn_point, texture_ID id)
+	: Unit(id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params)
 {	}
 
 int Swordsman::get_places_requires() const
@@ -296,7 +296,7 @@ int Swordsman::get_places_requires() const
 	return places_requires;
 }
 
-ID Swordsman::get_id() const
+texture_ID Swordsman::get_id() const
 {
 	return texture_id;
 }

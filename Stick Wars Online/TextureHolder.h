@@ -2,8 +2,10 @@
 #include <unordered_map>
 #include <SFML/Graphics.hpp>
 
-enum ID
+enum texture_ID
 {
+	intro,
+
 	forest_background,
 	large_forest_background,
 
@@ -30,12 +32,14 @@ enum ID
 
 class TextureHolder
 {
-	void append(ID id, const char* filepath);
-public:
-	sf::Texture& get_texture(ID id);
-
+	void append(texture_ID id, const char* filepath);
 	void load_textures();
+public:
+	sf::Texture& get_texture(texture_ID id);
+	TextureHolder();
+	
 private:
-	std::unordered_map<ID, sf::Texture> textures_;
+	std::unordered_map<texture_ID, sf::Texture> textures_;
 };
 
+inline TextureHolder texture_holder;

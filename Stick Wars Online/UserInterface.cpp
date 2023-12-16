@@ -1,8 +1,8 @@
 #include "UserInterface.h"
 
-Button::Button(sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder)
+Button::Button(sf::Vector2f position, sf::Vector2f scale, texture_ID id)
 {
-	sprite_.setTexture(holder.get_texture(id));
+	sprite_.setTexture(texture_holder.get_texture(id));
 	sprite_.setPosition(position);
 	sprite_.setScale(scale);
 }
@@ -34,8 +34,8 @@ bool Button::is_pressed()
 	return temp;
 }
 
-UnitBuyButton::UnitBuyButton(ID unit_id, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, ID id, TextureHolder& holder, const sf::Font& font)
-	: Button(position, scale, id, holder), wait_time_(wait_time), unit_cost_(unit_cost), unit_id_(unit_id)
+UnitBuyButton::UnitBuyButton(texture_ID unit_id, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, texture_ID id, const sf::Font& font)
+	: Button(position, scale, id), wait_time_(wait_time), unit_cost_(unit_cost), unit_id_(unit_id)
 {
 	time_bar_.setPosition({ position.x + 3, position.y + 100 });
 	time_bar_.setFillColor(sf::Color::Cyan);
@@ -45,7 +45,7 @@ UnitBuyButton::UnitBuyButton(ID unit_id, int unit_cost, int wait_time, sf::Vecto
 	count_text_.setFillColor(sf::Color::Black);
 	count_text_.setPosition({ position.x + 10, position.y + 50 });
 
-	gold_icon_.setTexture(holder.get_texture(gold));
+	gold_icon_.setTexture(texture_holder.get_texture(gold));
 	gold_icon_.setScale({ 0.04f, 0.04f });
 	gold_icon_.setPosition({ position.x + 5, position.y + 10 });
 
@@ -78,7 +78,7 @@ int UnitBuyButton::get_unit_cost() const
 	return unit_cost_;
 }
 
-ID UnitBuyButton::get_unit_id() const
+texture_ID UnitBuyButton::get_unit_id() const
 {
 	return unit_id_;
 }
@@ -107,12 +107,12 @@ bool UserInterface::process_unit_buy_buttons(const sf::Vector2i mouse_position) 
 			bool unit_added = false;
 			if (unit_button->get_unit_id() == Miner::texture_id and spawn_queue_.get_free_places() >= Miner::places_requires)
 			{
-				spawn_queue_.put_unit(std::make_shared<Miner>(UnitBuyButton::spawn_point, texture_holder_, unit_button->get_unit_id()), Miner::wait_time);
+				spawn_queue_.put_unit(std::make_shared<Miner>(UnitBuyButton::spawn_point, unit_button->get_unit_id()), Miner::wait_time);
 				unit_added = true;
 			}
 			else if (unit_button->get_unit_id() == Swordsman::texture_id and spawn_queue_.get_free_places() >= Swordsman::places_requires)
 			{
-				spawn_queue_.put_unit(std::make_shared<Swordsman>(UnitBuyButton::spawn_point, texture_holder_, unit_button->get_unit_id()), Swordsman::wait_time);
+				spawn_queue_.put_unit(std::make_shared<Swordsman>(UnitBuyButton::spawn_point, unit_button->get_unit_id()), Swordsman::wait_time);
 				unit_added = true;
 			}
 
@@ -127,10 +127,10 @@ bool UserInterface::process_unit_buy_buttons(const sf::Vector2i mouse_position) 
 	return false;
 }
 
-UserInterface::UserInterface(TextureHolder& holder, int& money, const float& camera_position, Army& army, SpawnUnitQueue& spawn_queue) :
-	money_(money), camera_position_(camera_position), army_(army), spawn_queue_(spawn_queue), texture_holder_(holder)
+UserInterface::UserInterface(int& money, const float& camera_position, Army& army, SpawnUnitQueue& spawn_queue) :
+	money_(money), camera_position_(camera_position), army_(army), spawn_queue_(spawn_queue)
 {
-	gold_sprite_.setTexture(holder.get_texture(gold));
+	gold_sprite_.setTexture(texture_holder.get_texture(gold));
 	gold_sprite_.setPosition({ 20, 20 });
 	gold_sprite_.setScale({ 0.1, 0.1 });
 
@@ -138,7 +138,7 @@ UserInterface::UserInterface(TextureHolder& holder, int& money, const float& cam
 	money_count_text_.setFont(text_font_);
 	money_count_text_.setPosition(20, 70);
 
-	stick_man_.setTexture(holder.get_texture(stick_man));
+	stick_man_.setTexture(texture_holder.get_texture(stick_man));
 	stick_man_.setScale({ 0.25, 0.25 });
 	stick_man_.setPosition({ 35, 120 });
 
@@ -149,12 +149,12 @@ UserInterface::UserInterface(TextureHolder& holder, int& money, const float& cam
 	camera_position_text_.setPosition(1800, 10);
 
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(my_miner, Miner::cost, Miner::wait_time, sf::Vector2f{ 130, 20 }, sf::Vector2f{ 0.15f, 0.15f },
-		miner_buy_button, holder, text_font_));
+	miner_buy_button, text_font_));
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(my_swordsman, Swordsman::cost, Swordsman::wait_time, sf::Vector2f{ 230, 20 }, sf::Vector2f{ 0.15f, 0.15f },
-		swordsman_buy_button, holder, text_font_));
+		swordsman_buy_button, text_font_));
 
-	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button, holder));
-	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, in_attack_button, holder));
+	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button));
+	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, in_attack_button));
 }
 
 bool UserInterface::process_left_mouse_button_press(const sf::Vector2i mouse_position) const
