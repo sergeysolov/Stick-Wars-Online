@@ -25,6 +25,7 @@ enum texture_ID
 
 	my_miner,
 	enemy_miner,
+
 	my_swordsman,
 	enemy_swordsman
 };

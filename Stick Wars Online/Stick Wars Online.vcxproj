@@ -133,9 +133,11 @@
     <ClCompile Include="Game.cpp">
       <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdcpp20</LanguageStandard>
     </ClCompile>
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MapObject.cpp" />
-    <ClCompile Include="StatusManager.cpp" />
+    <ClCompile Include="PlayState.cpp" />
+    <ClCompile Include="StateManager.cpp" />
     <ClCompile Include="TextureHolder.cpp" />
     <ClCompile Include="Units.cpp" />
     <ClCompile Include="UserInterface.cpp" />
@@ -146,10 +148,13 @@
   <ItemGroup>
     <ClInclude Include="Army.h" />
     <ClInclude Include="Attributes.h" />
+    <ClInclude Include="BaseState.h" />
     <ClInclude Include="DrawQueue.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="MapObject.h" />
-    <ClInclude Include="StatusManager.h" />
+    <ClInclude Include="PlayState.h" />
+    <ClInclude Include="StateManager.h" />
     <ClInclude Include="TextureHolder.h" />
     <ClInclude Include="Units.h" />
     <ClInclude Include="UserInterface.h" />

@@ -4,6 +4,8 @@
 #include <random>
 #include <ranges>
 
+#include "PlayState.h"
+
 Army::Army(const float army_defend_line, const bool is_ally_army) : is_ally_army_(is_ally_army)
 {
 	if(is_ally_army)
