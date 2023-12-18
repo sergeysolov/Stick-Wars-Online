@@ -86,8 +86,8 @@ class Statue : public MapObject
 	Bar<float> health_bar_;
 public:
 	inline const static AnimationParams animation_params = AnimationParams({ 0, 0 }, 817, 261, 1, { 1.f, 1.f });
-	constexpr static float my_max_health = 5000.0f;
-	constexpr static float enemy_max_health = 6000.0f; //12000
+	constexpr static float my_max_health = 50000.0f;
+	constexpr static float enemy_max_health = 60000.0f; //12000
 
 	inline const static sf::Vector2f my_statue_position = { 500, 450 };
 	inline const static sf::Vector2f enemy_statue_position = { map_frame_width * 3 - 800, 450 };
@@ -97,4 +97,6 @@ public:
 	void cause_damage(float damage);
 	void draw(DrawQueue& queue) const override;
 	void set_screen_place(float camera_position) override;
+	bool is_destroyed() const;
+	float get_health() const;
 };

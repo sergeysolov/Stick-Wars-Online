@@ -4,6 +4,8 @@
 
 enum texture_ID
 {
+	none,
+
 	intro,
 
 	forest_background,
@@ -15,6 +17,7 @@ enum texture_ID
 	stick_man,
 	in_attack_button,
 	defend_button,
+	pause_button,
 
 	star,
 
@@ -44,3 +47,5 @@ private:
 };
 
 inline TextureHolder texture_holder;
+
+inline sf::Font text_font;

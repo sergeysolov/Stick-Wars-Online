@@ -18,7 +18,7 @@ class Game
 
 	void draw();
 public:
-	Game(uint16_t width, uint16_t height, const char* title);
+	Game(unsigned width, unsigned height, const char* title);
 	int run();
 };
 

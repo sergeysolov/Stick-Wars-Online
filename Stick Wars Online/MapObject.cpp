@@ -96,3 +96,13 @@ void Statue::set_screen_place(const float camera_position)
 	health_bar_.set_position({x_-camera_position, y_});
 }
 
+bool Statue::is_destroyed() const
+{
+	return health_ <= 0;
+}
+
+float Statue::get_health() const
+{
+	return health_;
+}
+

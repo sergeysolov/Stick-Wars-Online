@@ -133,10 +133,13 @@
     <ClCompile Include="Game.cpp">
       <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdcpp20</LanguageStandard>
     </ClCompile>
+    <ClCompile Include="GameOverState.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MainMenuState.cpp" />
     <ClCompile Include="MapObject.cpp" />
     <ClCompile Include="PlayState.cpp" />
+    <ClCompile Include="SoundBufHolder.cpp" />
     <ClCompile Include="StateManager.cpp" />
     <ClCompile Include="TextureHolder.cpp" />
     <ClCompile Include="Units.cpp" />
@@ -151,9 +154,13 @@
     <ClInclude Include="BaseState.h" />
     <ClInclude Include="DrawQueue.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameOverState.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="IPlayState.h" />
+    <ClInclude Include="MainMenuState.h" />
     <ClInclude Include="MapObject.h" />
     <ClInclude Include="PlayState.h" />
+    <ClInclude Include="SoundBufHolder.h" />
     <ClInclude Include="StateManager.h" />
     <ClInclude Include="TextureHolder.h" />
     <ClInclude Include="Units.h" />

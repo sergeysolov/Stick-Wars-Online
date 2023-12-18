@@ -20,9 +20,8 @@ void PlayState::move_camera(const float step)
 	background_sprite_.setTextureRect({ static_cast<int>(camera_position_), 0, static_cast<int>(map_frame_width), 1050 });
 }
 
-PlayState::PlayState() : enemy_army_(Army::enemy_defend_line, false)
+PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), enemy_army_(Army::enemy_defend_line, false)
 {
-
 	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
 
@@ -45,10 +44,10 @@ PlayState::PlayState() : enemy_army_(Army::enemy_defend_line, false)
 	for (const auto goldmine_position : GoldMine::goldmine_positions)
 		gold_mines_.emplace_back(new GoldMine(goldmine_position));
 
-	user_interface_ = std::make_unique<UserInterface>(money_, camera_position_, armies_[0], *my_spawn_queue_);
+	user_interface_ = std::make_unique<UserInterface>(*this);
 }
 
-void PlayState::update(sf::Time delta_time)
+void PlayState::update(const sf::Time delta_time)
 {
 	// handle money increment
 	timer_money_increment_ += delta_time.asMilliseconds();
@@ -70,11 +69,16 @@ void PlayState::update(sf::Time delta_time)
 	enemy_spawn_queue_->process(delta_time);
 
 	if (enemy_behaviour == 0)
-		process_enemy_spawn_queue(*enemy_spawn_queue_);
+		process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
 
 	enemy_army_.process(armies_[0], my_statue_, nullptr, gold_mines_, delta_time);
 
 	set_objects_screen_place();
+
+	if (my_statue_->is_destroyed())
+		state_manager_.switch_state(lose_menu);
+	else if (enemy_statue_->is_destroyed())
+		state_manager_.switch_state(victory_menu);
 }
 
 void PlayState::handle_input(Input& input, const sf::Time delta_time)
@@ -147,6 +151,31 @@ void PlayState::draw(DrawQueue& draw_queue)
 	controlled_unit_->draw(draw_queue);
 
 	user_interface_->draw(draw_queue);
+}
+
+float PlayState::get_camera_position() const
+{
+	return camera_position_;
+}
+
+int& PlayState::get_money_count()
+{
+	return money_;
+}
+
+SpawnUnitQueue& PlayState::get_SpawnQueue() const
+{
+	return *my_spawn_queue_;
+}
+
+Army& PlayState::get_Army()
+{
+	return armies_[0];
+}
+
+StateManager& PlayState::get_StateManager() const
+{
+	return state_manager_;
 }
 
 ControlledUnit::ControlledUnit(const std::shared_ptr<Unit>& unit)

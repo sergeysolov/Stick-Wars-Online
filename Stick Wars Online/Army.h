@@ -76,11 +76,11 @@ public:
 	[[nodiscard]] int get_free_places() const;
 
 	[[nodiscard]] int get_army_count() const;
-	[[nodiscard]] std::optional<texture_ID> get_front_unit_id() const;
+	[[nodiscard]] std::optional<int> get_front_unit_id() const;
 
-	friend void process_enemy_spawn_queue(SpawnUnitQueue&);
+	friend void process_enemy_spawn_queue(SpawnUnitQueue&, const Statue&);
 };
 
 bool random(float probability);
 
-void process_enemy_spawn_queue(SpawnUnitQueue& queue, TextureHolder& holder);
+void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue);

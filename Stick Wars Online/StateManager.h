@@ -7,9 +7,12 @@
 
 #include "BaseState.h"
 #include "PlayState.h"
+#include "MainMenuState.h"
+#include "GameOverState.h"
 
 enum StateType
 {
+	to_exit,
 	main_menu,
 	play,
 	pause,
@@ -19,20 +22,21 @@ enum StateType
 
 class StateManager
 {
-	std::unordered_map<StateType, std::function<BaseState*()>> state_factory_;
-	std::unique_ptr<BaseState> current_state_ = nullptr;
-
 	template<class T>
-	void register_state(const StateType& state);
+	void register_state(StateType state);
+	std::unordered_map<StateType, std::function<BaseState*()>> state_factory_;
 
+	sf::RenderWindow& window_;
+
+	std::vector<std::pair<StateType, std::unique_ptr<BaseState>>> states_;
 public:
-	StateManager();
+	StateManager(sf::RenderWindow& window);
 
 	void switch_state(StateType state);
 
+	void handle_input(Input& input, sf::Time delta_time) const;
 	void update(sf::Time delta_time) const;
 	void draw(DrawQueue& draw_queue) const;
-	void handle_input(Input& input, sf::Time delta_time) const;
 };
 
 

@@ -1,14 +1,14 @@
 #include "Game.h"
 
-Game::Game(const uint16_t width, const uint16_t height, const char* title)
-	: main_window_(sf::VideoMode(width, height), title)
+Game::Game(const unsigned width, const unsigned height, const char* title)
+	: main_window_(sf::VideoMode(width, height), title), state_manager_(main_window_)
 {
 }
 
 int Game::run()
 {
 	main_window_.setFramerateLimit(120);
-	state_manager_.switch_state(play);
+	state_manager_.switch_state(main_menu);
 	while (main_window_.isOpen())
 	{
 		const sf::Time delta_time = clock_.restart();
@@ -27,7 +27,9 @@ int Game::run()
 void Game::draw()
 {
 	main_window_.clear();
+
 	state_manager_.draw(draw_queue_);
+
 	while (not draw_queue_.empty())
 	{
 		main_window_.draw(*draw_queue_.top().object);

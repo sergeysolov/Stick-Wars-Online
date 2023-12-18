@@ -6,6 +6,7 @@
 class BaseState
 {
 public:
+	virtual ~BaseState() = default;
 	virtual void update(sf::Time delta_time) = 0;
 	virtual void handle_input(Input& input, sf::Time delta_time) = 0;
 	virtual void draw(DrawQueue& draw_queue) = 0;

@@ -3,7 +3,10 @@
 Unit::Unit(texture_ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
 	MapObject(spawn_point, id, animation_params), health_(health), max_health_(health), max_speed_x_(speed), damage_(damage),
 	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
-{	}
+{
+	kill_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_kill));
+	damage_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_damage));
+}
 
 float Unit::get_max_health() const
 {
@@ -46,6 +49,8 @@ void Unit::cause_damage(const float damage, const int direction)
 	health_ = std::clamp(health_ - damage, 0.f, max_health_);
 	push(direction);
 	health_bar_.update();
+	if (damage > 0)
+		damage_sound_.play();
 	if (health_ <= 0)
 		kill();
 }
@@ -189,6 +194,8 @@ void Unit::kill()
 	animation_type_ = die_animation;
 	cumulative_time_++;
 	dead_ = true;
+
+	kill_sound_.play();
 }
 
 void Unit::push(const int direction)
@@ -282,22 +289,41 @@ int Miner::get_places_requires() const
 	return places_requires;
 }
 
-texture_ID Miner::get_id() const
+int Miner::get_wait_time() const
 {
-	return texture_id;
+	return wait_time;
+}
+
+int Miner::get_id() const
+{
+	return id;
 }
 
 Swordsman::Swordsman(sf::Vector2f spawn_point, texture_ID id)
 	: Unit(id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params)
-{	}
+{
+	hit_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_hit));
+}
+
+void Swordsman::commit_attack()
+{
+	Unit::commit_attack();
+	hit_sound_.play();
+}
 
 int Swordsman::get_places_requires() const
 {
 	return places_requires;
 }
 
-texture_ID Swordsman::get_id() const
+int Swordsman::get_wait_time() const
 {
-	return texture_id;
+	return wait_time;
 }
+
+int Swordsman::get_id() const
+{
+	return id;
+}
+
 

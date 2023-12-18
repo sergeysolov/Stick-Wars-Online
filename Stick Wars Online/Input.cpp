@@ -1,6 +1,5 @@
 #include "Input.h"
 
-
 void Input::process_events(sf::RenderWindow& window)
 {
 	auto key_manage = [&](const sf::Event event, const bool is_pressed)

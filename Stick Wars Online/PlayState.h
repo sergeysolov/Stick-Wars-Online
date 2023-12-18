@@ -3,6 +3,8 @@
 #include "MapObject.h"
 #include "Units.h"
 #include "UserInterface.h"
+#include "StateManager.h"
+#include "IPlayState.h"
 
 constexpr float max_camera_position = map_frame_width * 2;
 constexpr float min_camera_position = 0;
@@ -21,7 +23,7 @@ class ControlledUnit
 
 public:
 	static constexpr float speed_boost_factor = 1.5f;
-	static constexpr float damage_boost_factor = 2.f;
+	static constexpr float damage_boost_factor = 5.f;
 
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
 	void release();
@@ -33,16 +35,19 @@ public:
 	ControlledUnit& operator=(const std::shared_ptr<Unit>& new_unit);
 };
 
+class StateManager;
+class UserInterface;
 
-class PlayState : public BaseState
+class PlayState : public IPlayState
 {
+	StateManager& state_manager_;
 	sf::Sprite background_sprite_;
 
 	float camera_position_ = start_camera_position;
 
 	std::unique_ptr<UserInterface> user_interface_;
 
-	int money_ = 400;
+	int money_ = 500;
 
 	int timer_money_increment_ = 0;
 	static constexpr int time_money_increment = 10000;
@@ -64,10 +69,16 @@ class PlayState : public BaseState
 	void set_objects_screen_place() const;
 
 public:
-	PlayState();
+	explicit PlayState(StateManager& state_manager);
 
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;
 	void draw(DrawQueue& draw_queue) override;
+
+	float get_camera_position() const override;
+	int& get_money_count() override;
+	SpawnUnitQueue& get_SpawnQueue() const override;
+	Army& get_Army() override;
+	StateManager& get_StateManager() const override;
 };
 

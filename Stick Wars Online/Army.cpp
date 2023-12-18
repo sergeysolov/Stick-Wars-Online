@@ -288,7 +288,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			nearest_enemy->get()->cause_damage(unit->get_damage() * damage_multiplier, unit->get_direction());
 		}
   		else if(can_attack_statue == 1)
-  			enemy_statue->cause_damage(unit->get_damage());
+  			enemy_statue->cause_damage(unit->get_damage() * (unit == controlled_unit ? ControlledUnit::damage_boost_factor : 1.f));
 	}
 
 	if (unit == controlled_unit)
@@ -411,7 +411,7 @@ int SpawnUnitQueue::get_army_count() const
 	return army_.get_alive_units_count() + units_queue_.size();
 }
 
-std::optional<texture_ID> SpawnUnitQueue::get_front_unit_id() const
+std::optional<int> SpawnUnitQueue::get_front_unit_id() const
 {
 	if (units_queue_.empty())
 		return {};
@@ -431,26 +431,31 @@ bool random(const float probability)
 	return distribution(generator) < probability;
 }
 
-void process_enemy_spawn_queue(SpawnUnitQueue& queue)
+void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue)
 {
 	static const sf::Vector2f enemy_spawn_point = { map_frame_width * 3 + 100, 650 };
-	static constexpr int invoke_enemy_time = 10000;
+	static constexpr int invoke_enemy_time = 8000;
 
 	if (queue.units_queue_.empty() and queue.get_free_places() >= Swordsman::places_requires)
 	{
 		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), invoke_enemy_time);
 	}
-	if (random(0.0001f))
+	if (queue.army_.get_units().size() > Army::army_max_size - 5)
 	{
 		queue.army_.set_army_target(Army::attack);
 	}
-	else if (random(0.00005f))
+	else if (queue.army_.get_units().size() < 15)
 	{
 		queue.army_.set_army_target(Army::defend);
 	}
-	if (random(0.0002f))
+	if (random(0.0008f))
 	{
-		for (int i = 0; i < 3 and queue.get_free_places() >= Swordsman::places_requires; ++i)
+		int count = 3;
+		if (enemy_statue.get_health() < Statue::enemy_max_health / 2)
+			count += 3;
+		if (enemy_statue.get_health() < Statue::enemy_max_health / 4)
+			count += 3;
+		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);
 	}
 }

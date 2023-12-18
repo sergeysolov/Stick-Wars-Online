@@ -4,7 +4,8 @@
 
 int main()
 {
-	Game game(1920, 1080, "Stick Wars Online");
+	text_font.loadFromFile("Images/fonts/textfont.ttf");
+	Game game(sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height, "Stick Wars Online");
 	game.run();
 	return 0;
 }

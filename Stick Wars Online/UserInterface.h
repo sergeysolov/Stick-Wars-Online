@@ -1,26 +1,37 @@
 #pragma once
+#include <functional>
+
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include "TextureHolder.h"
 #include "Army.h"
+#include "PlayState.h"
+#include "IPlayState.h"
+
 
 class Button
 {
 protected:
-	sf::Sprite sprite_;
+	sf::RectangleShape rectangle_;
+	sf::Text text_;
 	bool pressed_ = false;
 public:
 	virtual ~Button() = default;
-	Button(sf::Vector2f position, sf::Vector2f scale, texture_ID id);
-	const sf::Sprite& get_sprite() const;
+
+	Button(sf::Vector2f position, sf::Vector2f sprite_scale, texture_ID sprite_id);
+	Button(sf::Vector2f position, sf::Vector2f rectangle_size, sf::Color rectangle_color);
+
+	sf::Text& get_text();
 	virtual void draw(DrawQueue& queue) const;
-	bool check_mouse_pressed(sf::Vector2i mouse_position) const;
+	[[nodiscard]] virtual bool check_mouse_pressed(sf::Vector2i mouse_position) const;
 	virtual void press();
 	bool is_pressed();
 };
 
+
 class UnitBuyButton : public Button
 {
+
 	sf::RectangleShape time_bar_;
 	const sf::Vector2f bar_size_ = { 85, 5 };
 
@@ -29,51 +40,47 @@ class UnitBuyButton : public Button
 
 	sf::Text count_text_;
 	sf::Sprite gold_icon_;
-	sf::Text cost_text_;
 
 	int unit_cost_;
-	texture_ID unit_id_;
 
+	std::function<Unit*()> unit_creation_;
 public:
+
 	inline static const sf::Vector2f spawn_point = { -100, 650 };
 
-	UnitBuyButton(texture_ID unit_id, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, texture_ID id, const sf::Font& font);
+	UnitBuyButton(std::function<Unit*()> unit_creation, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, texture_ID id);
 	void draw(DrawQueue& queue) const override;
 	int get_unit_cost() const;
-	texture_ID get_unit_id() const;
 	void press() override;
 	void process_button(int elapsed_time);
+	Unit* create_unit() const;
 };
-
 
 class UserInterface
 {
 	sf::Sprite gold_sprite_;
 	sf::Sprite stick_man_;
 
-	sf::Font text_font_;
-
 	sf::Text army_count_text_;
 	sf::Text money_count_text_;
 	sf::Text camera_position_text_;
 
 	std::vector<std::unique_ptr<UnitBuyButton>> unit_buy_buttons_;
-	std::unique_ptr<Button> in_attack_button_ = nullptr;
-	std::unique_ptr<Button> defend_button_ = nullptr;
+	std::unique_ptr<Button> in_attack_button_;
+	std::unique_ptr<Button> defend_button_;
+
+	std::unique_ptr<Button> pause_button_;
 
 	bool process_unit_buy_buttons(sf::Vector2i mouse_position) const;
 public:
 
-	UserInterface(int& money, const float& camera_position, Army& army, SpawnUnitQueue& spawn_queue);
+	UserInterface(IPlayState& play_state);
 
 	bool process_left_mouse_button_press(sf::Vector2i mouse_position) const;
 	void update(sf::Time delta_time);
 	void draw(DrawQueue& queue) const;
 
 protected:
-	int& money_;
-	const float& camera_position_;
-	Army& army_;
-	SpawnUnitQueue& spawn_queue_;
+	IPlayState& game_;
 };
 

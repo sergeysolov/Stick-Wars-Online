@@ -7,6 +7,7 @@
 #include "TextureHolder.h"
 #include "MapObject.h"
 #include "Attributes.h"
+#include "SoundBufHolder.h"
 
 class Unit : public MapObject
 {	
@@ -20,6 +21,9 @@ public:
 	};
 	
 protected:
+	sf::Sound kill_sound_;
+	sf::Sound damage_sound_;
+
 	float health_;
 	const float max_health_;
 	sf::Vector2f speed_ = { 0.f, 0.f };
@@ -53,14 +57,14 @@ public:
 	Unit(texture_ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params);
 	~Unit() override = default;
 
-	virtual texture_ID get_id() const = 0;
-
+	virtual int get_id() const = 0;
 	sf::Vector2f get_speed() const;
 	int get_direction() const;
 	float get_attack_distance() const;
 	float get_damage() const;
 	virtual int get_places_requires() const = 0;
 	float get_max_health() const;
+	virtual int get_wait_time() const = 0;
 
 	void show_animation(int delta_time);
 
@@ -88,7 +92,7 @@ class Miner : public Unit
 	int gold_count_in_bag_ = 0;
 	Bar<int> gold_count_bar_;
 public:
-	static constexpr texture_ID texture_id = my_miner;
+	constexpr static int id = 0;
 	constexpr static int places_requires = 1;
 	constexpr static float max_health = 100;
 	constexpr static float speed = 0.2f;
@@ -114,14 +118,16 @@ public:
 	int flush_bag();
 
 	int get_places_requires() const override;
-	texture_ID get_id() const override;
+	int get_wait_time() const override;
+	int get_id() const override;
 };
 
 
 class Swordsman : public Unit
 {
+	sf::Sound hit_sound_;
 public:
-	static constexpr texture_ID texture_id = my_swordsman;
+	constexpr static int id = 1;
 	constexpr static int places_requires = 1;
 	constexpr static float max_health = 300;
 	constexpr static float speed = 0.3f;
@@ -134,6 +140,9 @@ public:
 	Swordsman(sf::Vector2f spawn_point, texture_ID id);
 	~Swordsman() override = default;
 
+	void commit_attack() override;
+
 	int get_places_requires() const override;
-	texture_ID get_id() const override;
+	int get_wait_time() const override;
+	int get_id() const override;
 };
