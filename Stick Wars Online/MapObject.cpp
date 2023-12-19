@@ -1,7 +1,7 @@
 #include "MapObject.h"
 #include "MapObject.h"
 
-MapObject::MapObject(sf::Vector2f spawnpoint, texture_ID id, AnimationParams animation_params)
+MapObject::MapObject(const sf::Vector2f spawnpoint, texture_ID id, const AnimationParams& animation_params)
 	: x_(spawnpoint.x), y_(spawnpoint.y), animation_params_(animation_params)
 {
 	sprite_.setTexture(texture_holder.get_texture(id));

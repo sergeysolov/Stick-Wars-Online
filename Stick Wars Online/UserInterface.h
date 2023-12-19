@@ -6,8 +6,6 @@
 #include "TextureHolder.h"
 #include "Army.h"
 #include "PlayState.h"
-#include "IPlayState.h"
-
 
 class Button
 {
@@ -56,6 +54,9 @@ public:
 	Unit* create_unit() const;
 };
 
+class Player;
+class StateManager;
+
 class UserInterface
 {
 	sf::Sprite gold_sprite_;
@@ -74,13 +75,14 @@ class UserInterface
 	bool process_unit_buy_buttons(sf::Vector2i mouse_position) const;
 public:
 
-	UserInterface(IPlayState& play_state);
+	UserInterface(Player& player, StateManager& state_manager);
 
 	bool process_left_mouse_button_press(sf::Vector2i mouse_position) const;
-	void update(sf::Time delta_time);
+	void update(sf::Time delta_time, float camera_position);
 	void draw(DrawQueue& queue) const;
 
 protected:
-	IPlayState& game_;
+	Player& player_;
+	StateManager& state_manager_;
 };
 

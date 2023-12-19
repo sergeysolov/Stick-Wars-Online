@@ -25,7 +25,7 @@ public:
 
 	constexpr static int army_max_size = 40;
 
-	constexpr static float defend_line_1 = 900;
+	constexpr static std::array<float, 3> defend_lines = { 900, 1500, 2300 };
 	constexpr static float enemy_defend_line = map_frame_width * 3 - 600;
 
 	Army(float army_defend_line, bool is_ally_army);

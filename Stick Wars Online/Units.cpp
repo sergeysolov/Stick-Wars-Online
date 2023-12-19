@@ -1,16 +1,10 @@
 #include "Units.h"
 
-Unit::Unit(texture_ID id, sf::Vector2f spawn_point, float health, float speed, float damage, float attack_distance, int spawn_time, AnimationParams animation_params) :
-	MapObject(spawn_point, id, animation_params), health_(health), max_health_(health), max_speed_x_(speed), damage_(damage),
-	attack_distance_(attack_distance), health_bar_(max_health_, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
+Unit::Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params) :
+	MapObject(spawn_point, id, animation_params), health_(health), health_bar_(health, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
 {
 	kill_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_kill));
 	damage_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_damage));
-}
-
-float Unit::get_max_health() const
-{
-	return max_health_;
 }
 
 void Unit::show_animation(const int delta_time)
@@ -46,7 +40,7 @@ void Unit::show_animation(const int delta_time)
 
 void Unit::cause_damage(const float damage, const int direction)
 {
-	health_ = std::clamp(health_ - damage, 0.f, max_health_);
+	health_ = std::clamp(health_ - damage, 0.f, get_max_health());
 	push(direction);
 	health_bar_.update();
 	if (damage > 0)
@@ -111,16 +105,6 @@ int Unit::get_direction() const
 	return prev_direction_;
 }
 
-float Unit::get_attack_distance() const
-{
-	return attack_distance_;
-}
-
-float Unit::get_damage() const
-{
-	return damage_;
-}
-
 void Unit::set_screen_place(const float camera_position)
 {
 	MapObject::set_screen_place(camera_position);
@@ -177,8 +161,8 @@ void Unit::move(const sf::Vector2i direction, const sf::Time time)
 
 	was_move_ = { direction.x != 0, direction.y != 0 };
 
-	speed_.x = std::clamp(speed_.x + time.asMilliseconds() * acceleration * direction.x, -max_speed_x_, max_speed_x_);
-	speed_.y = std::clamp(speed_.y + time.asMilliseconds() * acceleration * direction.y, -max_speed_y, max_speed_y);
+	speed_.x = std::clamp(speed_.x + time.asMilliseconds() * acceleration * direction.x, -get_max_speed().x, get_max_speed().x);
+	speed_.y = std::clamp(speed_.y + time.asMilliseconds() * acceleration * direction.y, -get_max_speed().y, get_max_speed().y);
 
 	if (direction.x != 0 and direction.x != prev_direction_)
 	{
@@ -222,7 +206,7 @@ void Unit::draw(DrawQueue& queue) const
 	if (is_alive())
 	{
 		queue.emplace(alive_units, &sprite_);
-		if (abs(health_ - max_health_) > 1e-5)
+		if (abs(health_ - get_max_health()) > 1e-5)
 			health_bar_.draw(queue);
 	}
 	else
@@ -238,8 +222,8 @@ void Unit::commit_attack()
 	cumulative_time_++;
 }
 
-Miner::Miner(sf::Vector2f spawn_point, texture_ID id)
-	: Unit(id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params),
+Miner::Miner(const sf::Vector2f spawn_point, const texture_ID texture_id)
+	: Unit(texture_id, spawn_point, max_health, animation_params),
 	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_health_bar_size, Bar<int>::miner_gold_count_bar_shift, Bar<int>::miner_gold_bar_color)
 {
 	
@@ -289,6 +273,26 @@ int Miner::get_places_requires() const
 	return places_requires;
 }
 
+float Miner::get_max_health() const
+{
+	return max_health;
+}
+
+sf::Vector2f Miner::get_max_speed() const
+{
+	return max_speed;
+}
+
+float Miner::get_damage() const
+{
+	return damage;
+}
+
+float Miner::get_attack_distance() const
+{
+	return attack_distance;
+}
+
 int Miner::get_wait_time() const
 {
 	return wait_time;
@@ -299,8 +303,8 @@ int Miner::get_id() const
 	return id;
 }
 
-Swordsman::Swordsman(sf::Vector2f spawn_point, texture_ID id)
-	: Unit(id, spawn_point, max_health, speed, damage, attack_distance, wait_time, animation_params)
+Swordsman::Swordsman(const sf::Vector2f spawn_point, const texture_ID texture_id)
+	: Unit(texture_id, spawn_point, max_health, animation_params)
 {
 	hit_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_hit));
 }
@@ -314,6 +318,26 @@ void Swordsman::commit_attack()
 int Swordsman::get_places_requires() const
 {
 	return places_requires;
+}
+
+float Swordsman::get_max_health() const
+{
+	return max_health;
+}
+
+sf::Vector2f Swordsman::get_max_speed() const
+{
+	return max_speed;
+}
+
+float Swordsman::get_damage() const
+{
+	return damage;
+}
+
+float Swordsman::get_attack_distance() const
+{
+	return attack_distance;
 }
 
 int Swordsman::get_wait_time() const

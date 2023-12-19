@@ -22,7 +22,6 @@ sf::Text& Button::get_text()
 	return text_;
 }
 
-
 void Button::draw(DrawQueue& queue) const
 {
 	queue.emplace(interface_layer_0, &rectangle_);
@@ -116,13 +115,13 @@ bool UserInterface::process_unit_buy_buttons(const sf::Vector2i mouse_position) 
 	{
 		if (unit_button->check_mouse_pressed(mouse_position))
 		{
-			if(game_.get_money_count() >= unit_button->get_unit_cost())
+			if(player_.get_money_count() >= unit_button->get_unit_cost())
 			{
 				const auto unit = std::shared_ptr<Unit>(unit_button->create_unit());
-				if (game_.get_SpawnQueue().get_free_places() >= unit->get_places_requires())
+				if (player_.get_SpawnQueue().get_free_places() >= unit->get_places_requires())
 				{
-					game_.get_SpawnQueue().put_unit(unit, unit->get_wait_time());
-					game_.get_money_count() -= unit_button->get_unit_cost();
+					player_.get_SpawnQueue().put_unit(unit, unit->get_wait_time());
+					player_.get_money_count() -= unit_button->get_unit_cost();
 					unit_button->press();
 				}
 			}
@@ -132,12 +131,11 @@ bool UserInterface::process_unit_buy_buttons(const sf::Vector2i mouse_position) 
 	return false;
 }
 
-UserInterface::UserInterface(IPlayState& play_state) : game_(play_state)
+UserInterface::UserInterface(Player& player, StateManager& state_manager) : player_(player), state_manager_(state_manager)
 {
 	gold_sprite_.setTexture(texture_holder.get_texture(gold));
 	gold_sprite_.setPosition({ 20, 20 });
 	gold_sprite_.setScale({ 0.1, 0.1 });
-
 
 	money_count_text_.setFont(text_font);
 	money_count_text_.setPosition(20, 70);
@@ -163,7 +161,7 @@ UserInterface::UserInterface(IPlayState& play_state) : game_(play_state)
 	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button));
 	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, in_attack_button));
 
-	pause_button_ = std::make_unique<Button>(sf::Vector2f{ 1600.f, 20.f }, sf::Vector2f{ 0.15f, 0.15f }, pause_button);
+	pause_button_ = std::make_unique<Button>(sf::Vector2f{ 1700.f, 20.f }, sf::Vector2f{ 0.15f, 0.15f }, pause_button);
 }
 
 bool UserInterface::process_left_mouse_button_press(const sf::Vector2i mouse_position) const
@@ -173,36 +171,36 @@ bool UserInterface::process_left_mouse_button_press(const sf::Vector2i mouse_pos
 	{
 		if (defend_button_->check_mouse_pressed(mouse_position))
 		{
-			game_.get_Army().set_army_target(Army::defend);
+			player_.get_Army().set_army_target(Army::defend);
 			return true;
 		}
 		if (in_attack_button_->check_mouse_pressed(mouse_position))
 		{
-			game_.get_Army().set_army_target(Army::attack);
+			player_.get_Army().set_army_target(Army::attack);
 			return true;
 		}
 		if(pause_button_->check_mouse_pressed(mouse_position))
 		{
-			game_.get_StateManager().switch_state(pause);
+			state_manager_.switch_state(pause);
 			return true;
 		}
 	}
 	return unit_buy_button_pressed;
 }
 
-void UserInterface::update(const sf::Time delta_time)
+void UserInterface::update(const sf::Time delta_time, float camera_position)
 {
 	// update army count text
-	const std::string str = std::to_string(game_.get_SpawnQueue().get_army_count()) + "/" + std::to_string(Army::army_max_size);
+	const std::string str = std::to_string(player_.get_SpawnQueue().get_army_count()) + "/" + std::to_string(Army::army_max_size);
 	army_count_text_.setString(str);
 
 	//process units queue and units spawn
-	if (const auto id = game_.get_SpawnQueue().get_front_unit_id(); id)
+	if (const auto id = player_.get_SpawnQueue().get_front_unit_id(); id)
 		unit_buy_buttons_[*id]->process_button(delta_time.asMilliseconds());
 
-	camera_position_text_.setString("x: " + std::to_string(static_cast<int>(game_.get_camera_position())));
+	camera_position_text_.setString("x: " + std::to_string(static_cast<int>(camera_position)));
 
-	money_count_text_.setString(std::to_string(game_.get_money_count()));
+	money_count_text_.setString(std::to_string(player_.get_money_count()));
 }
 
 void UserInterface::draw(DrawQueue& queue) const

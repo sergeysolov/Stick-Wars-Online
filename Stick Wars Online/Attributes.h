@@ -6,7 +6,7 @@ template <typename  T>
 class Bar
 {
 protected:
-	const T& max_value_;
+	const T max_value_;
 	const T& value_;
 	const float max_size_;
 	const sf::Vector2f shift_;
@@ -24,7 +24,7 @@ public:
 	inline const static sf::Color health_bar_color = sf::Color{ 255, 0, 100 };
 	inline const static sf::Color miner_gold_bar_color = sf::Color{ 210, 160, 30 };
 
-	Bar(const T& max_value, const T& value, sf::Vector2f position, sf::Vector2f size, sf::Vector2f shift, sf::Color color);
+	Bar(T max_value, const T& value, sf::Vector2f position, sf::Vector2f size, sf::Vector2f shift, sf::Color color);
 	void update();
 	void move(sf::Vector2f offset);
 	void set_position(sf::Vector2f position);
@@ -34,7 +34,7 @@ public:
 
 
 template <typename T>
-Bar<T>::Bar(const T& max_value, const T& value, sf::Vector2f position, sf::Vector2f size, sf::Vector2f shift,
+Bar<T>::Bar(const T max_value, const T& value, sf::Vector2f position, sf::Vector2f size, sf::Vector2f shift,
 	sf::Color color)
 	:
 	max_value_(max_value), value_(value), max_size_(size.x), shift_(shift)

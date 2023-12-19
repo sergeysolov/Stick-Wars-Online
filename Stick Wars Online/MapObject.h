@@ -28,7 +28,7 @@ public:
 		{}
 	};
 
-	MapObject(sf::Vector2f spawnpoint, texture_ID id, AnimationParams animation_params);
+	MapObject(sf::Vector2f spawnpoint, texture_ID id, const AnimationParams& animation_params);
 	virtual ~MapObject() = default;
 
 	const sf::Sprite& get_sprite() const;
