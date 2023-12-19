@@ -22,15 +22,30 @@ sf::Text& Button::get_text()
 	return text_;
 }
 
+void Button::set_text(const std::string& text, const sf::Font& font, const sf::Vector2f offset)
+{
+	text_.setFont(font);
+	text_.setString(text);
+	text_.move(offset);
+}
+
+void Button::set_visible(const bool visible)
+{
+	visible_ = visible;
+}
+
 void Button::draw(DrawQueue& queue) const
 {
-	queue.emplace(interface_layer_0, &rectangle_);
-	queue.emplace(interface_layer_1, &text_);
+	if(visible_)
+	{
+		queue.emplace(interface_layer_0, &rectangle_);
+		queue.emplace(interface_layer_1, &text_);
+	}
 }
 
 bool Button::check_mouse_pressed(const sf::Vector2i mouse_position) const
 {
-	return rectangle_.getGlobalBounds().contains(static_cast<float>(mouse_position.x), static_cast<float>(mouse_position.y));
+	return visible_ and rectangle_.getGlobalBounds().contains(static_cast<float>(mouse_position.x), static_cast<float>(mouse_position.y));
 }
 
 void Button::press()

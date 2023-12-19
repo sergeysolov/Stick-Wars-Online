@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include <memory>
 
 #include <SFML/Graphics.hpp>
@@ -50,7 +49,6 @@ public:
 	std::shared_ptr<Unit> target_unit;
 
 	Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params);
-	~Unit() override = default;
 
 	virtual int get_id() const = 0;
 	virtual int get_places_requires() const = 0;
@@ -102,7 +100,6 @@ public:
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
 	Miner(sf::Vector2f spawn_point, texture_ID texture_id);
-	~Miner() override = default;
 
 	void draw(DrawQueue& queue) const override;
 	void set_screen_place(float camera_position) override;
@@ -138,7 +135,6 @@ public:
 	inline const static AnimationParams animation_params = { {-300, 20}, 700, 1280, 13, {-0.4f, 0.4f} };
 
 	Swordsman(sf::Vector2f spawn_point, texture_ID texture_id);
-	~Swordsman() override = default;
 
 	void commit_attack() override;
 

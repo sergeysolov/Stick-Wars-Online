@@ -3,6 +3,7 @@
 
 #include "UserInterface.h"
 #include "StateManager.h"
+#include "ConnectionHandler.h"
 
 class StateManager;
 class Button;
@@ -13,7 +14,13 @@ class MainMenuState : public BaseState
 
 	sf::RectangleShape background_;
 
-	std::unique_ptr<Button> play_button_;
+	std::unique_ptr<Button> play_single_player_button_;
+	std::unique_ptr<Button> play_multi_player_button_;
+	
+	std::unique_ptr<Button> back_button_;
+	std::unique_ptr<Button> create_game_button_;
+	std::unique_ptr<Button> connect_button_;
+
 	std::unique_ptr<Button> exit_button_;
 	
 public:

@@ -13,6 +13,7 @@ protected:
 	sf::RectangleShape rectangle_;
 	sf::Text text_;
 	bool pressed_ = false;
+	bool visible_ = true;
 public:
 	virtual ~Button() = default;
 
@@ -20,6 +21,8 @@ public:
 	Button(sf::Vector2f position, sf::Vector2f rectangle_size, sf::Color rectangle_color);
 
 	sf::Text& get_text();
+	void set_text(const std::string& text, const sf::Font& font, sf::Vector2f offset);
+	void set_visible(bool visible);
 	virtual void draw(DrawQueue& queue) const;
 	[[nodiscard]] virtual bool check_mouse_pressed(sf::Vector2i mouse_position) const;
 	virtual void press();
