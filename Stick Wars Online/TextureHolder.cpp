@@ -25,8 +25,13 @@ void TextureHolder::load_textures()
 	append(large_forest_background, "Images/backgrounds/large_forest.png");
 
 	append(my_miner, "Images/units/miner.png");
+	append(my_miner_blue, "Images/units/miner_blue.png");
+	append(my_miner_orange, "Images/units/miner_orange.png");
 	append(enemy_miner, "Images/units/miner_enemy.png");
+
 	append(my_swordsman, "Images/units/swordsman.png");
+	append(my_swordsman_blue, "Images/units/swordsman_blue.png");
+	append(my_swordsman_orange, "Images/units/swordsman_orange.png");
 	append(enemy_swordsman, "Images/units/swordsman_enemy.png");
 
 	append(gold, "Images/attributes/gold.png");

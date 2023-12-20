@@ -4,6 +4,11 @@ Connection::Connection(std::unique_ptr<sf::TcpSocket>&& socket, const int id, st
 socket_(std::move(socket)), id_(id), name_(std::move(name))
 {	}
 
+sf::TcpSocket& Connection::get_socket() const
+{
+	return *socket_;
+}
+
 void ClientConnectionHandler::connect()
 {
 	std::thread([&]
@@ -35,7 +40,7 @@ void ClientConnectionHandler::connect()
 					id_packet >> id_;
 
 					server_ = std::make_unique<Connection>(std::move(server), 0, "Server");
-					std::cout << "Successful connected to server" << '\n';
+					std::cout << "Successfully connected to server" << '\n';
 				}
 				else
 					std::cout << "Error: connect to server" << '\n';
@@ -44,6 +49,11 @@ void ClientConnectionHandler::connect()
 				std::cout << "IP address is incorrect" << '\n';
 
 		}).detach();
+}
+
+Connection& ClientConnectionHandler::get_server() const
+{
+	return *server_;
 }
 
 int ClientConnectionHandler::get_id() const
@@ -55,38 +65,60 @@ void ServerConnectionHandler::listen_for_client_connection()
 {
 	const sf::IpAddress ip_address = sf::IpAddress::getLocalAddress();
 	std::cout << "Local IP Address: " << ip_address << '\n';
+	listen_ = true;
 	std::thread([&]
 		{
 			if(listener_.listen(Connection::port) == sf::Socket::Done)
-				std::cout << "Listen complete \n";
+				std::cout << "Waiting for incoming connections... \n";
 			else
 				std::cout << "Error: listen on port " << Connection::port << '\n';
 
-			if (auto client = std::make_unique<sf::TcpSocket>(); listener_.accept(*client) == sf::Socket::Done)
+			//listener_.setBlocking(false);
+			while (listen_)
 			{
-				if (sf::Packet client_name; client->receive(client_name) == sf::Socket::Done)
+				if (auto client = std::make_unique<sf::TcpSocket>(); listener_.accept(*client) == sf::Socket::Done)
 				{
-					std::string name;
-					client_name >> name;
-					int client_id = clients_.size() + 1;
-
-					sf::Packet id_packet;
-					id_packet << client_id;
-					if(client->send(id_packet) != sf::Socket::Done)
+					if (sf::Packet client_name; client->receive(client_name) == sf::Socket::Done)
 					{
-						std::cout << "Error: send data";
+						std::string name;
+						client_name >> name;
+						int client_id = clients_.size() + 1;
+
+						sf::Packet id_packet;
+						id_packet << client_id;
+						if(client->send(id_packet) != sf::Socket::Done)
+						{
+							std::cout << "Error: send data";
+						}
+						else
+						{
+							std::lock_guard guard(clients_mtx_);
+							clients_.emplace_back(std::move(client), client_id, name);
+							std::cout << "Connection established with: " << name << ", id = " << client_id << '\n';
+						}
 					}
 					else
-					{
-						std::lock_guard guard(clients_mtx_);
-						clients_.emplace_back(std::move(client), client_id, name);
-						std::cout << "Connection established with: " << name << ", id = " << client_id << '\n';
-					}
+						std::cout << "Error: receive data \n";
 				}
-				else
-					std::cout << "Error: receive data \n";
+				//else
+				//	std::cout << "Error: establish connection" << '\n';
 			}
-			else
-				std::cout << "Error: establish connection" << '\n';
+			std::cout << "Stop waiting for connections" << '\n';
+			listener_.close();
 		}).detach();
+}
+
+ServerConnectionHandler::~ServerConnectionHandler()
+{
+	stop_listen();
+}
+
+void ServerConnectionHandler::stop_listen()
+{
+	listen_ = false;
+}
+
+std::vector<Connection>& ServerConnectionHandler::get_connections()
+{
+	return clients_;
 }

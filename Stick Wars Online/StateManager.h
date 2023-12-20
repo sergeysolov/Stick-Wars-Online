@@ -14,6 +14,7 @@ enum StateType
 {
 	to_exit,
 	main_menu,
+	multiplayer_menu,
 	play,
 	pause,
 	lose_menu,

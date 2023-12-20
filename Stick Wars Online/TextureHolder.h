@@ -27,9 +27,13 @@ enum texture_ID
 	enemy_statue,
 
 	my_miner,
+	my_miner_blue,
+	my_miner_orange,
 	enemy_miner,
 
 	my_swordsman,
+	my_swordsman_blue,
+	my_swordsman_orange,
 	enemy_swordsman
 };
 
