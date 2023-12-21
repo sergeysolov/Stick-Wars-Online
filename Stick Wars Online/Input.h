@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <SFML/Network.hpp>
 
 class Input
 {
@@ -18,5 +19,8 @@ public:
 	bool mouse_left = false;
 
 	sf::Vector2i mouse_position;
+
+	void write_to_packet(sf::Packet& packet) const;
+	void read_from_packet(sf::Packet& packet);
 };
 

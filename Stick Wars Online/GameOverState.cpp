@@ -69,7 +69,9 @@ void PauseState::handle_input(Input& input, const sf::Time delta_time)
 {
 	GameOverState::handle_input(input, delta_time);
 	if (back_to_game_button_->check_mouse_pressed(input.mouse_position))
+	{
 		back_to_game_button_->press();
+	}
 }
 
 void PauseState::draw(DrawQueue& draw_queue)

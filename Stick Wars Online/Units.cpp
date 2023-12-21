@@ -298,6 +298,11 @@ int Miner::get_wait_time() const
 	return wait_time;
 }
 
+int Miner::get_cost() const
+{
+	return cost;
+}
+
 int Miner::get_id() const
 {
 	return id;
@@ -343,6 +348,11 @@ float Swordsman::get_attack_distance() const
 int Swordsman::get_wait_time() const
 {
 	return wait_time;
+}
+
+int Swordsman::get_cost() const
+{
+	return cost;
 }
 
 int Swordsman::get_id() const

@@ -62,9 +62,9 @@ public:
 		{800, 670},
 		{1100, 670},
 		{1400, 690},
+		{map_frame_width * 3 - 750, 700},
 		{map_frame_width * 3 - 550, 800},
-		{map_frame_width * 3 - 450, 670},
-		{map_frame_width * 3 - 350, 670},};
+		{map_frame_width * 3 - 350, 680},};
 
 	const inline static AnimationParams animation_params = AnimationParams({ 0, 0 }, 538, 960, 10, { 0.2f, 0.2f });
 

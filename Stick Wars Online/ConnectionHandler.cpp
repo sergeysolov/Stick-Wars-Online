@@ -9,6 +9,88 @@ sf::TcpSocket& Connection::get_socket() const
 	return *socket_;
 }
 
+int Connection::get_id() const
+{
+	return id_;
+}
+
+std::string Connection::get_name() const
+{
+	return name_;
+}
+
+void Connection::put_input(const Input& input)
+{
+	std::lock_guard guard(input_mtx_);
+	input_ = input;
+}
+
+std::optional<Input> Connection::get_input()
+{
+	std::lock_guard guard(input_mtx_);
+	if(input_)
+	{
+		Input input = *input_;
+		input_ = {};
+		return input;
+	}
+	return {};
+}
+
+//for client
+void Connection::start_send_input()
+{
+	send_input_active_ = true;
+	std::thread([&]
+		{
+			while (send_input_active_)
+			{
+				if (input_)
+				{
+					Input input;
+					{
+						std::lock_guard guard(input_mtx_);
+						input = *input_;
+						input_ = {};
+					}
+					sf::Packet packet;
+					input.write_to_packet(packet);
+					socket_->send(packet);
+					//std::cout << "Packet sent " << input.a << ' ' << input.d << '\n';
+				}
+			}
+		}).detach();
+}
+
+void Connection::stop_send_input()
+{
+	send_input_active_ = false;
+}
+
+//for server
+void Connection::start_receive_input()
+{
+	receive_input_active_ = true;
+	std::thread([&]
+		{
+			while (receive_input_active_)
+			{
+				sf::Packet packet;
+				socket_->receive(packet);
+				Input input;
+				input.read_from_packet(packet);
+				//std::cout << "Packet received " << input.a << ' ' << input.d <<'\n';
+				std::lock_guard guard(input_mtx_);
+				input_ = input;
+			}
+		}).detach();
+}
+
+void Connection::stop_receive_input()
+{
+	receive_input_active_ = false;
+}
+
 void ClientConnectionHandler::connect()
 {
 	std::thread([&]
@@ -59,6 +141,22 @@ Connection& ClientConnectionHandler::get_server() const
 int ClientConnectionHandler::get_id() const
 {
 	return id_;
+}
+
+void ClientConnectionHandler::put_input_in_queue(const Input& input) const
+{
+	server_->put_input(input);
+}
+
+void ClientConnectionHandler::start_send_input() const
+{
+	server_->start_send_input();
+}
+
+void ClientConnectionHandler::stop_send_input() const
+{
+	server_->stop_receive_input();
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
 void ServerConnectionHandler::listen_for_client_connection()
@@ -118,7 +216,39 @@ void ServerConnectionHandler::stop_listen()
 	listen_ = false;
 }
 
-std::vector<Connection>& ServerConnectionHandler::get_connections()
+std::list<Connection>& ServerConnectionHandler::get_connections()
 {
 	return clients_;
+}
+
+void ServerConnectionHandler::read_player_name()
+{
+	std::cout << "Input your name: \n";
+	std::cin >> player_name_;
+}
+
+std::string ServerConnectionHandler::get_player_name() const
+{
+	return player_name_;
+}
+
+void ServerConnectionHandler::start_receive_input()
+{
+	for (auto& client : clients_)
+		client.start_receive_input();
+}
+
+void ServerConnectionHandler::stop_receive_input()
+{
+	for (auto& client : clients_)
+		client.stop_receive_input();
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+}
+
+std::vector<std::optional<Input>> ServerConnectionHandler::get_clients_input()
+{
+	std::vector<std::optional<Input>> clients_input;
+	for (auto& client : clients_)
+		clients_input.push_back(client.get_input());
+	return clients_input;
 }

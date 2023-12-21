@@ -1,6 +1,4 @@
 #pragma once
-#include <functional>
-
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include "TextureHolder.h"
@@ -32,7 +30,6 @@ public:
 
 class UnitBuyButton : public Button
 {
-
 	sf::RectangleShape time_bar_;
 	const sf::Vector2f bar_size_ = { 85, 5 };
 
@@ -44,20 +41,15 @@ class UnitBuyButton : public Button
 
 	int unit_cost_;
 
-	std::function<Unit*()> unit_creation_;
 public:
 
-	inline static const sf::Vector2f spawn_point = { -100, 650 };
-
-	UnitBuyButton(std::function<Unit*()> unit_creation, int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, texture_ID id);
+	UnitBuyButton(int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, texture_ID id);
 	void draw(DrawQueue& queue) const override;
-	int get_unit_cost() const;
 	void press() override;
 	void process_button(int elapsed_time);
-	Unit* create_unit() const;
+	int get_unit_cost() const;
 };
 
-class Player;
 class StateManager;
 
 class UserInterface
@@ -67,25 +59,19 @@ class UserInterface
 
 	sf::Text army_count_text_;
 	sf::Text money_count_text_;
-	sf::Text camera_position_text_;
 
 	std::vector<std::unique_ptr<UnitBuyButton>> unit_buy_buttons_;
 	std::unique_ptr<Button> in_attack_button_;
 	std::unique_ptr<Button> defend_button_;
 
-	std::unique_ptr<Button> pause_button_;
-
-	bool process_unit_buy_buttons(sf::Vector2i mouse_position) const;
 public:
+	UserInterface();
 
-	UserInterface(Player& player, StateManager& state_manager);
-
-	bool process_left_mouse_button_press(sf::Vector2i mouse_position) const;
-	void update(sf::Time delta_time, float camera_position);
+	void update(int money_count, int army_count, std::optional<int> unit_queue_id, sf::Time delta_time);
 	void draw(DrawQueue& queue) const;
 
-protected:
-	Player& player_;
-	StateManager& state_manager_;
+	std::vector<std::unique_ptr<UnitBuyButton>>& get_unit_buy_buttons();
+	std::unique_ptr<Button>& get_in_attack_button();
+	std::unique_ptr<Button>& get_defend_button();
 };
 

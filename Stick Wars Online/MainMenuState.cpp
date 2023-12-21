@@ -2,6 +2,9 @@
 
 MainMenuState::MainMenuState(StateManager& state_manager) : state_manager_(state_manager)
 {
+	server_handler.reset();
+	client_handler.reset();
+
 	background_.setSize(static_cast<sf::Vector2f>(sf::Vector2u{ sf::VideoMode::getDesktopMode().width, sf::VideoMode::getDesktopMode().height }));
 	background_.setTexture(&texture_holder.get_texture(intro));
 
@@ -95,6 +98,7 @@ void MultiplayerMenuState::update(sf::Time delta_time)
 		if (server_handler == nullptr)
 			server_handler = std::make_unique<ServerConnectionHandler>();
 		client_handler.reset();
+		server_handler->read_player_name();
 		server_handler->listen_for_client_connection();
 	}
 	else if (connect_button_->is_pressed())
@@ -113,6 +117,7 @@ void MultiplayerMenuState::update(sf::Time delta_time)
 		sf::Packet acceptance_to_start_game;
 		if(client_handler->get_server().get_socket().receive(acceptance_to_start_game) == sf::Socket::Done)
 		{
+			client_handler->get_server().get_socket().setBlocking(true);
 			int num; acceptance_to_start_game >> num;
 			if (num == acceptance_to_start_game_num)
 				state_manager_.switch_state(play);

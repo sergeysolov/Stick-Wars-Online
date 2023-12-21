@@ -57,6 +57,7 @@ public:
 	virtual float get_damage() const = 0;
 	virtual float get_attack_distance() const = 0;
 	virtual int get_wait_time() const = 0;
+	virtual int get_cost() const = 0;
 
 	sf::Vector2f get_speed() const;
 	int get_direction() const;
@@ -117,6 +118,7 @@ public:
 	float get_damage() const override;
 	float get_attack_distance() const override;
 	int get_wait_time() const override;
+	int get_cost() const override;
 };
 
 
@@ -145,4 +147,5 @@ public:
 	float get_damage() const override;
 	float get_attack_distance() const override;
 	int get_wait_time() const override;
+	int get_cost() const override;
 };

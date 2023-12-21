@@ -53,3 +53,13 @@ void Input::process_events(sf::RenderWindow& window)
 		}
 	}
 }
+
+void Input::write_to_packet(sf::Packet& packet) const
+{
+	packet << a << d << w << s << k << left_arrow << right_arrow << space << shift << escape << mouse_left << mouse_position.x << mouse_position.y;
+}
+
+void Input::read_from_packet(sf::Packet& packet)
+{
+	packet >> a >> d >> w >> s >> k >> left_arrow >> right_arrow >> space >> shift >> escape >> mouse_left >> mouse_position.x >> mouse_position.y;
+}

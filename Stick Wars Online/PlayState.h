@@ -13,15 +13,16 @@ constexpr float start_camera_position = 0;
 static int enemy_behaviour = 0;
 
 class StateManager;
-class UserInterface;
+class Player;
 
 class PlayState : public BaseState
 {
 	StateManager& state_manager_;
 	sf::Sprite background_sprite_;
+	std::unique_ptr<Button> pause_button_;
+	sf::Text camera_position_text_;
 
 	float camera_position_ = start_camera_position;
-	std::unique_ptr<UserInterface> user_interface_;
 
 	std::vector<Player> players_;
 
@@ -31,12 +32,12 @@ class PlayState : public BaseState
 	std::unique_ptr<SpawnUnitQueue> enemy_spawn_queue_;
 	std::vector<std::shared_ptr<GoldMine>> gold_mines_;
 
-
 	void move_camera(float step);
 	void set_objects_screen_place() const;
 
 public:
 	explicit PlayState(StateManager& state_manager);
+	~PlayState();
 
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;

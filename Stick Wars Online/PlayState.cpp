@@ -25,37 +25,93 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
 
-	players_.emplace_back(players_.size());
+	camera_position_text_.setFont(text_font);
+	camera_position_text_.setPosition(1800, 10);
 
-	user_interface_ = std::make_unique<UserInterface>(players_[0], state_manager);
+	pause_button_ = std::make_unique<Button>(sf::Vector2f{ 1700.f, 20.f }, sf::Vector2f{ 0.15f, 0.15f }, pause_button);
 
 	my_statue_ = std::make_shared<Statue>(Statue::my_statue_position, my_statue, Statue::my_max_health);
 	enemy_statue_ = std::make_shared<Statue>(Statue::enemy_statue_position, enemy_statue, Statue::enemy_max_health);
 
-	//Creating spawn queue
-	enemy_spawn_queue_ = std::make_unique<SpawnUnitQueue>(enemy_army_);
-
-	// Add goldmines
 	for (const auto goldmine_position : GoldMine::goldmine_positions)
 		gold_mines_.emplace_back(new GoldMine(goldmine_position));
+
+	if(client_handler == nullptr)
+	{
+		if (server_handler != nullptr)
+		{
+			//std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			players_.emplace_back(0, server_handler->get_player_name());
+			for (const auto& client : server_handler->get_connections())
+				players_.emplace_back(client.get_id(), client.get_name());
+
+			sf::Packet players_info;
+			players_info << static_cast<int>(server_handler->get_connections().size() + 1);
+			players_info << 0 << server_handler->get_player_name();
+			for (const auto& client : server_handler->get_connections())
+				players_info << client.get_id() << client.get_name();
+
+			for (const auto& client : server_handler->get_connections())
+				client.get_socket().send(players_info);
+
+			server_handler->start_receive_input();
+		}
+		else
+			players_.emplace_back(0);
+		enemy_spawn_queue_ = std::make_unique<SpawnUnitQueue>(enemy_army_);
+	}
+	else
+	{
+		sf::Packet players_info;
+		client_handler->get_server().get_socket().receive(players_info);
+		int players_number;
+		players_info >> players_number;
+		for (int i = 0; i < players_number; i++)
+		{
+			int id; std::string player_name;
+			players_info >> id >> player_name;
+			players_.emplace_back(id, player_name);
+		}
+		client_handler->start_send_input();
+	}
+}
+
+PlayState::~PlayState()
+{
+	if(server_handler != nullptr)
+	{
+		server_handler->stop_receive_input();
+		server_handler.reset();
+	}
+	if(client_handler != nullptr)
+	{
+		client_handler->stop_send_input();
+		client_handler.reset();
+	}
 }
 
 void PlayState::update(const sf::Time delta_time)
 {
-	for (auto& player : players_)
+	if(client_handler == nullptr)
 	{
-		enemy_army_.process(player.get_Army(), my_statue_, nullptr, gold_mines_, delta_time);
-		player.update(delta_time, enemy_army_, enemy_statue_, gold_mines_);
-	}
+		std::vector<Army*> ally_armies;
+		for (auto& player : players_)
+		{
+			ally_armies.push_back(&player.get_Army());
+			player.update(delta_time, enemy_army_, enemy_statue_, gold_mines_);
+		}
 
-	user_interface_->update(delta_time, camera_position_);
+		enemy_army_.process(ally_armies, my_statue_, nullptr, gold_mines_, delta_time);
 
-	//Enemy army processing
-	enemy_spawn_queue_->process(delta_time);
-
-	if (enemy_behaviour == 0)
+		//Enemy army processing
+		//if (enemy_behaviour == 0)
 		process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
 
+		enemy_spawn_queue_->process(delta_time);
+	}
+
+	camera_position_text_.setString("x: " + std::to_string(static_cast<int>(camera_position_)));
+	
 	set_objects_screen_place();
 
 	if (my_statue_->is_destroyed())
@@ -66,24 +122,40 @@ void PlayState::update(const sf::Time delta_time)
 
 void PlayState::handle_input(Input& input, const sf::Time delta_time)
 {
-	// process behaviour of controlled unit
-	//for (const auto& player : players_)//???????????????????????????????
-
-	constexpr int player_id = 0;
-
-	const auto controlled_unit_coords = players_[player_id].handle_keyboard_input(input, delta_time);
-	if(controlled_unit_coords)
+	if (input.mouse_left and pause_button_->check_mouse_pressed(input.mouse_position))
 	{
-		const float window_width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
-		const float shift = (controlled_unit_coords->x + 15 - window_width / 2 - camera_position_) / 15;
-		move_camera(shift);
+		state_manager_.switch_state(pause);
+		return;
 	}
 
-	//process mouse clicks
-	if (input.mouse_left)
-		if (not user_interface_->process_left_mouse_button_press(input.mouse_position))
-			players_[player_id].handle_mouse_input(input.mouse_position);
+	if(client_handler == nullptr)
+	{
+		int player_id = 0;
 
+		players_[player_id].handle_input(input, delta_time);
+
+		if (const auto controlled_unit_position = players_[player_id].get_controlled_unit_position(); controlled_unit_position)
+		{
+			const float window_width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
+			const float shift = (controlled_unit_position->x + 15 - window_width / 2 - camera_position_) / 15;
+			move_camera(shift);
+		}
+
+		if(server_handler != nullptr)
+		{
+			const auto clients_input = server_handler->get_clients_input();
+			for (const auto& client_input : clients_input)
+			{
+				player_id++;
+				if(client_input)
+					players_[player_id].handle_input(*client_input, delta_time);
+			}
+		}
+	}
+	else
+	{
+		client_handler->put_input_in_queue(input);
+	}
 
 	if (input.left_arrow or input.right_arrow)
 	{
@@ -96,6 +168,7 @@ void PlayState::handle_input(Input& input, const sf::Time delta_time)
 void PlayState::draw(DrawQueue& draw_queue)
 {
 	draw_queue.emplace(background, &background_sprite_);
+	draw_queue.emplace(attributes_layer_0, &camera_position_text_);
 
 	my_statue_->draw(draw_queue);
 	enemy_statue_->draw(draw_queue);
@@ -108,6 +181,6 @@ void PlayState::draw(DrawQueue& draw_queue)
 	for (const auto& player : players_)
 		player.draw(draw_queue);
 
-	user_interface_->draw(draw_queue);
+	pause_button_->draw(draw_queue);
 }
 

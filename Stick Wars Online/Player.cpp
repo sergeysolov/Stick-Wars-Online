@@ -1,15 +1,31 @@
 #include "Player.h"
 
-ControlledUnit::ControlledUnit(const std::shared_ptr<Unit>& unit)
+#include "ConnectionHandler.h"
+
+ControlledUnit::ControlledUnit(const std::shared_ptr<Unit>& unit, const int id, const std::string& name)
 {
 	unit_ = unit;
 	star_sprite_.setTexture(texture_holder.get_texture(star));
 	star_sprite_.setScale(star_scale);
+
+	name_text_.setFont(text_font);
+	name_text_.setString(name);
+	name_text_.setScale(name_scale);
+
+	if (client_handler == nullptr)
+		is_mine_ = id == 0;
+	else
+		is_mine_ = id == client_handler->get_id();
 }
 
 std::shared_ptr<Unit> ControlledUnit::get_unit() const
 {
 	return unit_;
+}
+
+bool ControlledUnit::get_is_mine() const
+{
+	return is_mine_;
 }
 
 void ControlledUnit::release()
@@ -23,7 +39,13 @@ void ControlledUnit::draw(DrawQueue& queue)
 	{
 		star_sprite_.setPosition(unit_->get_sprite().getPosition());
 		star_sprite_.move(star_shift);
-		queue.emplace(attributes_layer_1, &star_sprite_);
+
+		name_text_.setPosition(unit_->get_sprite().getPosition());
+		name_text_.move(name_shift);
+
+		queue.emplace(attributes_layer_1, &name_text_);
+		if(is_mine_)
+			queue.emplace(attributes_layer_1, &star_sprite_);
 	}
 }
 
@@ -40,36 +62,37 @@ ControlledUnit& ControlledUnit::operator=(const std::shared_ptr<Unit>& new_unit)
 	return *this;
 }
 
-Player::Player(const size_t player_id) : player_id_(player_id), army_(Army::defend_lines[player_id], true)
+texture_ID Player::get_correct_texture_id(const texture_ID texture_id, const size_t player_id)
 {
-	spawn_queue_ = std::make_unique<SpawnUnitQueue>(army_);
+	return static_cast<texture_ID>(static_cast<int>(texture_id) + player_id);
+}
+
+Player::Player(const size_t player_id, const std::string& name) : player_id_(player_id)
+{
+	army_ = std::make_unique<Army>(Army::defend_lines[player_id], true);
+	spawn_queue_ = std::make_unique<SpawnUnitQueue>(*army_);
+	user_interface_ = std::make_unique<UserInterface>();
 
 	// Add first unit of the game to player control
-	auto unit_to_control = std::make_shared<Swordsman>(sf::Vector2f{ 300, 650 }, my_swordsman);
-	controlled_unit_ = std::make_unique<ControlledUnit>(unit_to_control);
-	army_.add_unit(unit_to_control);
+	auto unit_to_control = std::make_shared<Swordsman>(sf::Vector2f{ 300, 650 }, get_correct_texture_id(my_swordsman, player_id));
+	controlled_unit_ = std::make_unique<ControlledUnit>(unit_to_control, player_id, name);
+	army_->add_unit(unit_to_control);
 }
 
 void Player::set_screen_place(const float camera_position) const
 {
-	army_.set_screen_place(camera_position);
+	army_->set_screen_place(camera_position);
 }
 
-void Player::handle_mouse_input(const sf::Vector2i mouse_position) const
+void Player::draw(DrawQueue& draw_queue) const
 {
-	bool changed_controlled_unit = false;
-	for (const auto& unit : army_.get_units())
-		if (unit->get_sprite().getGlobalBounds().contains(static_cast<float>(mouse_position.x), static_cast<float>(mouse_position.y)))
-		{
-			*controlled_unit_ = unit;
-			changed_controlled_unit = true;
-			break;
-		}
-	if (not changed_controlled_unit)
-		*controlled_unit_ = nullptr;
+	army_->draw(draw_queue);
+	controlled_unit_->draw(draw_queue);
+	if(controlled_unit_->get_is_mine())
+		user_interface_->draw(draw_queue);
 }
 
-std::optional<sf::Vector2f> Player::handle_keyboard_input(const Input& input, const sf::Time delta_time) const
+void Player::handle_input(const Input& input, const sf::Time delta_time)
 {
 	if (controlled_unit_->get_unit() != nullptr)
 	{
@@ -81,7 +104,7 @@ std::optional<sf::Vector2f> Player::handle_keyboard_input(const Input& input, co
 			if (direction.x != 0 or direction.y != 0)
 			{
 				controlled_unit_->get_unit()->move(direction, delta_time);
-				return { controlled_unit_->get_unit()->get_coords() };
+				controlled_unit_->last_position = controlled_unit_->get_unit()->get_coords();
 			}
 			if (input.space)
 				controlled_unit_->get_unit()->commit_attack();
@@ -91,31 +114,74 @@ std::optional<sf::Vector2f> Player::handle_keyboard_input(const Input& input, co
 		else
 			controlled_unit_->release();
 	}
-	return {};
+
+	if (not input.mouse_left)
+		return;
+
+	for (int i = 0; const auto& unit_buy_button : user_interface_->get_unit_buy_buttons())
+	{
+		if (unit_buy_button->check_mouse_pressed(input.mouse_position))
+		{
+			std::shared_ptr<Unit> unit;
+			if (i == Miner::id and money_ >= Miner::cost)
+				unit = std::static_pointer_cast<Unit>(std::make_shared<Miner>(spawn_point, get_correct_texture_id(my_miner, player_id_)));
+			else if (i == Swordsman::id and money_ >= Swordsman::cost)
+				unit = std::static_pointer_cast<Unit>(std::make_shared<Swordsman>(spawn_point, get_correct_texture_id(my_swordsman, player_id_)));
+
+			if (unit != nullptr and spawn_queue_->get_free_places() >= unit->get_places_requires())
+			{
+				spawn_queue_->put_unit(unit, unit->get_wait_time());
+				money_ -= unit->get_cost();
+				unit_buy_button->press();
+			}
+			return;
+		}
+		i++;
+	}
+
+	if (user_interface_->get_defend_button()->check_mouse_pressed(input.mouse_position))
+	{
+		army_->set_army_target(Army::defend);
+		user_interface_->get_defend_button()->press();
+		return;
+	}
+	if (user_interface_->get_in_attack_button()->check_mouse_pressed(input.mouse_position))
+	{
+		army_->set_army_target(Army::attack);
+		user_interface_->get_in_attack_button()->press();
+		return;
+	}
+
+	bool changed_controlled_unit = false;
+	for (const auto& unit : army_->get_units())
+		if (unit->get_sprite().getGlobalBounds().contains(static_cast<float>(input.mouse_position.x), static_cast<float>(input.mouse_position.y)))
+		{
+			*controlled_unit_ = unit;
+			changed_controlled_unit = true;
+			break;
+		}
+	if (not changed_controlled_unit)
+		*controlled_unit_ = nullptr;
 }
 
-void Player::draw(DrawQueue& draw_queue) const
+std::optional<sf::Vector2f> Player::get_controlled_unit_position() const
 {
-	army_.draw(draw_queue);
-	controlled_unit_->draw(draw_queue);
+	const auto position = controlled_unit_->last_position;
+	controlled_unit_->last_position = {};
+	return position;
 }
 
-Army& Player::get_Army()
+Army& Player::get_Army() const
 {
-	return army_;
+	return *army_;
 }
 
-int& Player::get_money_count()
+size_t Player::get_id() const
 {
-	return money_;
+	return player_id_;
 }
 
-SpawnUnitQueue& Player::get_SpawnQueue() const
-{
-	return *spawn_queue_;
-}
-
-void Player::update(const sf::Time delta_time, const Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, std::vector<std::shared_ptr<GoldMine>>& gold_mines)
+void Player::update(const sf::Time delta_time, Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, std::vector<std::shared_ptr<GoldMine>>& gold_mines)
 {
 	// handle money increment
 	timer_money_increment_ += delta_time.asMilliseconds();
@@ -129,5 +195,6 @@ void Player::update(const sf::Time delta_time, const Army& enemy_army, const std
 
 	//army processing
 	spawn_queue_->process(delta_time);
-	money_ += army_.process(enemy_army, enemy_statue, controlled_unit_->get_unit(), gold_mines, delta_time);
+	money_ += army_->process(std::vector{&enemy_army}, enemy_statue, controlled_unit_->get_unit(), gold_mines, delta_time);
+	user_interface_->update(money_, spawn_queue_->get_army_count(), spawn_queue_->get_front_unit_id(), delta_time);
 }
