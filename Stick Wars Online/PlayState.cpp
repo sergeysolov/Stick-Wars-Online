@@ -1,5 +1,7 @@
 #include "PlayState.h"
 
+#include <ranges>
+
 void PlayState::set_objects_screen_place() const
 {
 	for (const auto& player : players_)
@@ -20,7 +22,7 @@ void PlayState::move_camera(const float step)
 	background_sprite_.setTextureRect({ static_cast<int>(camera_position_), 0, static_cast<int>(map_frame_width), 1050 });
 }
 
-PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), enemy_army_(Army::enemy_defend_line, false)
+PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), enemy_army_(Army::enemy_defend_line, -1)
 {
 	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
@@ -55,6 +57,7 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 				client.get_socket().send(players_info);
 
 			server_handler->start_receive_input();
+			server_handler->start_send_updates();
 		}
 		else
 			players_.emplace_back(0);
@@ -73,6 +76,7 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 			players_.emplace_back(id, player_name);
 		}
 		client_handler->start_send_input();
+		client_handler->start_receive_updates();
 	}
 }
 
@@ -81,11 +85,13 @@ PlayState::~PlayState()
 	if(server_handler != nullptr)
 	{
 		server_handler->stop_receive_input();
+		server_handler->stop_send_updates();
 		server_handler.reset();
 	}
 	if(client_handler != nullptr)
 	{
 		client_handler->stop_send_input();
+		client_handler->stop_receive_updates();
 		client_handler.reset();
 	}
 }
@@ -102,12 +108,51 @@ void PlayState::update(const sf::Time delta_time)
 		}
 
 		enemy_army_.process(ally_armies, my_statue_, nullptr, gold_mines_, delta_time);
-
-		//Enemy army processing
 		//if (enemy_behaviour == 0)
 		process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
-
 		enemy_spawn_queue_->process(delta_time);
+
+		if(server_handler != nullptr)
+		{
+			sf::Packet update_packet;
+			update_packet << players_.size();
+			for (auto& player : players_)
+				player.write_to_packet(update_packet);
+
+			my_statue_->write_to_packet(update_packet);
+			enemy_statue_->write_to_packet(update_packet);
+
+			enemy_army_.write_to_packet(update_packet);
+
+			update_packet << gold_mines_.size();
+			for (const auto& gold_mine : gold_mines_)
+				gold_mine->write_to_packet(update_packet);
+
+			server_handler->put_update_to_clients(update_packet);
+		}
+	}
+	else
+	{
+		if(const auto packet = client_handler->get_update_from_server(); packet != nullptr)
+		{
+			size_t players_count;
+			*packet >> players_count;
+			for (auto& player : players_)
+				player.update_from_packet(*packet);
+
+			my_statue_->update_from_packet(*packet);
+			enemy_statue_->update_from_packet(*packet);
+
+			enemy_army_.update_from_packet(*packet);
+
+			size_t gold_mines_count;
+			*packet >> gold_mines_count;
+			if (gold_mines_count < gold_mines_.size())
+				gold_mines_.resize(gold_mines_count);
+
+			for (const auto& gold_mine : gold_mines_)
+				gold_mine->update_from_packet(*packet);
+		}
 	}
 
 	camera_position_text_.setString("x: " + std::to_string(static_cast<int>(camera_position_)));
@@ -128,18 +173,13 @@ void PlayState::handle_input(Input& input, const sf::Time delta_time)
 		return;
 	}
 
+	int my_player_id = 0;
 	if(client_handler == nullptr)
 	{
 		int player_id = 0;
 
 		players_[player_id].handle_input(input, delta_time);
 
-		if (const auto controlled_unit_position = players_[player_id].get_controlled_unit_position(); controlled_unit_position)
-		{
-			const float window_width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
-			const float shift = (controlled_unit_position->x + 15 - window_width / 2 - camera_position_) / 15;
-			move_camera(shift);
-		}
 
 		if(server_handler != nullptr)
 		{
@@ -154,7 +194,15 @@ void PlayState::handle_input(Input& input, const sf::Time delta_time)
 	}
 	else
 	{
-		client_handler->put_input_in_queue(input);
+		my_player_id = client_handler->get_id();
+		client_handler->put_input_to_server(input);
+	}
+
+	if (const auto controlled_unit_position = players_[my_player_id].get_controlled_unit_position(); controlled_unit_position)
+	{
+		const float window_width = static_cast<float>(sf::VideoMode::getDesktopMode().width);
+		const float shift = (controlled_unit_position->x + 15 - window_width / 2 - camera_position_) / 15;
+		move_camera(shift);
 	}
 
 	if (input.left_arrow or input.right_arrow)

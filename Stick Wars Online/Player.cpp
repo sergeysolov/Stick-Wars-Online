@@ -56,6 +56,7 @@ void ControlledUnit::heal() const
 }
 
 
+
 ControlledUnit& ControlledUnit::operator=(const std::shared_ptr<Unit>& new_unit)
 {
 	unit_ = new_unit;
@@ -69,7 +70,7 @@ texture_ID Player::get_correct_texture_id(const texture_ID texture_id, const siz
 
 Player::Player(const size_t player_id, const std::string& name) : player_id_(player_id)
 {
-	army_ = std::make_unique<Army>(Army::defend_lines[player_id], true);
+	army_ = std::make_unique<Army>(Army::defend_lines[player_id], player_id);
 	spawn_queue_ = std::make_unique<SpawnUnitQueue>(*army_);
 	user_interface_ = std::make_unique<UserInterface>();
 
@@ -179,6 +180,40 @@ Army& Player::get_Army() const
 size_t Player::get_id() const
 {
 	return player_id_;
+}
+
+void Player::write_to_packet(sf::Packet& packet) const
+{
+	packet << player_id_ << money_ << spawn_queue_->get_army_count();
+	army_->write_to_packet(packet);
+	if (controlled_unit_->get_unit() != nullptr)
+	{
+		const auto unit_it = std::ranges::find(army_->get_units(), controlled_unit_->get_unit());
+		const int unit_idx = unit_it - army_->get_units().begin();
+		packet << unit_idx;
+	}
+	else
+		packet << -1;
+	user_interface_->write_to_packet(packet);
+}
+
+void Player::update_from_packet(sf::Packet& packet)
+{
+	int army_count;
+	packet >> player_id_ >> money_ >> army_count;
+	army_->update_from_packet(packet);
+	int controlled_unit_idx;
+	packet >> controlled_unit_idx;
+	if (controlled_unit_idx >= 0)
+	{
+		*controlled_unit_ = army_->get_units()[controlled_unit_idx];
+		if (abs(controlled_unit_->get_unit()->get_speed().x) > 1e-5)
+			controlled_unit_->last_position = controlled_unit_->get_unit()->get_coords();
+	}
+	else
+		controlled_unit_->release();
+	user_interface_->update_from_packet(packet);
+	user_interface_->update(money_, army_count, {}, sf::Time(sf::milliseconds(0)));
 }
 
 void Player::update(const sf::Time delta_time, Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, std::vector<std::shared_ptr<GoldMine>>& gold_mines)

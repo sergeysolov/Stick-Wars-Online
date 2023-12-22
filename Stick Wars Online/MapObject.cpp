@@ -42,6 +42,17 @@ int MapObject::get_cumulative_time() const
 	return cumulative_time_;
 }
 
+void MapObject::write_to_packet(sf::Packet& packet) const
+{
+	packet << x_ << y_ << current_frame_ << cumulative_time_;
+}
+
+void MapObject::update_from_packet(sf::Packet& packet)
+{
+	packet >> x_ >> y_ >> current_frame_ >> cumulative_time_;
+	sprite_.setPosition({ x_, y_ });
+}
+
 void MapObject::set_y_scale()
 {
 	
@@ -68,6 +79,19 @@ int GoldMine::mine(int gold_count)
 bool GoldMine::empty() const
 {
 	return gold_capacity_ == 0;
+}
+
+void GoldMine::write_to_packet(sf::Packet& packet) const
+{
+	MapObject::write_to_packet(packet);
+	packet << gold_capacity_;
+}
+
+void GoldMine::update_from_packet(sf::Packet& packet)
+{
+	MapObject::update_from_packet(packet);
+	packet >> gold_capacity_;
+	mine(0);
 }
 
 Statue::Statue(sf::Vector2f position, texture_ID id, float max_health) :
@@ -104,5 +128,18 @@ bool Statue::is_destroyed() const
 float Statue::get_health() const
 {
 	return health_;
+}
+
+void Statue::write_to_packet(sf::Packet& packet) const
+{
+	//MapObject::write_to_packet(packet);
+	packet << health_;
+}
+
+void Statue::update_from_packet(sf::Packet& packet)
+{
+	//MapObject::update_from_packet(packet);
+	packet >> health_;
+	cause_damage(0);
 }
 

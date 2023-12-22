@@ -6,9 +6,9 @@
 
 #include "PlayState.h"
 
-Army::Army(const float army_defend_line, const bool is_ally_army) : is_ally_army_(is_ally_army)
+Army::Army(const float army_defend_line, const int id) : texture_shift_(id)
 {
-	if(is_ally_army)
+	if(is_ally())
 		for (int i = 0; i < army_max_size; i++)
 			defend_places_.insert({ i, { army_defend_line - (i / 5) * row_width, y_map_max - 30 - (i % max_soldiers_in_row) * (y_map_max - y_map_min - 50) / max_soldiers_in_row } });
 	else
@@ -45,7 +45,7 @@ int Army::get_alive_units_count() const
 
 void Army::draw(DrawQueue& queue) const
 {
-	for (const auto& unit : dead_units_ | std::views::keys)
+	for (const auto& unit : dead_units_)
 		unit->draw(queue);
 
 	for (const auto& unit : units_)
@@ -57,7 +57,7 @@ void Army::set_screen_place(const float camera_position) const
 	for (const auto& unit : units_)
 		unit->set_screen_place(camera_position);
 
-	for (const auto& dead_unit : dead_units_ | std::views::keys)
+	for (const auto& dead_unit : dead_units_)
 		dead_unit->set_screen_place(camera_position);
 }
 
@@ -81,7 +81,8 @@ int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<
 				miner->attached_goldmine.reset();
 
 
-			dead_units_.emplace_back(*it, dead_unit_time_to_delete);
+			dead_units_.emplace_back(*it);
+			dead_units_remains_times_.push_back(dead_unit_time_to_delete);
 			it = units_.erase(it);
 			continue;
 		}
@@ -105,14 +106,16 @@ int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<
 	}
 
 	// process dead units
-	for (auto it = dead_units_.begin(); it != dead_units_.end(); ++it)
+	for (int i = 0; i < dead_units_.size(); i++)
 	{
-		it->first->show_animation(delta_time.asMilliseconds());
-		it->second -= delta_time.asMilliseconds();
-		if (it->second <= 0)
+		dead_units_[i]->show_animation(delta_time.asMilliseconds());
+		dead_units_remains_times_[i] -= delta_time.asMilliseconds();
+		if(dead_units_remains_times_[i] <= 0)
 		{
-			std::swap(*it, dead_units_.back());
+			std::swap(dead_units_[i], dead_units_.back());
 			dead_units_.pop_back();
+			std::swap(dead_units_remains_times_[i], dead_units_remains_times_.back());
+			dead_units_remains_times_.pop_back();
 			break;
 		}
 	}
@@ -121,7 +124,63 @@ int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<
 
 bool Army::is_ally() const
 {
-	return is_ally_army_;
+	return texture_shift_ >= 0;
+}
+
+void Army::write_to_packet(sf::Packet& packet) const
+{
+	packet << texture_shift_ << army_target_ << alive_units_count_ << units_.size();
+	for (const auto& unit : units_)
+		unit->write_to_packet(packet);
+
+	packet << dead_units_.size();
+	for (const auto& dead_unit : dead_units_)
+		dead_unit->write_to_packet(packet);
+}
+
+void Army::update_from_packet(sf::Packet& packet)
+{
+	int army_target;
+	packet >> texture_shift_ >> army_target >> alive_units_count_;
+	army_target_ = static_cast<ArmyTarget>(army_target);
+
+	auto update_units_from_packet = [&](std::vector<std::shared_ptr<Unit>>& units, sf::Packet& packet_to_get_update)
+		{
+			size_t units_count;
+			packet_to_get_update >> units_count;
+
+			for (int i = 0; i < std::min(units_count, units.size()); i++)
+			{
+				int unit_id; packet_to_get_update >> unit_id;
+				if (unit_id != units[i]->get_id())
+				{
+					if (unit_id == Miner::id)
+						units[i] = std::make_shared<Miner>(Player::spawn_point, Player::get_correct_texture_id(my_miner, texture_shift_));
+					else if (unit_id == Swordsman::id)
+						units[i] = std::make_shared<Swordsman>(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, texture_shift_));
+				}
+				units[i]->update_from_packet(packet_to_get_update);
+			}
+
+			if (units_count < units.size())
+				units.resize(units_count);
+			else
+			{
+				while (units.size() < units_count)
+				{
+					int unit_id; packet_to_get_update >> unit_id;
+					std::shared_ptr<Unit> unit;
+					if (unit_id == Miner::id)
+						unit = std::make_shared<Miner>(Player::spawn_point, Player::get_correct_texture_id(my_miner, texture_shift_));
+					else if (unit_id == Swordsman::id)
+						unit = std::make_shared<Swordsman>(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, texture_shift_));
+					unit->update_from_packet(packet_to_get_update);
+					units.push_back(unit);
+				}
+			}
+		};
+	update_units_from_packet(units_, packet);
+	update_units_from_packet(dead_units_, packet);
 }
 
 int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const

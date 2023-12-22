@@ -20,21 +20,26 @@ void Unit::show_animation(const int delta_time)
 			if (current_frame_ == 0)
 				cumulative_time_ = 0;
 
-			int y_shift = 0; // if walk_animation
-
-			if (animation_type_ == attack_animation)
-			{
-				y_shift = animation_params_.frame_height;
-				if (current_frame_ == 7)
-					do_damage_flag_ = true;
-			}
-
-			if (animation_type_ == die_animation)
-				y_shift = animation_params_.frame_height * 2;
-
-			sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
+			set_animation_frame();
 		}
 	}
+}
+
+void Unit::set_animation_frame()
+{
+	int y_shift = 0; // if walk_animation
+
+	if (animation_type_ == attack_animation)
+	{
+		y_shift = animation_params_.frame_height;
+		if (current_frame_ == 7)
+			do_damage_flag_ = true;
+	}
+
+	if (animation_type_ == die_animation)
+		y_shift = animation_params_.frame_height * 2;
+
+	sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
 }
 
 
@@ -98,6 +103,27 @@ void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
 {
 	stand_place_ = *places.begin();
 	places.erase(places.begin());
+}
+
+void Unit::write_to_packet(sf::Packet& packet) const
+{
+	MapObject::write_to_packet(packet);
+	packet << health_ << speed_.x << speed_.y << animation_type_ << was_move_.first << was_move_.second << prev_direction_
+		<< dead_ << do_damage_flag_;
+}
+
+void Unit::update_from_packet(sf::Packet& packet)
+{
+	MapObject::update_from_packet(packet);
+	int animation_type;
+	packet >> health_ >> speed_.x >> speed_.y >> animation_type >> was_move_.first >> was_move_.second >> prev_direction_
+		>> dead_ >> do_damage_flag_;
+	animation_type_ = static_cast<AnimationType>(animation_type);
+
+	cause_damage(0, 0);
+	set_animation_frame();
+	sprite_.scale({ static_cast<float>(prev_direction_), 0.f });
+	set_y_scale();
 }
 
 int Unit::get_direction() const
@@ -303,6 +329,19 @@ int Miner::get_cost() const
 	return cost;
 }
 
+void Miner::write_to_packet(sf::Packet& packet) const
+{
+	packet << id << gold_count_in_bag_;
+	Unit::write_to_packet(packet);
+}
+
+void Miner::update_from_packet(sf::Packet& packet)
+{
+	packet >> gold_count_in_bag_;
+	gold_count_bar_.update();
+	Unit::update_from_packet(packet);
+}
+
 int Miner::get_id() const
 {
 	return id;
@@ -353,6 +392,12 @@ int Swordsman::get_wait_time() const
 int Swordsman::get_cost() const
 {
 	return cost;
+}
+
+void Swordsman::write_to_packet(sf::Packet& packet) const
+{
+	packet << id;
+	Unit::write_to_packet(packet);
 }
 
 int Swordsman::get_id() const

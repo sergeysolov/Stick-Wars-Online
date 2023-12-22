@@ -23,7 +23,7 @@ protected:
 	sf::Sound kill_sound_;
 	sf::Sound damage_sound_;
 
-	float health_;
+	float health_; 
 	Bar<float> health_bar_;
 
 	sf::Vector2f speed_ = { 0.f, 0.f };
@@ -40,6 +40,7 @@ protected:
 
 	void set_y_scale() override;
 	bool animation_complete();
+	void set_animation_frame();
 	virtual void kill();
 	void push(int direction);
 
@@ -80,6 +81,9 @@ public:
 	std::pair<int, sf::Vector2f> get_stand_place() const;
 	std::pair<int, sf::Vector2f> extract_stand_place();
 	void set_stand_place(std::map<int, sf::Vector2f>& places);
+
+	void write_to_packet(sf::Packet& packet) const override;
+	void update_from_packet(sf::Packet& packet) override;
 };
 
 class Miner : public Unit
@@ -119,6 +123,9 @@ public:
 	float get_attack_distance() const override;
 	int get_wait_time() const override;
 	int get_cost() const override;
+
+	void write_to_packet(sf::Packet& packet) const override;
+	void update_from_packet(sf::Packet& packet) override;
 };
 
 
@@ -148,4 +155,6 @@ public:
 	float get_attack_distance() const override;
 	int get_wait_time() const override;
 	int get_cost() const override;
+
+	void write_to_packet(sf::Packet& packet) const override;
 };

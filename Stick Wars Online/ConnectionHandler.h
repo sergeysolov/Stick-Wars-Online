@@ -20,6 +20,11 @@ class Connection
 	bool send_input_active_ = false;
 	bool receive_input_active_ = false;
 	std::optional<Input> input_;
+
+	std::mutex update_mtx_;
+	bool send_updates_active_ = false;
+	bool receive_updates_active_ = false;
+	std::shared_ptr<sf::Packet> update_;
 public:
 	Connection(std::unique_ptr<sf::TcpSocket>&& socket, int id, std::string name);
 
@@ -30,11 +35,20 @@ public:
 	void put_input(const Input& input);
 	std::optional<Input> get_input();
 
+	void put_update(const std::shared_ptr<sf::Packet>& update);
+	std::shared_ptr<sf::Packet> get_update();
+
 	void start_send_input();
 	void stop_send_input();
 
 	void start_receive_input();
 	void stop_receive_input();
+
+	void start_send_updates();
+	void stop_send_updates();
+
+	void start_receive_updates();
+	void stop_receive_updates();
 
 	constexpr static int port = 38721;
 };
@@ -54,12 +68,16 @@ public:
 	
 	std::list<Connection>& get_connections();
 	void read_player_name();
-	std::string get_player_name() const;
+	[[nodiscard]] std::string get_player_name() const;
 
 	void start_receive_input();
 	void stop_receive_input();
 
+	void start_send_updates();
+	void stop_send_updates();
+
 	std::vector<std::optional<Input>> get_clients_input();
+	void put_update_to_clients(const sf::Packet& update_packet);
 };
 
 inline std::unique_ptr<ServerConnectionHandler> server_handler;
@@ -74,10 +92,15 @@ public:
 	void connect();
 	Connection& get_server() const;
 	[[nodiscard]] int get_id() const;
-	void put_input_in_queue(const Input& input) const;
 
 	void start_send_input() const;
 	void stop_send_input() const;
+
+	void start_receive_updates() const;
+	void stop_receive_updates() const;
+
+	void put_input_to_server(const Input& input) const;
+	std::shared_ptr<sf::Packet> get_update_from_server() const;
 };
 
 inline std::unique_ptr<ClientConnectionHandler> client_handler;

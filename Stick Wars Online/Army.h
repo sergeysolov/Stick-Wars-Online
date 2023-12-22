@@ -3,6 +3,7 @@
 #include <queue>
 #include <vector>
 #include <optional>
+#include <SFML/Network/Packet.hpp>
 
 #include "Units.h"
 
@@ -28,7 +29,7 @@ public:
 	constexpr static std::array<float, 3> defend_lines = { 900, 1500, 2300 };
 	constexpr static float enemy_defend_line = map_frame_width * 3 - 600;
 
-	Army(float army_defend_line, bool is_ally_army);
+	Army(float army_defend_line, int id);
 
 	void set_army_target(ArmyTarget target);
 	[[nodiscard]] ArmyTarget get_army_target() const;
@@ -45,19 +46,22 @@ public:
 
 	[[nodiscard]] bool is_ally() const;
 
+	void write_to_packet(sf::Packet& packet) const;
+	void update_from_packet(sf::Packet& packet);
+
 protected:
 	int process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const;
 	void process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time);
 
-	bool is_ally_army_;
-
+	int texture_shift_; // is equal to player id
 	ArmyTarget army_target_ = defend;
-	
+	int alive_units_count_ = 0;
+
 	std::map<int, sf::Vector2f> defend_places_;
 	std::vector<std::shared_ptr<Unit>> units_;
-	std::vector<std::pair<std::shared_ptr<Unit>, int>> dead_units_;
 
-	int alive_units_count_ = 0;
+	std::vector<std::shared_ptr<Unit>> dead_units_;
+	std::vector<int> dead_units_remains_times_;
 };
 
 

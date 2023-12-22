@@ -48,6 +48,9 @@ public:
 	void press() override;
 	void process_button(int elapsed_time);
 	int get_unit_cost() const;
+
+	void write_to_packet(sf::Packet& packet) const;
+	void update_from_packet(sf::Packet& packet);
 };
 
 class StateManager;
@@ -73,5 +76,8 @@ public:
 	std::vector<std::unique_ptr<UnitBuyButton>>& get_unit_buy_buttons();
 	std::unique_ptr<Button>& get_in_attack_button();
 	std::unique_ptr<Button>& get_defend_button();
+
+	void write_to_packet(sf::Packet& packet) const;
+	void update_from_packet(sf::Packet& packet) const;
 };
 

@@ -40,7 +40,7 @@ class UserInterface;
 
 class Player
 {
-	const size_t player_id_;
+	size_t player_id_;
 
 	int money_ = 500;
 
@@ -53,10 +53,11 @@ class Player
 
 	static constexpr int time_money_increment = 5000;
 	static constexpr int count_money_increment = 20;
-	inline static const sf::Vector2f spawn_point = { -100, 650 };
 
-	static texture_ID get_correct_texture_id(texture_ID texture_id, size_t player_id);
 public:
+	inline static const sf::Vector2f spawn_point = { -100, 650 };
+	static texture_ID get_correct_texture_id(texture_ID texture_id, size_t player_id);
+
 	Player(size_t player_id, const std::string& name = "");
 	void set_screen_place(float camera_position) const;
 
@@ -68,5 +69,8 @@ public:
 
 	[[nodiscard]] Army& get_Army() const;
 	[[nodiscard]] size_t get_id() const;
+
+	void write_to_packet(sf::Packet& packet) const;
+	void update_from_packet(sf::Packet& packet);
 };
 

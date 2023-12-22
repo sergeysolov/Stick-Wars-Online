@@ -28,13 +28,24 @@ void Connection::put_input(const Input& input)
 std::optional<Input> Connection::get_input()
 {
 	std::lock_guard guard(input_mtx_);
-	if(input_)
-	{
-		Input input = *input_;
-		input_ = {};
-		return input;
-	}
-	return {};
+	const auto input = input_;
+	input_ = {};
+	return input;
+
+}
+
+void Connection::put_update(const std::shared_ptr<sf::Packet>& update)
+{
+	std::lock_guard guard(update_mtx_);
+	update_ = update;
+}
+
+std::shared_ptr<sf::Packet> Connection::get_update()
+{
+	std::lock_guard guard(update_mtx_);
+	const auto update = update_;
+	update_.reset();
+	return update;
 }
 
 //for client
@@ -80,6 +91,7 @@ void Connection::start_receive_input()
 				Input input;
 				input.read_from_packet(packet);
 				//std::cout << "Packet received " << input.a << ' ' << input.d <<'\n';
+
 				std::lock_guard guard(input_mtx_);
 				input_ = input;
 			}
@@ -89,6 +101,52 @@ void Connection::start_receive_input()
 void Connection::stop_receive_input()
 {
 	receive_input_active_ = false;
+}
+
+void Connection::start_send_updates()
+{
+	send_updates_active_ = true;
+	std::thread([&]
+		{
+			while (send_updates_active_)
+			{
+				std::shared_ptr<sf::Packet> packet;
+				{
+					std::lock_guard guard(update_mtx_);
+					packet = update_;
+					update_.reset();
+				}
+				if(packet != nullptr)
+					socket_->send(*packet);
+			}	
+		}
+	).detach();
+}
+
+void Connection::stop_send_updates()
+{
+	send_updates_active_ = false;
+}
+
+void Connection::start_receive_updates()
+{
+	receive_updates_active_ = true;
+	std::thread([&]
+		{
+			while (receive_updates_active_)
+			{
+				auto packet = std::make_shared<sf::Packet>();
+				socket_->receive(*packet);
+
+				std::lock_guard guard(update_mtx_);
+				update_ = packet;
+			}
+		}).detach();
+}
+
+void Connection::stop_receive_updates()
+{
+	receive_updates_active_ = false;
 }
 
 void ClientConnectionHandler::connect()
@@ -143,9 +201,14 @@ int ClientConnectionHandler::get_id() const
 	return id_;
 }
 
-void ClientConnectionHandler::put_input_in_queue(const Input& input) const
+void ClientConnectionHandler::put_input_to_server(const Input& input) const
 {
 	server_->put_input(input);
+}
+
+std::shared_ptr<sf::Packet> ClientConnectionHandler::get_update_from_server() const
+{
+	return server_->get_update();
 }
 
 void ClientConnectionHandler::start_send_input() const
@@ -156,6 +219,17 @@ void ClientConnectionHandler::start_send_input() const
 void ClientConnectionHandler::stop_send_input() const
 {
 	server_->stop_receive_input();
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+}
+
+void ClientConnectionHandler::start_receive_updates() const
+{
+	server_->start_receive_updates();
+}
+
+void ClientConnectionHandler::stop_receive_updates() const
+{
+	server_->stop_receive_updates();
 	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
@@ -245,10 +319,30 @@ void ServerConnectionHandler::stop_receive_input()
 	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
+void ServerConnectionHandler::start_send_updates()
+{
+	for (auto& client : clients_)
+		client.start_send_updates();
+}
+
+void ServerConnectionHandler::stop_send_updates()
+{
+	for (auto& client : clients_)
+		client.stop_send_updates();
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+}
+
 std::vector<std::optional<Input>> ServerConnectionHandler::get_clients_input()
 {
 	std::vector<std::optional<Input>> clients_input;
 	for (auto& client : clients_)
 		clients_input.push_back(client.get_input());
 	return clients_input;
+}
+
+void ServerConnectionHandler::put_update_to_clients(const sf::Packet& update_packet)
+{
+	const auto shared_packet = std::make_shared<sf::Packet>(update_packet);
+	for (auto& client : clients_)
+		client.put_update(shared_packet);
 }

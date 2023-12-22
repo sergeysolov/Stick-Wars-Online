@@ -3,6 +3,8 @@
 #include "TextureHolder.h"
 #include "Attributes.h"
 #include <SFML/Graphics.hpp>
+#include <SFML/Network/Packet.hpp>
+
 #include "DrawQueue.h"
 
 constexpr float map_frame_width = 2100;
@@ -37,6 +39,9 @@ public:
 	virtual void draw(DrawQueue& queue) const;
 	const AnimationParams& get_animation_params() const;
 	int get_cumulative_time() const;
+
+	virtual void write_to_packet(sf::Packet& packet) const;
+	virtual void update_from_packet(sf::Packet& packet);
 
 protected:
 	float x_;
@@ -73,6 +78,9 @@ public:
 	int mine(int gold_count);
 	bool empty() const;
 	const int max_gold_capacity = 3000;
+
+	void write_to_packet(sf::Packet& packet) const override;
+	void update_from_packet(sf::Packet& packet) override;
 protected:
 	int gold_capacity_ = max_gold_capacity;
 };
@@ -99,4 +107,7 @@ public:
 	void set_screen_place(float camera_position) override;
 	bool is_destroyed() const;
 	float get_health() const;
+
+	void write_to_packet(sf::Packet& packet) const override;
+	void update_from_packet(sf::Packet& packet) override;
 };

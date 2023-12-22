@@ -91,7 +91,7 @@ void UnitBuyButton::draw(DrawQueue& queue) const
 	queue.emplace(interface_layer_0, &time_bar_);
 	queue.emplace(interface_layer_1, &gold_icon_);
 
-	if (remaining_time_ != 0)
+	if (remaining_time_ > 0)
 		queue.emplace(interface_layer_1, &count_text_);
 }
 
@@ -104,6 +104,17 @@ void UnitBuyButton::press()
 int UnitBuyButton::get_unit_cost() const
 {
 	return unit_cost_;
+}
+
+void UnitBuyButton::write_to_packet(sf::Packet& packet) const
+{
+	packet << remaining_time_;
+}
+
+void UnitBuyButton::update_from_packet(sf::Packet& packet)
+{
+	packet >> remaining_time_;
+	process_button(0);
 }
 
 void UnitBuyButton::process_button(const int elapsed_time)
@@ -189,4 +200,16 @@ std::unique_ptr<Button>& UserInterface::get_in_attack_button()
 std::unique_ptr<Button>& UserInterface::get_defend_button()
 {
 	return defend_button_;
+}
+
+void UserInterface::write_to_packet(sf::Packet& packet) const
+{
+	for (const auto& unit_buy_button : unit_buy_buttons_)
+		unit_buy_button->write_to_packet(packet);
+}
+
+void UserInterface::update_from_packet(sf::Packet& packet) const
+{
+	for (const auto& unit_buy_button : unit_buy_buttons_)
+		unit_buy_button->update_from_packet(packet);
 }

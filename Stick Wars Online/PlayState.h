@@ -24,20 +24,20 @@ class PlayState : public BaseState
 
 	float camera_position_ = start_camera_position;
 
-	std::vector<Player> players_;
+	std::vector<Player> players_; // shared
 
-	std::shared_ptr<Statue> my_statue_;
-	std::shared_ptr<Statue> enemy_statue_;
-	Army enemy_army_;
+	std::shared_ptr<Statue> my_statue_; //shared
+	std::shared_ptr<Statue> enemy_statue_; //shared
+	Army enemy_army_; // shared
 	std::unique_ptr<SpawnUnitQueue> enemy_spawn_queue_;
-	std::vector<std::shared_ptr<GoldMine>> gold_mines_;
+	std::vector<std::shared_ptr<GoldMine>> gold_mines_;//shared 
 
 	void move_camera(float step);
 	void set_objects_screen_place() const;
 
 public:
 	explicit PlayState(StateManager& state_manager);
-	~PlayState();
+	~PlayState() override;
 
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;
