@@ -19,7 +19,7 @@ class Connection
 	std::mutex input_mtx_;
 	bool send_input_active_ = false;
 	bool receive_input_active_ = false;
-	std::optional<Input> input_;
+	std::optional<sf::Packet> input_;
 
 	std::mutex update_mtx_;
 	bool send_updates_active_ = false;
@@ -32,8 +32,8 @@ public:
 	[[nodiscard]] int get_id() const;
 	[[nodiscard]] std::string get_name() const;
 
-	void put_input(const Input& input);
-	std::optional<Input> get_input();
+	void put_input(const sf::Packet& input);
+	std::optional<sf::Packet> get_input();
 
 	void put_update(const std::shared_ptr<sf::Packet>& update);
 	std::shared_ptr<sf::Packet> get_update();
@@ -50,7 +50,7 @@ public:
 	void start_receive_updates();
 	void stop_receive_updates();
 
-	constexpr static int port = 38721;
+	constexpr static int port = 27365;
 };
 
 class ServerConnectionHandler
@@ -76,7 +76,7 @@ public:
 	void start_send_updates();
 	void stop_send_updates();
 
-	std::vector<std::optional<Input>> get_clients_input();
+	std::vector<std::optional<sf::Packet>> get_clients_input();
 	void put_update_to_clients(const sf::Packet& update_packet);
 };
 
@@ -99,7 +99,7 @@ public:
 	void start_receive_updates() const;
 	void stop_receive_updates() const;
 
-	void put_input_to_server(const Input& input) const;
+	void put_input_to_server(const sf::Packet& input) const;
 	std::shared_ptr<sf::Packet> get_update_from_server() const;
 };
 

@@ -63,6 +63,20 @@ ControlledUnit& ControlledUnit::operator=(const std::shared_ptr<Unit>& new_unit)
 	return *this;
 }
 
+void Player::handle_change_controlled_unit(const sf::Vector2i mouse_position) const
+{
+	bool changed_controlled_unit = false;
+	for (const auto& unit : army_->get_units())
+		if (unit->get_sprite().getGlobalBounds().contains(static_cast<float>(mouse_position.x), static_cast<float>(mouse_position.y)))
+		{
+			*controlled_unit_ = unit;
+			changed_controlled_unit = true;
+			break;
+		}
+	if (not changed_controlled_unit)
+		*controlled_unit_ = nullptr;
+}
+
 texture_ID Player::get_correct_texture_id(const texture_ID texture_id, const size_t player_id)
 {
 	return static_cast<texture_ID>(static_cast<int>(texture_id) + player_id);
@@ -93,7 +107,7 @@ void Player::draw(DrawQueue& draw_queue) const
 		user_interface_->draw(draw_queue);
 }
 
-void Player::handle_input(const Input& input, const sf::Time delta_time)
+void Player::handle_input(const Input& input, const int mouse_offset, const sf::Time delta_time)
 {
 	if (controlled_unit_->get_unit() != nullptr)
 	{
@@ -153,16 +167,7 @@ void Player::handle_input(const Input& input, const sf::Time delta_time)
 		return;
 	}
 
-	bool changed_controlled_unit = false;
-	for (const auto& unit : army_->get_units())
-		if (unit->get_sprite().getGlobalBounds().contains(static_cast<float>(input.mouse_position.x), static_cast<float>(input.mouse_position.y)))
-		{
-			*controlled_unit_ = unit;
-			changed_controlled_unit = true;
-			break;
-		}
-	if (not changed_controlled_unit)
-		*controlled_unit_ = nullptr;
+	handle_change_controlled_unit({ input.mouse_position.x + mouse_offset, input.mouse_position.y });
 }
 
 std::optional<sf::Vector2f> Player::get_controlled_unit_position() const
@@ -204,7 +209,7 @@ void Player::update_from_packet(sf::Packet& packet)
 	army_->update_from_packet(packet);
 	int controlled_unit_idx;
 	packet >> controlled_unit_idx;
-	if (controlled_unit_idx >= 0)
+	if (controlled_unit_idx >= 0 and controlled_unit_idx < army_->get_units().size())
 	{
 		*controlled_unit_ = army_->get_units()[controlled_unit_idx];
 		if (abs(controlled_unit_->get_unit()->get_speed().x) > 1e-5)

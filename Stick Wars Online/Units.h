@@ -20,14 +20,12 @@ public:
 	};
 	
 protected:
-	sf::Sound kill_sound_;
-	sf::Sound damage_sound_;
 
 	float health_; 
 	Bar<float> health_bar_;
 
 	sf::Vector2f speed_ = { 0.f, 0.f };
-	constexpr static float acceleration = 0.003f;
+	constexpr static float acceleration = 0.002f;
 	
 	AnimationType animation_type_ = no_animation;
 	std::pair<bool, bool> was_move_ = { false, false };
@@ -45,6 +43,10 @@ protected:
 	void push(int direction);
 
 public:
+	static void play_kill_sound();
+	static void play_damage_sound();
+	static void play_hit_sound();
+
 	constexpr static int animation_step = 70;
 	constexpr static float trigger_attack_radius = 500.f;
 	std::shared_ptr<Unit> target_unit;
@@ -131,8 +133,8 @@ public:
 
 class Swordsman : public Unit
 {
-	sf::Sound hit_sound_;
 public:
+
 	constexpr static int id = 1;
 	constexpr static int places_requires = 1;
 	constexpr static float max_health = 300;

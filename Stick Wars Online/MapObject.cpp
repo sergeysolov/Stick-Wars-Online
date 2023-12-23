@@ -61,17 +61,17 @@ void MapObject::set_y_scale()
 }
 
 
-GoldMine::GoldMine(sf::Vector2f position) : MapObject(position, goldmine, animation_params)
+GoldMine::GoldMine(const sf::Vector2f position) : MapObject(position, goldmine, animation_params)
 {
 
 }
 
 int GoldMine::mine(int gold_count)
 {
-	if (gold_count > gold_capacity_)
+ 	if (gold_count > gold_capacity_)
 		gold_count = gold_capacity_;
 	gold_capacity_ -= gold_count;
-	current_frame_ = animation_params_.total_frames - 1 - animation_params_.total_frames *  gold_capacity_ / max_gold_capacity;
+	current_frame_ = static_cast<uint16_t>((1.f - static_cast<float>(gold_capacity_) / static_cast<float>(max_gold_capacity)) * static_cast<float>(animation_params_.total_frames));
 	sprite_.setTextureRect({ animation_params_.init_position.x + current_frame_ * animation_params_.frame_width, animation_params_.init_position.y, animation_params_.frame_width, animation_params_.frame_height });
 	return gold_count;
 }

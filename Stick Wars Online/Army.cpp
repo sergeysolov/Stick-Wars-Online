@@ -519,7 +519,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.army_.set_army_target(Army::defend);
 	}
-	if(random(0.0008f) and queue.get_free_places() >= Miner::places_requires)
+	if(random(0.00004f) and queue.get_free_places() >= Miner::places_requires)
 	{
 		queue.army_.add_unit(std::make_shared<Miner>(enemy_spawn_point, enemy_miner));
 	}

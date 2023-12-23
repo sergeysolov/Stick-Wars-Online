@@ -19,13 +19,13 @@ std::string Connection::get_name() const
 	return name_;
 }
 
-void Connection::put_input(const Input& input)
+void Connection::put_input(const sf::Packet& input)
 {
 	std::lock_guard guard(input_mtx_);
 	input_ = input;
 }
 
-std::optional<Input> Connection::get_input()
+std::optional<sf::Packet> Connection::get_input()
 {
 	std::lock_guard guard(input_mtx_);
 	const auto input = input_;
@@ -56,19 +56,15 @@ void Connection::start_send_input()
 		{
 			while (send_input_active_)
 			{
-				if (input_)
+				std::optional<sf::Packet> input;
 				{
-					Input input;
-					{
-						std::lock_guard guard(input_mtx_);
-						input = *input_;
-						input_ = {};
-					}
-					sf::Packet packet;
-					input.write_to_packet(packet);
-					socket_->send(packet);
-					//std::cout << "Packet sent " << input.a << ' ' << input.d << '\n';
+					std::lock_guard guard(input_mtx_);
+					input = input_;
+					input_ = {};
 				}
+
+				if (input)
+					socket_->send(*input);
 			}
 		}).detach();
 }
@@ -86,11 +82,8 @@ void Connection::start_receive_input()
 		{
 			while (receive_input_active_)
 			{
-				sf::Packet packet;
-				socket_->receive(packet);
-				Input input;
-				input.read_from_packet(packet);
-				//std::cout << "Packet received " << input.a << ' ' << input.d <<'\n';
+				sf::Packet input;
+				socket_->receive(input);
 
 				std::lock_guard guard(input_mtx_);
 				input_ = input;
@@ -201,7 +194,7 @@ int ClientConnectionHandler::get_id() const
 	return id_;
 }
 
-void ClientConnectionHandler::put_input_to_server(const Input& input) const
+void ClientConnectionHandler::put_input_to_server(const sf::Packet& input) const
 {
 	server_->put_input(input);
 }
@@ -332,9 +325,9 @@ void ServerConnectionHandler::stop_send_updates()
 	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
-std::vector<std::optional<Input>> ServerConnectionHandler::get_clients_input()
+std::vector<std::optional<sf::Packet>> ServerConnectionHandler::get_clients_input()
 {
-	std::vector<std::optional<Input>> clients_input;
+	std::vector<std::optional<sf::Packet>> clients_input;
 	for (auto& client : clients_)
 		clients_input.push_back(client.get_input());
 	return clients_input;

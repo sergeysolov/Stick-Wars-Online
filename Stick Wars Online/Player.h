@@ -21,7 +21,7 @@ class ControlledUnit
 
 public:
 	static constexpr float speed_boost_factor = 1.5f;
-	static constexpr float damage_boost_factor = 20.f;
+	static constexpr float damage_boost_factor = 4.f;
 
 	std::optional<sf::Vector2f> last_position = {};
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
@@ -54,6 +54,7 @@ class Player
 	static constexpr int time_money_increment = 5000;
 	static constexpr int count_money_increment = 20;
 
+	void handle_change_controlled_unit(sf::Vector2i mouse_position) const;
 public:
 	inline static const sf::Vector2f spawn_point = { -100, 650 };
 	static texture_ID get_correct_texture_id(texture_ID texture_id, size_t player_id);
@@ -63,7 +64,7 @@ public:
 
 	void update(sf::Time delta_time, Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, std::vector<std::shared_ptr<GoldMine>>& gold_mines);
 	void draw(DrawQueue& draw_queue) const;
-	void handle_input(const Input& input, sf::Time delta_time);
+	void handle_input(const Input& input, int mouse_offset, sf::Time delta_time);
 
 	[[nodiscard]] std::optional<sf::Vector2f> get_controlled_unit_position() const;
 

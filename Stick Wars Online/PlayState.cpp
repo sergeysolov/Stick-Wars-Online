@@ -147,8 +147,7 @@ void PlayState::update(const sf::Time delta_time)
 
 			size_t gold_mines_count;
 			*packet >> gold_mines_count;
-			if (gold_mines_count < gold_mines_.size())
-				gold_mines_.resize(gold_mines_count);
+			gold_mines_.resize(gold_mines_count);
 
 			for (const auto& gold_mine : gold_mines_)
 				gold_mine->update_from_packet(*packet);
@@ -178,24 +177,33 @@ void PlayState::handle_input(Input& input, const sf::Time delta_time)
 	{
 		int player_id = 0;
 
-		players_[player_id].handle_input(input, delta_time);
-
+		players_[player_id].handle_input(input, 0, delta_time);
 
 		if(server_handler != nullptr)
 		{
-			const auto clients_input = server_handler->get_clients_input();
-			for (const auto& client_input : clients_input)
+			auto clients_input_vector = server_handler->get_clients_input();
+			for (auto& client_input_packet : clients_input_vector)
 			{
 				player_id++;
-				if(client_input)
-					players_[player_id].handle_input(*client_input, delta_time);
+				if(client_input_packet)
+				{
+					Input client_input;
+					client_input.read_from_packet(*client_input_packet);
+					float client_camera_position_;
+					*client_input_packet >> client_camera_position_;
+
+					players_[player_id].handle_input(client_input, static_cast<int>(client_camera_position_ - camera_position_), delta_time);
+				}
 			}
 		}
 	}
 	else
 	{
 		my_player_id = client_handler->get_id();
-		client_handler->put_input_to_server(input);
+		sf::Packet input_packet;
+		input.write_to_packet(input_packet);
+		input_packet << camera_position_;
+		client_handler->put_input_to_server(input_packet);
 	}
 
 	if (const auto controlled_unit_position = players_[my_player_id].get_controlled_unit_position(); controlled_unit_position)

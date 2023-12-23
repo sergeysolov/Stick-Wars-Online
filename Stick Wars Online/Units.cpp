@@ -3,8 +3,7 @@
 Unit::Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params) :
 	MapObject(spawn_point, id, animation_params), health_(health), health_bar_(health, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
 {
-	kill_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_kill));
-	damage_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_damage));
+	
 }
 
 void Unit::show_animation(const int delta_time)
@@ -31,6 +30,9 @@ void Unit::set_animation_frame()
 
 	if (animation_type_ == attack_animation)
 	{
+		if(current_frame_ == 2 and get_id() > 0)
+			play_hit_sound();
+
 		y_shift = animation_params_.frame_height;
 		if (current_frame_ == 7)
 			do_damage_flag_ = true;
@@ -49,7 +51,7 @@ void Unit::cause_damage(const float damage, const int direction)
 	push(direction);
 	health_bar_.update();
 	if (damage > 0)
-		damage_sound_.play();
+		play_damage_sound();
 	if (health_ <= 0)
 		kill();
 }
@@ -205,12 +207,64 @@ void Unit::kill()
 	cumulative_time_++;
 	dead_ = true;
 
-	kill_sound_.play();
+	play_kill_sound();
 }
 
 void Unit::push(const int direction)
 {
 	speed_.x = std::clamp(speed_.x + direction * 0.3f, -0.8f, 0.8f);
+}
+
+void Unit::play_kill_sound()
+{
+	static constexpr int total_kill_sounds = 3;
+	static std::vector<sf::Sound> kill_sounds;
+	if (kill_sounds.empty())
+	{
+		for (int i = 0; i < total_kill_sounds; i++)
+		{
+			kill_sounds.emplace_back();
+			kill_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_kill));
+		}
+	}
+	static int idx = 0;
+	idx = (idx + 1) % total_kill_sounds;
+	kill_sounds[idx].play();
+}
+
+void Unit::play_damage_sound()
+{
+	static constexpr int total_damage_sounds = 8;
+	static std::vector<sf::Sound> damage_sounds;
+	if (damage_sounds.empty())
+	{
+		for (int i = 0; i < total_damage_sounds; i++)
+		{
+			damage_sounds.emplace_back();
+			damage_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_damage));
+		}
+	}
+	static int idx = 0;
+	idx = (idx + 1) % total_damage_sounds;
+	damage_sounds[idx].play();
+}
+
+void Unit::play_hit_sound()
+{
+	static constexpr int total_hit_sounds = 8;
+	static std::vector<sf::Sound> hit_sounds;
+	if (hit_sounds.empty())
+	{
+		for (int i = 0; i < total_hit_sounds; i++)
+		{
+			hit_sounds.emplace_back();
+			hit_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_hit));
+		}
+	}
+	static int idx = 0;
+	idx = (idx + 1) % total_hit_sounds;
+	if(hit_sounds[idx].getStatus() != sf::Sound::Playing)
+		hit_sounds[idx].play();
 }
 
 bool Unit::was_killed()
@@ -242,7 +296,9 @@ void Unit::draw(DrawQueue& queue) const
 void Unit::commit_attack()
 {
 	if (animation_type_ != attack_animation)
+	{
 		current_frame_ = 0;
+	}
 	animation_type_ = attack_animation;
 
 	cumulative_time_++;
@@ -350,13 +406,11 @@ int Miner::get_id() const
 Swordsman::Swordsman(const sf::Vector2f spawn_point, const texture_ID texture_id)
 	: Unit(texture_id, spawn_point, max_health, animation_params)
 {
-	hit_sound_.setBuffer(sound_buffers_holder.get_sound_buffer(sward_hit));
 }
 
 void Swordsman::commit_attack()
 {
 	Unit::commit_attack();
-	hit_sound_.play();
 }
 
 int Swordsman::get_places_requires() const
