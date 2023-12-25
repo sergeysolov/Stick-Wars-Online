@@ -37,7 +37,6 @@ class PlayState : public BaseState
 
 public:
 	explicit PlayState(StateManager& state_manager);
-	~PlayState() override;
 
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;

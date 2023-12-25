@@ -22,21 +22,21 @@ public:
 
 
 
-class VictoryState : public GameOverState
+class VictoryState final : public GameOverState
 {
 public:
 	explicit VictoryState(StateManager& state_manager);
 };
 
 
-class LoseState : public GameOverState
+class DefeatState final : public GameOverState
 {
 public:
-	explicit LoseState(StateManager& state_manager);
+	explicit DefeatState(StateManager& state_manager);
 };
 
 
-class PauseState : public GameOverState
+class PauseState final : public GameOverState
 {
 	std::unique_ptr<Button> back_to_game_button_;
 public:

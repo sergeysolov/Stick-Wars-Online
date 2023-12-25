@@ -24,13 +24,13 @@ void Unit::show_animation(const int delta_time)
 	}
 }
 
-void Unit::set_animation_frame()
+void Unit::set_animation_frame(const bool is_play_hit_sound)
 {
 	int y_shift = 0; // if walk_animation
 
 	if (animation_type_ == attack_animation)
 	{
-		if(current_frame_ == 2 and get_id() > 0)
+		if(is_play_hit_sound and current_frame_ == 2 and get_id() > 0)
 			play_hit_sound();
 
 		y_shift = animation_params_.frame_height;
@@ -116,14 +116,25 @@ void Unit::write_to_packet(sf::Packet& packet) const
 
 void Unit::update_from_packet(sf::Packet& packet)
 {
+	const auto prev_frame = current_frame_;
 	MapObject::update_from_packet(packet);
+	const float prev_health = health_;
+	const bool prev_dead = dead_;
+
 	int animation_type;
 	packet >> health_ >> speed_.x >> speed_.y >> animation_type >> was_move_.first >> was_move_.second >> prev_direction_
 		>> dead_ >> do_damage_flag_;
 	animation_type_ = static_cast<AnimationType>(animation_type);
 
+	if (prev_health > health_)
+		play_damage_sound();
+	if (prev_health > 1.f and health_ < 1e-5)
+		play_kill_sound();
+	if (get_id() > 0 and prev_frame == 1 and current_frame_ == 2 and animation_type_ == attack_animation)
+		play_hit_sound();
+
 	cause_damage(0, 0);
-	set_animation_frame();
+	set_animation_frame(false);
 	sprite_.scale({ static_cast<float>(prev_direction_), 0.f });
 	set_y_scale();
 }
@@ -225,6 +236,7 @@ void Unit::play_kill_sound()
 		{
 			kill_sounds.emplace_back();
 			kill_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_kill));
+			kill_sounds.back().setVolume(sounds_volume);
 		}
 	}
 	static int idx = 0;
@@ -242,6 +254,7 @@ void Unit::play_damage_sound()
 		{
 			damage_sounds.emplace_back();
 			damage_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_damage));
+			damage_sounds.back().setVolume(sounds_volume);
 		}
 	}
 	static int idx = 0;
@@ -259,6 +272,7 @@ void Unit::play_hit_sound()
 		{
 			hit_sounds.emplace_back();
 			hit_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_hit));
+			hit_sounds.back().setVolume(sounds_volume);
 		}
 	}
 	static int idx = 0;

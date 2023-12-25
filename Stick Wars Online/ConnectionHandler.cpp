@@ -54,9 +54,13 @@ void Connection::start_send_input()
 	send_input_active_ = true;
 	std::thread([&]
 		{
+			socket_->setBlocking(false);
+
+			std::optional<sf::Packet> input;
+			bool take_new_input = true;
 			while (send_input_active_)
 			{
-				std::optional<sf::Packet> input;
+				if(take_new_input)
 				{
 					std::lock_guard guard(input_mtx_);
 					input = input_;
@@ -64,8 +68,14 @@ void Connection::start_send_input()
 				}
 
 				if (input)
-					socket_->send(*input);
+				{
+					if (const auto status = socket_->send(*input); status == sf::Socket::Done)
+						take_new_input = true;
+					else
+						take_new_input = false;
+				}
 			}
+			socket_->setBlocking(true);
 		}).detach();
 }
 
@@ -80,14 +90,19 @@ void Connection::start_receive_input()
 	receive_input_active_ = true;
 	std::thread([&]
 		{
+			socket_->setBlocking(false);
+
 			while (receive_input_active_)
 			{
 				sf::Packet input;
-				socket_->receive(input);
-
-				std::lock_guard guard(input_mtx_);
-				input_ = input;
+				if(const auto status = socket_->receive(input); status == sf::Socket::Done)
+				{
+					std::lock_guard guard(input_mtx_);
+					input_ = input;
+				}
 			}
+
+			socket_->setBlocking(true);
 		}).detach();
 }
 
@@ -101,17 +116,27 @@ void Connection::start_send_updates()
 	send_updates_active_ = true;
 	std::thread([&]
 		{
+			socket_->setBlocking(false);
+
+			std::shared_ptr<sf::Packet> packet;
+			bool take_new_packet = true;
 			while (send_updates_active_)
 			{
-				std::shared_ptr<sf::Packet> packet;
+				if(take_new_packet)
 				{
 					std::lock_guard guard(update_mtx_);
 					packet = update_;
 					update_.reset();
 				}
 				if(packet != nullptr)
-					socket_->send(*packet);
-			}	
+				{
+					if (const auto status = socket_->send(*packet); status == sf::Socket::Done)
+						take_new_packet = true;
+					else
+						take_new_packet = false;
+				}
+			}
+			socket_->setBlocking(true);
 		}
 	).detach();
 }
@@ -121,25 +146,42 @@ void Connection::stop_send_updates()
 	send_updates_active_ = false;
 }
 
+//for client
 void Connection::start_receive_updates()
 {
 	receive_updates_active_ = true;
 	std::thread([&]
 		{
+			socket_->setBlocking(false);
+
+			auto packet = std::make_shared<sf::Packet>();
+			bool create_new_packet = false;
 			while (receive_updates_active_)
 			{
-				auto packet = std::make_shared<sf::Packet>();
-				socket_->receive(*packet);
+				if(create_new_packet)
+					packet = std::make_shared<sf::Packet>();
+				if(const auto status = socket_->receive(*packet); status == sf::Socket::Done)
+				{
+					create_new_packet = true;
+					std::lock_guard guard(update_mtx_);
+					update_ = packet;
+				}
 
-				std::lock_guard guard(update_mtx_);
-				update_ = packet;
 			}
+			socket_->setBlocking(true);
 		}).detach();
 }
 
 void Connection::stop_receive_updates()
 {
 	receive_updates_active_ = false;
+}
+
+ClientConnectionHandler::~ClientConnectionHandler()
+{
+	stop_receive_updates();
+	stop_send_input();
+	std::this_thread::sleep_for(Connection::exit_sleep_time);
 }
 
 void ClientConnectionHandler::connect()
@@ -223,7 +265,7 @@ void ClientConnectionHandler::start_receive_updates() const
 void ClientConnectionHandler::stop_receive_updates() const
 {
 	server_->stop_receive_updates();
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	std::this_thread::sleep_for(Connection::exit_sleep_time);
 }
 
 void ServerConnectionHandler::listen_for_client_connection()
@@ -276,6 +318,9 @@ void ServerConnectionHandler::listen_for_client_connection()
 ServerConnectionHandler::~ServerConnectionHandler()
 {
 	stop_listen();
+	stop_receive_input();
+	stop_send_updates();
+	std::this_thread::sleep_for(Connection::exit_sleep_time);
 }
 
 void ServerConnectionHandler::stop_listen()

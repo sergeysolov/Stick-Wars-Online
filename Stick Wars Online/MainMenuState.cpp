@@ -75,6 +75,12 @@ MultiplayerMenuState::MultiplayerMenuState(StateManager& state_manager) : state_
 	connect_button_->set_text("Connect", text_font, { 50, 30 });
 }
 
+MultiplayerMenuState::~MultiplayerMenuState()
+{
+	server_handler.reset();
+	client_handler.reset();
+}
+
 void MultiplayerMenuState::update(sf::Time delta_time)
 {
 	if(start_game_button_->is_pressed())

@@ -29,6 +29,8 @@ public:
 	constexpr static std::array<float, 3> defend_lines = { 900, 1500, 2300 };
 	constexpr static float enemy_defend_line = map_frame_width * 3 - 600;
 
+	static void play_in_attack_music(bool play=true);
+
 	Army(float army_defend_line, int id);
 
 	void set_army_target(ArmyTarget target);

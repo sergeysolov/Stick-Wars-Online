@@ -3,7 +3,12 @@
 void GameOverState::update(sf::Time delta_time)
 {
 	if (to_menu_button_->is_pressed())
-		state_manager_.switch_state(main_menu);
+	{
+		if (client_handler != nullptr or server_handler != nullptr)
+			state_manager_.switch_state(multiplayer_menu);
+		else
+			state_manager_.switch_state(main_menu);
+	}
 }
 
 void GameOverState::handle_input(Input& input, sf::Time delta_time)
@@ -38,12 +43,12 @@ GameOverState::GameOverState(StateManager& state_manager, const std::string& tex
 	to_menu_button_->get_text().move({ 45, 25 });
 }
 
-VictoryState::VictoryState(StateManager& state_manager) : GameOverState(state_manager, "You Win!")
+VictoryState::VictoryState(StateManager& state_manager) : GameOverState(state_manager, "Victory!")
 {
 
 }
 
-LoseState::LoseState(StateManager& state_manager) : GameOverState(state_manager, "You Lose!")
+DefeatState::DefeatState(StateManager& state_manager) : GameOverState(state_manager, "Defeat!")
 {
 }
 

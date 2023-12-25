@@ -6,7 +6,9 @@ enum sound_buffer_id
 {
 	sward_hit,
 	sward_damage,
-	sward_kill
+	sward_kill,
+
+	in_attack_music,
 };
 
 class SoundBuffersHolder

@@ -38,11 +38,12 @@ protected:
 
 	void set_y_scale() override;
 	bool animation_complete();
-	void set_animation_frame();
+	void set_animation_frame(bool is_play_hit_sound=true);
 	virtual void kill();
 	void push(int direction);
 
 public:
+	static constexpr int sounds_volume = 15;
 	static void play_kill_sound();
 	static void play_damage_sound();
 	static void play_hit_sound();
@@ -88,7 +89,7 @@ public:
 	void update_from_packet(sf::Packet& packet) override;
 };
 
-class Miner : public Unit
+class Miner final : public Unit
 {
 	int gold_count_in_bag_ = 0;
 	Bar<int> gold_count_bar_;
@@ -131,7 +132,7 @@ public:
 };
 
 
-class Swordsman : public Unit
+class Swordsman final : public Unit
 {
 public:
 

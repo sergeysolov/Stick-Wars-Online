@@ -39,6 +39,7 @@ class MultiplayerMenuState : public BaseState
 	constexpr static int acceptance_to_start_game_num = 761;
 public:
 	explicit MultiplayerMenuState(StateManager& state_manager);
+	~MultiplayerMenuState() override;
 
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;

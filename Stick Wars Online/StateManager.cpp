@@ -15,7 +15,7 @@ StateManager::StateManager(sf::RenderWindow& window) : window_(window)
 	register_state<PlayState>(play);
 	register_state<MainMenuState>(main_menu);
 	register_state<MultiplayerMenuState>(multiplayer_menu);
-	register_state<LoseState>(lose_menu);
+	register_state<DefeatState>(lose_menu);
 	register_state<VictoryState>(victory_menu);
 	register_state<PauseState>(pause);
 }

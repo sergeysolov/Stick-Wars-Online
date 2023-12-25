@@ -80,22 +80,6 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 	}
 }
 
-PlayState::~PlayState()
-{
-	if(server_handler != nullptr)
-	{
-		server_handler->stop_receive_input();
-		server_handler->stop_send_updates();
-		server_handler.reset();
-	}
-	if(client_handler != nullptr)
-	{
-		client_handler->stop_send_input();
-		client_handler->stop_receive_updates();
-		client_handler.reset();
-	}
-}
-
 void PlayState::update(const sf::Time delta_time)
 {
 	if(client_handler == nullptr)
@@ -159,9 +143,15 @@ void PlayState::update(const sf::Time delta_time)
 	set_objects_screen_place();
 
 	if (my_statue_->is_destroyed())
+	{
+		Army::play_in_attack_music(false);
 		state_manager_.switch_state(lose_menu);
+	}
 	else if (enemy_statue_->is_destroyed())
+	{
+		Army::play_in_attack_music(false);
 		state_manager_.switch_state(victory_menu);
+	}
 }
 
 void PlayState::handle_input(Input& input, const sf::Time delta_time)

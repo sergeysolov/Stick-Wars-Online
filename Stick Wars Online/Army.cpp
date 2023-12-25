@@ -6,6 +6,20 @@
 
 #include "PlayState.h"
 
+void Army::play_in_attack_music(const bool play)
+{
+	static std::unique_ptr<sf::Sound> in_attack_sound;
+	if(in_attack_sound == nullptr)
+	{
+		in_attack_sound = std::make_unique<sf::Sound>();
+		in_attack_sound->setBuffer(sound_buffers_holder.get_sound_buffer(in_attack_music));
+	}
+	if (play)
+		in_attack_sound->play();
+	else
+		in_attack_sound->stop();
+}
+
 Army::Army(const float army_defend_line, const int id) : texture_shift_(id)
 {
 	if(is_ally())
@@ -140,10 +154,14 @@ void Army::write_to_packet(sf::Packet& packet) const
 
 void Army::update_from_packet(sf::Packet& packet)
 {
+	const auto prev_target = army_target_;
 	int army_target;
 	packet >> texture_shift_ >> army_target >> alive_units_count_;
 	army_target_ = static_cast<ArmyTarget>(army_target);
 
+	if (not is_ally() and (prev_target != attack and army_target == attack))
+		play_in_attack_music();
+	
 	auto update_units_from_packet = [&](std::vector<std::shared_ptr<Unit>>& units, sf::Packet& packet_to_get_update)
 		{
 			size_t units_count;
@@ -511,9 +529,10 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), invoke_enemy_time);
 	}
-	if (queue.army_.get_units().size() > Army::army_max_size - 5)
+	if (queue.army_.get_units().size() > Army::army_max_size - 5 and queue.army_.get_army_target() != Army::attack)
 	{
 		queue.army_.set_army_target(Army::attack);
+		Army::play_in_attack_music();
 	}
 	else if (queue.army_.get_units().size() < 15)
 	{
@@ -523,9 +542,9 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.army_.add_unit(std::make_shared<Miner>(enemy_spawn_point, enemy_miner));
 	}
-	if (random(0.0008f))
+	if (random(0.0009f))
 	{
-		int count = 3;
+		int count = 4;
 		if (enemy_statue.get_health() < Statue::enemy_max_health / 2)
 			count += 3;
 		if (enemy_statue.get_health() < Statue::enemy_max_health / 4)

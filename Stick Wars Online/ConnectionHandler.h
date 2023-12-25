@@ -6,9 +6,6 @@
 #include <list>
 #include <mutex>
 #include <optional>
-#include <queue>
-
-#include "Input.h"
 
 class Connection
 {
@@ -25,7 +22,13 @@ class Connection
 	bool send_updates_active_ = false;
 	bool receive_updates_active_ = false;
 	std::shared_ptr<sf::Packet> update_;
+
+	static constexpr auto threads_working_sleep_time = std::chrono::milliseconds(0);
 public:
+	static constexpr auto exit_sleep_time = std::chrono::milliseconds(100);
+
+	constexpr static int port = 27365;
+
 	Connection(std::unique_ptr<sf::TcpSocket>&& socket, int id, std::string name);
 
 	[[nodiscard]] sf::TcpSocket& get_socket() const;
@@ -49,8 +52,6 @@ public:
 
 	void start_receive_updates();
 	void stop_receive_updates();
-
-	constexpr static int port = 27365;
 };
 
 class ServerConnectionHandler
@@ -61,10 +62,12 @@ class ServerConnectionHandler
 
 	std::mutex clients_mtx_;
 	bool listen_ = false;
+
 public:
+	~ServerConnectionHandler();
+
 	void listen_for_client_connection();
 	void stop_listen();
-	~ServerConnectionHandler();
 	
 	std::list<Connection>& get_connections();
 	void read_player_name();
@@ -89,6 +92,8 @@ class ClientConnectionHandler
 	int id_ = -1;
 
 public:
+	~ClientConnectionHandler();
+
 	void connect();
 	Connection& get_server() const;
 	[[nodiscard]] int get_id() const;
