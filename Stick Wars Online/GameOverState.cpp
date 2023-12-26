@@ -5,7 +5,19 @@ void GameOverState::update(sf::Time delta_time)
 	if (to_menu_button_->is_pressed())
 	{
 		if (client_handler != nullptr or server_handler != nullptr)
+		{
+			if(client_handler != nullptr)
+			{
+				client_handler->stop_send_input();
+				client_handler->stop_receive_updates();
+			}
+			if(server_handler != nullptr)
+			{
+				server_handler->stop_receive_input();
+				server_handler->stop_send_updates();
+			}
 			state_manager_.switch_state(multiplayer_menu);
+		}
 		else
 			state_manager_.switch_state(main_menu);
 	}
@@ -13,7 +25,7 @@ void GameOverState::update(sf::Time delta_time)
 
 void GameOverState::handle_input(Input& input, sf::Time delta_time)
 {
-	if (to_menu_button_->check_mouse_pressed(input.mouse_position))
+	if (input.mouse_left and to_menu_button_->check_mouse_pressed(input.mouse_position))
 		to_menu_button_->press();
 }
 

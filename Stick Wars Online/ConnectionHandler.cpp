@@ -55,26 +55,34 @@ void Connection::start_send_input()
 	std::thread([&]
 		{
 			socket_->setBlocking(false);
+			size_t total_count = 0, success_count = 0;
 
 			std::optional<sf::Packet> input;
 			bool take_new_input = true;
 			while (send_input_active_)
 			{
-				if(take_new_input)
+				total_count++;
+				if (take_new_input)
 				{
 					std::lock_guard guard(input_mtx_);
+					//std::cout << "send: mutex captured\n";
 					input = input_;
 					input_ = {};
+					//std::cout << "send: mutex released\n";
 				}
 
 				if (input)
 				{
 					if (const auto status = socket_->send(*input); status == sf::Socket::Done)
+					{
 						take_new_input = true;
+						success_count++;
+					}
 					else
 						take_new_input = false;
 				}
 			}
+			std::cout << "From client: total: " << total_count << " success: " << success_count << '\n';
 			socket_->setBlocking(true);
 		}).detach();
 }
@@ -91,26 +99,31 @@ void Connection::start_receive_input()
 	std::thread([&]
 		{
 			socket_->setBlocking(false);
-
+			size_t total_count = 0, success_count = 0;
 			while (receive_input_active_)
 			{
+				total_count++;
 				sf::Packet input;
-				if(const auto status = socket_->receive(input); status == sf::Socket::Done)
+				if (const auto status = socket_->receive(input); status == sf::Socket::Done)
 				{
 					std::lock_guard guard(input_mtx_);
 					input_ = input;
+					success_count++;
 				}
 			}
 
+			std::cout << "From server: total: " << total_count << " success: " << success_count << '\n';
 			socket_->setBlocking(true);
 		}).detach();
 }
+
 
 void Connection::stop_receive_input()
 {
 	receive_input_active_ = false;
 }
 
+//for server
 void Connection::start_send_updates()
 {
 	send_updates_active_ = true;
@@ -122,13 +135,13 @@ void Connection::start_send_updates()
 			bool take_new_packet = true;
 			while (send_updates_active_)
 			{
-				if(take_new_packet)
+				if (take_new_packet)
 				{
 					std::lock_guard guard(update_mtx_);
 					packet = update_;
 					update_.reset();
 				}
-				if(packet != nullptr)
+				if (packet != nullptr)
 				{
 					if (const auto status = socket_->send(*packet); status == sf::Socket::Done)
 						take_new_packet = true;
@@ -158,15 +171,16 @@ void Connection::start_receive_updates()
 			bool create_new_packet = false;
 			while (receive_updates_active_)
 			{
-				if(create_new_packet)
+				if (create_new_packet)
 					packet = std::make_shared<sf::Packet>();
-				if(const auto status = socket_->receive(*packet); status == sf::Socket::Done)
+				if (const auto status = socket_->receive(*packet); status == sf::Socket::Done)
 				{
 					create_new_packet = true;
 					std::lock_guard guard(update_mtx_);
+					//std::cout << "receive: mutex captured\n";
 					update_ = packet;
+					//std::cout << "receive: mutex released\n";
 				}
-
 			}
 			socket_->setBlocking(true);
 		}).detach();
@@ -194,7 +208,7 @@ void ClientConnectionHandler::connect()
 
 			if (const sf::IpAddress server_address(server_address_str); server_address != sf::IpAddress::None)
 			{
-				if (auto server = std::make_unique<sf::TcpSocket>(); server->connect(server_address, Connection::port) == sf::TcpSocket::Done)
+				if (auto server = std::make_unique<sf::TcpSocket>(); server->connect(server_address, Connection::port, sf::milliseconds(500)) == sf::TcpSocket::Done)
 				{
 					std::cout << "Input your name: \n";
 					std::string name;
@@ -253,8 +267,8 @@ void ClientConnectionHandler::start_send_input() const
 
 void ClientConnectionHandler::stop_send_input() const
 {
-	server_->stop_receive_input();
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	if(server_ != nullptr)
+		server_->stop_send_input();
 }
 
 void ClientConnectionHandler::start_receive_updates() const
@@ -264,8 +278,8 @@ void ClientConnectionHandler::start_receive_updates() const
 
 void ClientConnectionHandler::stop_receive_updates() const
 {
-	server_->stop_receive_updates();
-	std::this_thread::sleep_for(Connection::exit_sleep_time);
+	if(server_ != nullptr)
+		server_->stop_receive_updates();
 }
 
 void ServerConnectionHandler::listen_for_client_connection()
@@ -354,7 +368,6 @@ void ServerConnectionHandler::stop_receive_input()
 {
 	for (auto& client : clients_)
 		client.stop_receive_input();
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
 void ServerConnectionHandler::start_send_updates()
@@ -367,7 +380,6 @@ void ServerConnectionHandler::stop_send_updates()
 {
 	for (auto& client : clients_)
 		client.stop_send_updates();
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
 }
 
 std::vector<std::optional<sf::Packet>> ServerConnectionHandler::get_clients_input()

@@ -1,6 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-
+#include <Windows.h>
 #include "UserInterface.h"
 #include "StateManager.h"
 #include "ConnectionHandler.h"
@@ -27,6 +27,8 @@ public:
 };
 
 
+void switch_to_console();
+
 class MultiplayerMenuState : public BaseState
 {
 	StateManager& state_manager_;
@@ -39,7 +41,6 @@ class MultiplayerMenuState : public BaseState
 	constexpr static int acceptance_to_start_game_num = 761;
 public:
 	explicit MultiplayerMenuState(StateManager& state_manager);
-	~MultiplayerMenuState() override;
 
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;

@@ -128,8 +128,6 @@ void Unit::update_from_packet(sf::Packet& packet)
 
 	if (prev_health > health_)
 		play_damage_sound();
-	if (prev_health > 1.f and health_ < 1e-5)
-		play_kill_sound();
 	if (get_id() > 0 and prev_frame == 1 and current_frame_ == 2 and animation_type_ == attack_animation)
 		play_hit_sound();
 

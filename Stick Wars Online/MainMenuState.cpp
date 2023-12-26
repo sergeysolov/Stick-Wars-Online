@@ -58,6 +58,13 @@ void MainMenuState::draw(DrawQueue& draw_queue)
 	exit_button_->draw(draw_queue);
 }
 
+void switch_to_console()
+{
+	const HWND console_window = GetConsoleWindow();
+	ShowWindow(console_window, SW_RESTORE); 
+	SetForegroundWindow(console_window);  
+}
+
 MultiplayerMenuState::MultiplayerMenuState(StateManager& state_manager) : state_manager_(state_manager)
 {
 	back_button_ = std::make_unique<Button>(sf::Vector2f{ 170, 500 }, sf::Vector2f{ 250, 100 }, sf::Color::Black);
@@ -73,12 +80,6 @@ MultiplayerMenuState::MultiplayerMenuState(StateManager& state_manager) : state_
 
 	connect_button_ = std::make_unique<Button>(sf::Vector2f{ 500, 350 }, sf::Vector2f{ 350, 100 }, sf::Color::Black);
 	connect_button_->set_text("Connect", text_font, { 50, 30 });
-}
-
-MultiplayerMenuState::~MultiplayerMenuState()
-{
-	server_handler.reset();
-	client_handler.reset();
 }
 
 void MultiplayerMenuState::update(sf::Time delta_time)
@@ -104,6 +105,7 @@ void MultiplayerMenuState::update(sf::Time delta_time)
 		if (server_handler == nullptr)
 			server_handler = std::make_unique<ServerConnectionHandler>();
 		client_handler.reset();
+		switch_to_console();
 		server_handler->read_player_name();
 		server_handler->listen_for_client_connection();
 	}
@@ -112,6 +114,7 @@ void MultiplayerMenuState::update(sf::Time delta_time)
 		if (client_handler == nullptr)
 			client_handler = std::make_unique<ClientConnectionHandler>();
 		server_handler.reset();
+		switch_to_console();
 		client_handler->connect();
 	}
 

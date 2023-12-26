@@ -80,6 +80,15 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 	}
 }
 
+PlayState::~PlayState()
+{
+	if (client_handler != nullptr)
+	{
+		client_handler->stop_send_input();
+		client_handler->stop_receive_updates();
+	}
+}
+
 void PlayState::update(const sf::Time delta_time)
 {
 	if(client_handler == nullptr)

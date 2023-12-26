@@ -13,9 +13,9 @@ ControlledUnit::ControlledUnit(const std::shared_ptr<Unit>& unit, const int id, 
 	name_text_.setScale(name_scale);
 
 	if (client_handler == nullptr)
-		is_mine_ = id == 0;
+		is_me_ = id == 0;
 	else
-		is_mine_ = id == client_handler->get_id();
+		is_me_ = id == client_handler->get_id();
 }
 
 std::shared_ptr<Unit> ControlledUnit::get_unit() const
@@ -23,9 +23,9 @@ std::shared_ptr<Unit> ControlledUnit::get_unit() const
 	return unit_;
 }
 
-bool ControlledUnit::get_is_mine() const
+bool ControlledUnit::get_is_me() const
 {
-	return is_mine_;
+	return is_me_;
 }
 
 void ControlledUnit::release()
@@ -44,7 +44,7 @@ void ControlledUnit::draw(DrawQueue& queue)
 		name_text_.move(name_shift);
 
 		queue.emplace(attributes_layer_1, &name_text_);
-		if(is_mine_)
+		if(is_me_)
 			queue.emplace(attributes_layer_1, &star_sprite_);
 	}
 }
@@ -103,7 +103,7 @@ void Player::draw(DrawQueue& draw_queue) const
 {
 	army_->draw(draw_queue);
 	controlled_unit_->draw(draw_queue);
-	if(controlled_unit_->get_is_mine())
+	if(controlled_unit_->get_is_me())
 		user_interface_->draw(draw_queue);
 }
 

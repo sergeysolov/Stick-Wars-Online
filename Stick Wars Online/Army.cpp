@@ -198,7 +198,10 @@ void Army::update_from_packet(sf::Packet& packet)
 			}
 		};
 	update_units_from_packet(units_, packet);
+	const auto prev_dead_units_count = dead_units_.size();
 	update_units_from_packet(dead_units_, packet);
+	if (dead_units_.size() > prev_dead_units_count)
+		Unit::play_kill_sound();
 }
 
 int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const

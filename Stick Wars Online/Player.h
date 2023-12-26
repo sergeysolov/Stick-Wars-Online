@@ -9,7 +9,7 @@ class ControlledUnit
 	std::shared_ptr<Unit> unit_;
 	sf::Sprite star_sprite_;
 	sf::Text name_text_;
-	bool is_mine_ = true;
+	bool is_me_ = true;
 
 	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
 	inline const static sf::Vector2f star_shift = { -15, -10 };
@@ -21,11 +21,11 @@ class ControlledUnit
 
 public:
 	static constexpr float speed_boost_factor = 1.5f;
-	static constexpr float damage_boost_factor = 4.f;
+	static constexpr float damage_boost_factor = 2000.f; //x4
 
 	std::optional<sf::Vector2f> last_position = {};
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
-	[[nodiscard]] bool get_is_mine() const;
+	[[nodiscard]] bool get_is_me() const;
 
 	void release();
 	void draw(DrawQueue& queue);
