@@ -217,7 +217,9 @@ void Player::update_from_packet(sf::Packet& packet)
 	}
 	else
 		controlled_unit_->release();
-	user_interface_->update_from_packet(packet);
+
+	user_interface_->update_from_packet(packet, army_->get_army_target());
+
 	user_interface_->update(money_, army_count, {}, sf::Time(sf::milliseconds(0)));
 }
 

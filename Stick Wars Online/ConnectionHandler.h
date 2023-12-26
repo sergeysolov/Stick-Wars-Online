@@ -7,6 +7,8 @@
 #include <mutex>
 #include <optional>
 
+#define TRACE_EFFICIENCY_SEND_RECEIVE
+
 class Connection
 {
 	std::unique_ptr<sf::TcpSocket> socket_;
@@ -23,9 +25,9 @@ class Connection
 	bool receive_updates_active_ = false;
 	std::shared_ptr<sf::Packet> update_;
 
-	static constexpr auto threads_working_sleep_time = std::chrono::milliseconds(0);
+	inline static const auto working_threads_sleep_time = sf::milliseconds(1);
 public:
-	static constexpr auto exit_sleep_time = std::chrono::milliseconds(100);
+	static constexpr auto exit_sleep_time = std::chrono::milliseconds(50);
 
 	constexpr static int port = 27365;
 

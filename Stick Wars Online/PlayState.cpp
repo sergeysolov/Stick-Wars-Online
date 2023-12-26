@@ -42,7 +42,6 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 	{
 		if (server_handler != nullptr)
 		{
-			//std::this_thread::sleep_for(std::chrono::milliseconds(200));
 			players_.emplace_back(0, server_handler->get_player_name());
 			for (const auto& client : server_handler->get_connections())
 				players_.emplace_back(client.get_id(), client.get_name());

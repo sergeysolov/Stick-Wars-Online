@@ -62,6 +62,17 @@ bool Button::is_pressed()
 	return temp;
 }
 
+void Button::highlight(const bool is_highlight, const sf::Color color)
+{
+	if (is_highlight)
+	{
+		rectangle_.setOutlineThickness(highlight_thickness);
+		rectangle_.setOutlineColor(color);
+	}
+	else
+		rectangle_.setOutlineThickness(0);
+}
+
 
 UnitBuyButton::UnitBuyButton(int unit_cost, int wait_time, sf::Vector2f position, sf::Vector2f scale, texture_ID id)
 	: Button(position, scale, id), wait_time_(wait_time), unit_cost_(unit_cost)
@@ -156,6 +167,7 @@ UserInterface::UserInterface()
 		swordsman_buy_button));
 
 	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button));
+	defend_button_->highlight(true);
 	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, in_attack_button));
 }
 
@@ -164,6 +176,17 @@ void UserInterface::update(const int money_count, const int army_count, const st
 	// update army count text
 	const std::string str = std::to_string(army_count) + "/" + std::to_string(Army::army_max_size);
 	army_count_text_.setString(str);
+
+	if(in_attack_button_->is_pressed())
+	{
+		in_attack_button_->highlight(true);
+		defend_button_->highlight(false);
+	}
+	else if(defend_button_->is_pressed())
+	{
+		in_attack_button_->highlight(false);
+		defend_button_->highlight(true);
+	}
 
 	//process units queue and units spawn
 	if (unit_queue_id)
@@ -208,8 +231,13 @@ void UserInterface::write_to_packet(sf::Packet& packet) const
 		unit_buy_button->write_to_packet(packet);
 }
 
-void UserInterface::update_from_packet(sf::Packet& packet) const
+void UserInterface::update_from_packet(sf::Packet& packet, Army::ArmyTarget target) const
 {
 	for (const auto& unit_buy_button : unit_buy_buttons_)
 		unit_buy_button->update_from_packet(packet);
+
+	if (target == Army::attack)
+		in_attack_button_->press();
+	else if (target == Army::defend)
+		defend_button_->press();
 }

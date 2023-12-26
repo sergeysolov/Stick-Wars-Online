@@ -54,21 +54,24 @@ void Connection::start_send_input()
 	send_input_active_ = true;
 	std::thread([&]
 		{
-			socket_->setBlocking(false);
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
 			size_t total_count = 0, success_count = 0;
+#endif
 
+			socket_->setBlocking(false);
 			std::optional<sf::Packet> input;
 			bool take_new_input = true;
 			while (send_input_active_)
 			{
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
 				total_count++;
+#endif
+				
 				if (take_new_input)
 				{
 					std::lock_guard guard(input_mtx_);
-					//std::cout << "send: mutex captured\n";
 					input = input_;
 					input_ = {};
-					//std::cout << "send: mutex released\n";
 				}
 
 				if (input)
@@ -76,14 +79,21 @@ void Connection::start_send_input()
 					if (const auto status = socket_->send(*input); status == sf::Socket::Done)
 					{
 						take_new_input = true;
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
 						success_count++;
+#endif
 					}
 					else
 						take_new_input = false;
 				}
+				else
+					sleep(working_threads_sleep_time);
 			}
-			std::cout << "From client: total: " << total_count << " success: " << success_count << '\n';
 			socket_->setBlocking(true);
+
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+			std::cout << "From client send input: total: " << total_count << " success: " << success_count << '\n';
+#endif
 		}).detach();
 }
 
@@ -98,22 +108,34 @@ void Connection::start_receive_input()
 	receive_input_active_ = true;
 	std::thread([&]
 		{
-			socket_->setBlocking(false);
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
 			size_t total_count = 0, success_count = 0;
+#endif
+
+			socket_->setBlocking(false);
 			while (receive_input_active_)
 			{
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
 				total_count++;
+#endif
 				sf::Packet input;
 				if (const auto status = socket_->receive(input); status == sf::Socket::Done)
 				{
 					std::lock_guard guard(input_mtx_);
 					input_ = input;
-					success_count++;
-				}
-			}
 
-			std::cout << "From server: total: " << total_count << " success: " << success_count << '\n';
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+					success_count++;
+#endif
+				}
+				else if (status == sf::Socket::NotReady)
+					sleep(working_threads_sleep_time);
+			}
 			socket_->setBlocking(true);
+
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+			std::cout << "From server receive input: total: " << total_count << " success: " << success_count << '\n';
+#endif
 		}).detach();
 }
 
@@ -129,12 +151,19 @@ void Connection::start_send_updates()
 	send_updates_active_ = true;
 	std::thread([&]
 		{
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+			size_t total_count = 0, success_count = 0;
+#endif
+
 			socket_->setBlocking(false);
 
 			std::shared_ptr<sf::Packet> packet;
 			bool take_new_packet = true;
 			while (send_updates_active_)
 			{
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+				total_count++;
+#endif
 				if (take_new_packet)
 				{
 					std::lock_guard guard(update_mtx_);
@@ -144,12 +173,23 @@ void Connection::start_send_updates()
 				if (packet != nullptr)
 				{
 					if (const auto status = socket_->send(*packet); status == sf::Socket::Done)
+					{
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+						success_count++;
+#endif
 						take_new_packet = true;
+					}
 					else
 						take_new_packet = false;
 				}
+				else
+					sleep(working_threads_sleep_time);
 			}
 			socket_->setBlocking(true);
+
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+			std::cout << "From server send update: total: " << total_count << " success: " << success_count << '\n';
+#endif
 		}
 	).detach();
 }
@@ -165,24 +205,37 @@ void Connection::start_receive_updates()
 	receive_updates_active_ = true;
 	std::thread([&]
 		{
-			socket_->setBlocking(false);
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+			size_t total_count = 0, success_count = 0;
+#endif
 
+			socket_->setBlocking(false);
 			auto packet = std::make_shared<sf::Packet>();
 			bool create_new_packet = false;
 			while (receive_updates_active_)
 			{
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+				total_count++;
+#endif
 				if (create_new_packet)
 					packet = std::make_shared<sf::Packet>();
 				if (const auto status = socket_->receive(*packet); status == sf::Socket::Done)
 				{
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+					success_count++;
+#endif
 					create_new_packet = true;
 					std::lock_guard guard(update_mtx_);
-					//std::cout << "receive: mutex captured\n";
 					update_ = packet;
-					//std::cout << "receive: mutex released\n";
 				}
+				else if (status == sf::Socket::NotReady)
+					sleep(working_threads_sleep_time);
 			}
 			socket_->setBlocking(true);
+
+#ifdef TRACE_EFFICIENCY_SEND_RECEIVE
+			std::cout << "From client receive update: total: " << total_count << " success: " << success_count << '\n';
+#endif
 		}).detach();
 }
 
@@ -208,7 +261,7 @@ void ClientConnectionHandler::connect()
 
 			if (const sf::IpAddress server_address(server_address_str); server_address != sf::IpAddress::None)
 			{
-				if (auto server = std::make_unique<sf::TcpSocket>(); server->connect(server_address, Connection::port, sf::milliseconds(500)) == sf::TcpSocket::Done)
+				if (auto server = std::make_unique<sf::TcpSocket>(); server->connect(server_address, Connection::port, sf::milliseconds(1000)) == sf::TcpSocket::Done)
 				{
 					std::cout << "Input your name: \n";
 					std::string name;
