@@ -542,7 +542,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), invoke_enemy_time);
 	}
-	if (queue.army_.get_units().size() > queue.army_.get_max_size() - 5)
+	if (queue.army_.get_units().size() > queue.army_.get_max_size() - 5 and queue.army_.get_army_target() != Army::attack)
 	{
 		queue.army_.set_army_target(Army::attack);
 		Army::play_in_attack_music();
