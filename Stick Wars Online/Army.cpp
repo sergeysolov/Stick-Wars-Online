@@ -23,12 +23,17 @@ void Army::play_in_attack_music(const bool play)
 Army::Army(const float army_defend_line, const int id) : texture_shift_(id)
 {
 	if(is_ally())
-		for (int i = 0; i < army_max_size; i++)
+	{
+		for (int i = 0; i < max_size_; i++)
 			defend_places_.insert({ i, { army_defend_line - (i / 5) * row_width, y_map_max - 30 - (i % max_soldiers_in_row) * (y_map_max - y_map_min - 50) / max_soldiers_in_row } });
+	}
 	else
-		for (int i = 0; i < army_max_size; i++)
-			defend_places_.insert({ army_max_size - i, {army_defend_line - (i / 5) * row_width, y_map_max - 30 - (i % max_soldiers_in_row) * (y_map_max - y_map_min - 50) / max_soldiers_in_row } });
-
+	{
+		if (server_handler != nullptr)
+			max_size_ *= static_cast<int>(server_handler->get_connections().size() + 1);
+		for (int i = 0; i < max_size_; i++)
+			defend_places_.insert({ max_size_ - i, {army_defend_line - (i / 5) * row_width, y_map_max - 30 - (i % max_soldiers_in_row) * (y_map_max - y_map_min - 50) / max_soldiers_in_row } });
+	}
 }
 
 void Army::set_army_target(const ArmyTarget target)
@@ -55,6 +60,11 @@ void Army::add_unit(const std::shared_ptr<Unit>& unit)
 int Army::get_alive_units_count() const
 {
 	return alive_units_count_;
+}
+
+int Army::get_max_size() const
+{
+	return max_size_;
 }
 
 void Army::draw(DrawQueue& queue) const
@@ -495,7 +505,7 @@ void SpawnUnitQueue::process(const sf::Time delta_time)
 
 int SpawnUnitQueue::get_free_places() const
 {
-	return Army::army_max_size - get_army_count();
+	return army_.get_max_size() - get_army_count();
 }
 
 int SpawnUnitQueue::get_army_count() const
@@ -532,7 +542,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), invoke_enemy_time);
 	}
-	if (queue.army_.get_units().size() > Army::army_max_size - 5 and queue.army_.get_army_target() != Army::attack)
+	if (queue.army_.get_units().size() > queue.army_.get_max_size() - 5)
 	{
 		queue.army_.set_army_target(Army::attack);
 		Army::play_in_attack_music();

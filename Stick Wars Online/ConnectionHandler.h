@@ -7,7 +7,7 @@
 #include <mutex>
 #include <optional>
 
-#define TRACE_EFFICIENCY_SEND_RECEIVE
+//#define TRACE_EFFICIENCY_SEND_RECEIVE
 
 class Connection
 {
@@ -94,6 +94,8 @@ class ClientConnectionHandler
 	int id_ = -1;
 
 public:
+	//~ClientConnectionHandler();
+
 	~ClientConnectionHandler();
 
 	void connect();

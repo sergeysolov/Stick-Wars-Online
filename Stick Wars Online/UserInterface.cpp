@@ -174,7 +174,7 @@ UserInterface::UserInterface()
 void UserInterface::update(const int money_count, const int army_count, const std::optional<int> unit_queue_id, const sf::Time delta_time)
 {
 	// update army count text
-	const std::string str = std::to_string(army_count) + "/" + std::to_string(Army::army_max_size);
+	const std::string str = std::to_string(army_count) + "/" + std::to_string(Army::size_per_one_player);
 	army_count_text_.setString(str);
 
 	if(in_attack_button_->is_pressed())
