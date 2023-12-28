@@ -20,8 +20,9 @@ void Army::play_in_attack_music(const bool play)
 		in_attack_sound->stop();
 }
 
-Army::Army(const float army_defend_line, const int id) : texture_shift_(id)
+Army::Army(const float army_defend_line, const int id, const int size_factor) : texture_shift_(id)
 {
+	max_size_ *= size_factor;
 	if(is_ally())
 	{
 		for (int i = 0; i < max_size_; i++)
@@ -29,8 +30,6 @@ Army::Army(const float army_defend_line, const int id) : texture_shift_(id)
 	}
 	else
 	{
-		if (server_handler != nullptr)
-			max_size_ *= static_cast<int>(server_handler->get_connections().size() + 1);
 		for (int i = 0; i < max_size_; i++)
 			defend_places_.insert({ max_size_ - i, {army_defend_line - (i / 5) * row_width, y_map_max - 30 - (i % max_soldiers_in_row) * (y_map_max - y_map_min - 50) / max_soldiers_in_row } });
 	}
@@ -249,7 +248,11 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 		};
 
 	if (miner->can_do_damage() and check_can_mine(find_nearest_goldmine()->get()).first)
-		miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(miner->get_damage())));
+	{
+		const float gold_count = (miner == controlled_unit.get() ? ControlledUnit::damage_boost_factor : 1) * miner->get_damage();
+			miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(gold_count)));
+	}
+		
 
 	int gold_count_mined = 0;
 	if (is_ally())
@@ -537,6 +540,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 {
 	static const sf::Vector2f enemy_spawn_point = { map_frame_width * 3 + 100, 650 };
 	static constexpr int invoke_enemy_time = 8000;
+	
 
 	if (queue.units_queue_.empty() and queue.get_free_places() >= Swordsman::places_requires)
 	{
@@ -555,14 +559,25 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.army_.add_unit(std::make_shared<Miner>(enemy_spawn_point, enemy_miner));
 	}
-	if (random(0.0009f))
+	if (random(0.0007f))
 	{
-		int count = 4;
-		if (enemy_statue.get_health() < Statue::enemy_max_health / 2)
-			count += 3;
-		if (enemy_statue.get_health() < Statue::enemy_max_health / 4)
-			count += 3;
+		constexpr int count = 3;
+		//if (enemy_statue.get_health() < Statue::enemy_max_health / 2)
+		//	count += 3;
+		//if (enemy_statue.get_health() < Statue::enemy_max_health / 4)
+		//	count += 3;
 		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);
+	}
+
+	static constexpr float reinforcement_count = 6;
+
+	if(enemy_statue.get_health() < Army::prev_hit_points_of_enemy_statue - Statue::enemy_max_health / reinforcement_count)
+	{
+		Army::prev_hit_points_of_enemy_statue -= Statue::enemy_max_health / reinforcement_count;
+
+		const int count = 20 * queue.army_.get_max_size() / Army::size_per_one_player;
+		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
+			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 100);
 	}
 }

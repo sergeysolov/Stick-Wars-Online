@@ -60,14 +60,21 @@ protected:
 class GoldMine : public MapObject
 {
 public:
-	inline const static std::array<sf::Vector2f, 9> goldmine_positions = 
+	inline const static std::array<sf::Vector2f, 16> goldmine_positions = 
 		{ sf::Vector2f{250, 750},
 		{350, 670},
 		{700, 790},
 		{800, 670},
 		{1100, 670},
 		{1400, 690},
-		{map_frame_width * 3 - 750, 700},
+		{1150, 760},
+		{1380, 780},
+		{1950, 700},
+		{2200, 760},
+		{2400, 750},
+		{2600, 690},
+		{2650, 780},
+		{map_frame_width * 3 - 1050, 700},
 		{map_frame_width * 3 - 550, 800},
 		{map_frame_width * 3 - 350, 680},};
 
@@ -77,7 +84,7 @@ public:
 
 	int mine(int gold_count);
 	bool empty() const;
-	const int max_gold_capacity = 3000;
+	const int max_gold_capacity = 400; //4000
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;

@@ -21,6 +21,3 @@ public:
 	Game(unsigned width, unsigned height, const char* title);
 	int run();
 };
-
-
-

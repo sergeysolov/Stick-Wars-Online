@@ -94,7 +94,6 @@ class ClientConnectionHandler
 	int id_ = -1;
 
 public:
-	//~ClientConnectionHandler();
 
 	~ClientConnectionHandler();
 

@@ -25,13 +25,14 @@ public:
 		defend,
 	};
 
+	inline static float prev_hit_points_of_enemy_statue;
 	constexpr static std::array<float, 3> defend_lines = { 900, 1500, 2300 };
 	constexpr static float enemy_defend_line = map_frame_width * 3 - 600;
 	constexpr static int size_per_one_player = 40;
 
 	static void play_in_attack_music(bool play=true);
 
-	Army(float army_defend_line, int id);
+	Army(float army_defend_line, int id, int size_factor = 1);
 
 	void set_army_target(ArmyTarget target);
 	[[nodiscard]] ArmyTarget get_army_target() const;

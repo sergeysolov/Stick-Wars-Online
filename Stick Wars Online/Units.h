@@ -25,7 +25,7 @@ protected:
 	Bar<float> health_bar_;
 
 	sf::Vector2f speed_ = { 0.f, 0.f };
-	constexpr static float acceleration = 0.002f;
+	constexpr static float acceleration = 0.002f; // 0.002
 	
 	AnimationType animation_type_ = no_animation;
 	std::pair<bool, bool> was_move_ = { false, false };

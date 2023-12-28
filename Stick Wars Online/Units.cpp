@@ -119,7 +119,6 @@ void Unit::update_from_packet(sf::Packet& packet)
 	const auto prev_frame = current_frame_;
 	MapObject::update_from_packet(packet);
 	const float prev_health = health_;
-	const bool prev_dead = dead_;
 
 	int animation_type;
 	packet >> health_ >> speed_.x >> speed_.y >> animation_type >> was_move_.first >> was_move_.second >> prev_direction_
@@ -133,8 +132,6 @@ void Unit::update_from_packet(sf::Packet& packet)
 
 	cause_damage(0, 0);
 	set_animation_frame(false);
-	sprite_.scale({ static_cast<float>(prev_direction_), 0.f });
-	set_y_scale();
 }
 
 int Unit::get_direction() const

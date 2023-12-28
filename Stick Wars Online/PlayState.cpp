@@ -7,7 +7,7 @@ void PlayState::set_objects_screen_place() const
 	for (const auto& player : players_)
 		player.set_screen_place(camera_position_);
 
-	enemy_army_.set_screen_place(camera_position_);
+	enemy_army_->set_screen_place(camera_position_);
 
 	for (const auto& goldmine : gold_mines_)
 		goldmine->set_screen_place(camera_position_);
@@ -22,13 +22,16 @@ void PlayState::move_camera(const float step)
 	background_sprite_.setTextureRect({ static_cast<int>(camera_position_), 0, static_cast<int>(map_frame_width), 1050 });
 }
 
-PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), enemy_army_(Army::enemy_defend_line, -1)
+PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager)
 {
 	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
 
 	camera_position_text_.setFont(text_font);
 	camera_position_text_.setPosition(1800, 10);
+
+	enemy_army_count_text_.setFont(text_font);
+	enemy_army_count_text_.setPosition({ 1800, 50 });
 
 	pause_button_ = std::make_unique<Button>(sf::Vector2f{ 1700.f, 20.f }, sf::Vector2f{ 0.15f, 0.15f }, pause_button);
 
@@ -60,7 +63,11 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 		}
 		else
 			players_.emplace_back(0);
-		enemy_spawn_queue_ = std::make_unique<SpawnUnitQueue>(enemy_army_);
+		enemy_army_ = std::make_unique<Army>(Army::enemy_defend_line, -1, players_.size());
+
+		enemy_spawn_queue_ = std::make_unique<SpawnUnitQueue>(*enemy_army_);
+
+		Army::prev_hit_points_of_enemy_statue = Statue::enemy_max_health;
 	}
 	else
 	{
@@ -74,6 +81,7 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 			players_info >> id >> player_name;
 			players_.emplace_back(id, player_name);
 		}
+		enemy_army_ = std::make_unique<Army>(Army::enemy_defend_line, -1, players_.size());
 		client_handler->start_send_input();
 		client_handler->start_receive_updates();
 	}
@@ -81,10 +89,16 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 
 PlayState::~PlayState()
 {
+	Army::play_in_attack_music(false);
 	if (client_handler != nullptr)
 	{
 		client_handler->stop_send_input();
 		client_handler->stop_receive_updates();
+	}
+	else if(server_handler != nullptr)
+	{
+		server_handler->stop_receive_input();
+		server_handler->stop_send_updates();
 	}
 }
 
@@ -96,10 +110,10 @@ void PlayState::update(const sf::Time delta_time)
 		for (auto& player : players_)
 		{
 			ally_armies.push_back(&player.get_Army());
-			player.update(delta_time, enemy_army_, enemy_statue_, gold_mines_);
+			player.update(delta_time, *enemy_army_, enemy_statue_, gold_mines_);
 		}
 
-		enemy_army_.process(ally_armies, my_statue_, nullptr, gold_mines_, delta_time);
+		enemy_army_->process(ally_armies, my_statue_, nullptr, gold_mines_, delta_time);
 		//if (enemy_behaviour == 0)
 		process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
 		enemy_spawn_queue_->process(delta_time);
@@ -114,7 +128,7 @@ void PlayState::update(const sf::Time delta_time)
 			my_statue_->write_to_packet(update_packet);
 			enemy_statue_->write_to_packet(update_packet);
 
-			enemy_army_.write_to_packet(update_packet);
+			enemy_army_->write_to_packet(update_packet);
 
 			update_packet << gold_mines_.size();
 			for (const auto& gold_mine : gold_mines_)
@@ -135,7 +149,7 @@ void PlayState::update(const sf::Time delta_time)
 			my_statue_->update_from_packet(*packet);
 			enemy_statue_->update_from_packet(*packet);
 
-			enemy_army_.update_from_packet(*packet);
+			enemy_army_->update_from_packet(*packet);
 
 			size_t gold_mines_count;
 			*packet >> gold_mines_count;
@@ -147,6 +161,9 @@ void PlayState::update(const sf::Time delta_time)
 	}
 
 	camera_position_text_.setString("x: " + std::to_string(static_cast<int>(camera_position_)));
+
+	const std::string temp_str = std::to_string(enemy_army_->get_units().size()) + "/" +  std::to_string(enemy_army_->get_max_size());
+	enemy_army_count_text_.setString(temp_str);
 	
 	set_objects_screen_place();
 
@@ -223,6 +240,7 @@ void PlayState::draw(DrawQueue& draw_queue)
 {
 	draw_queue.emplace(background, &background_sprite_);
 	draw_queue.emplace(attributes_layer_0, &camera_position_text_);
+	draw_queue.emplace(interface_layer_0, &enemy_army_count_text_);
 
 	my_statue_->draw(draw_queue);
 	enemy_statue_->draw(draw_queue);
@@ -230,7 +248,7 @@ void PlayState::draw(DrawQueue& draw_queue)
 	for (const auto& gold_mine : gold_mines_)
 		gold_mine->draw(draw_queue);
 
-	enemy_army_.draw(draw_queue);
+	enemy_army_->draw(draw_queue);
 
 	for (const auto& player : players_)
 		player.draw(draw_queue);

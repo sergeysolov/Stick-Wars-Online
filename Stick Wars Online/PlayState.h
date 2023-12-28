@@ -21,6 +21,7 @@ class PlayState : public BaseState
 	sf::Sprite background_sprite_;
 	std::unique_ptr<Button> pause_button_;
 	sf::Text camera_position_text_;
+	sf::Text enemy_army_count_text_;
 
 	float camera_position_ = start_camera_position;
 
@@ -28,7 +29,7 @@ class PlayState : public BaseState
 
 	std::shared_ptr<Statue> my_statue_; //shared
 	std::shared_ptr<Statue> enemy_statue_; //shared
-	Army enemy_army_; // shared
+	std::unique_ptr<Army> enemy_army_;// shared
 	std::unique_ptr<SpawnUnitQueue> enemy_spawn_queue_;
 	std::vector<std::shared_ptr<GoldMine>> gold_mines_;//shared 
 

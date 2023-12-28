@@ -51,6 +51,7 @@ void MapObject::update_from_packet(sf::Packet& packet)
 {
 	packet >> x_ >> y_ >> current_frame_ >> cumulative_time_;
 	sprite_.setPosition({ x_, y_ });
+	set_y_scale();
 }
 
 void MapObject::set_y_scale()
