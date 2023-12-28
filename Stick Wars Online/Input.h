@@ -17,6 +17,7 @@ public:
 	bool shift = false;
 	bool escape = false;
 	bool mouse_left = false;
+	bool mouse_right = false;
 
 	sf::Vector2i mouse_position;
 

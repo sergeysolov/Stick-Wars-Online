@@ -16,16 +16,20 @@ class Connection
 	std::string name_;
 
 	std::mutex input_mtx_;
+	std::condition_variable input_cv_;
+	
 	bool send_input_active_ = false;
 	bool receive_input_active_ = false;
 	std::optional<sf::Packet> input_;
 
 	std::mutex update_mtx_;
+	std::condition_variable update_cv_;
+
 	bool send_updates_active_ = false;
 	bool receive_updates_active_ = false;
 	std::shared_ptr<sf::Packet> update_;
 
-	inline static const auto working_threads_sleep_time = sf::milliseconds(1);
+	inline static const auto working_threads_sleep_time = sf::microseconds(1000);
 public:
 	static constexpr auto exit_sleep_time = std::chrono::milliseconds(50);
 

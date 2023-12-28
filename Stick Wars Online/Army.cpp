@@ -490,7 +490,22 @@ SpawnUnitQueue::SpawnUnitQueue(Army& army) : army_(army)
 
 void SpawnUnitQueue::put_unit(const std::shared_ptr<Unit>& unit, const int spawn_time)
 {
-	units_queue_.emplace(unit, spawn_time);
+	units_queue_.emplace_back(unit, spawn_time);
+}
+
+bool SpawnUnitQueue::remove_unit(const int unit_id)
+{
+	const auto find_res = std::ranges::find_if(units_queue_ | std::views::keys, [unit_id](const std::shared_ptr<Unit>& unit)
+	{
+		return unit->get_id() == unit_id;
+	});
+
+	if(find_res.base() != units_queue_.end())
+	{
+		units_queue_.erase(find_res.base());
+		return  true;
+	}
+	return false;
 }
 
 void SpawnUnitQueue::process(const sf::Time delta_time)
@@ -501,7 +516,7 @@ void SpawnUnitQueue::process(const sf::Time delta_time)
 		if (units_queue_.front().second <= 0)
 		{
 			army_.add_unit(units_queue_.front().first);
-			units_queue_.pop();
+			units_queue_.pop_front();
 		}
 	}
 }
@@ -546,12 +561,13 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), invoke_enemy_time);
 	}
-	if (queue.army_.get_units().size() > queue.army_.get_max_size() - 5 and queue.army_.get_army_target() != Army::attack)
+	const int in_attack_threshold = queue.army_.get_max_size() / 8 * 7;
+	if (queue.get_army_count() > in_attack_threshold and queue.army_.get_army_target() != Army::attack)
 	{
 		queue.army_.set_army_target(Army::attack);
 		Army::play_in_attack_music();
 	}
-	else if (queue.army_.get_units().size() < 15)
+	else if (queue.get_army_count() < queue.army_.get_max_size() / 2)
 	{
 		queue.army_.set_army_target(Army::defend);
 	}
@@ -559,24 +575,21 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		queue.army_.add_unit(std::make_shared<Miner>(enemy_spawn_point, enemy_miner));
 	}
-	if (random(0.0007f))
+	const int spawn_threshold = queue.army_.get_max_size() / 8 * 7;
+	if (queue.get_army_count() < spawn_threshold and random(0.0007f))
 	{
 		constexpr int count = 3;
-		//if (enemy_statue.get_health() < Statue::enemy_max_health / 2)
-		//	count += 3;
-		//if (enemy_statue.get_health() < Statue::enemy_max_health / 4)
-		//	count += 3;
 		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);
 	}
 
-	static constexpr float reinforcement_count = 6;
+	static constexpr float reinforcement_count = 50;
 
 	if(enemy_statue.get_health() < Army::prev_hit_points_of_enemy_statue - Statue::enemy_max_health / reinforcement_count)
 	{
 		Army::prev_hit_points_of_enemy_statue -= Statue::enemy_max_health / reinforcement_count;
 
-		const int count = 20 * queue.army_.get_max_size() / Army::size_per_one_player;
+		const int count = queue.army_.get_max_size() / 8;
 		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 100);
 	}

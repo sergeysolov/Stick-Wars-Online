@@ -84,7 +84,7 @@ public:
 
 	int mine(int gold_count);
 	bool empty() const;
-	const int max_gold_capacity = 400; //4000
+	const int max_gold_capacity = 4000; //4000
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;

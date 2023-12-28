@@ -50,7 +50,7 @@ bool Button::check_mouse_pressed(const sf::Vector2i mouse_position) const
 	return visible_ and rectangle_.getGlobalBounds().contains(static_cast<float>(mouse_position.x), static_cast<float>(mouse_position.y));
 }
 
-void Button::press()
+void Button::press_left()
 {
 	pressed_ = true;
 }
@@ -106,9 +106,15 @@ void UnitBuyButton::draw(DrawQueue& queue) const
 		queue.emplace(interface_layer_1, &count_text_);
 }
 
-void UnitBuyButton::press()
+void UnitBuyButton::press_left()
 {
 	remaining_time_ += wait_time_;
+	this->process_button(1);
+}
+
+void UnitBuyButton::press_right()
+{
+	remaining_time_ = std::max(remaining_time_ - wait_time_, 0);
 	this->process_button(1);
 }
 
@@ -237,7 +243,7 @@ void UserInterface::update_from_packet(sf::Packet& packet, Army::ArmyTarget targ
 		unit_buy_button->update_from_packet(packet);
 
 	if (target == Army::attack)
-		in_attack_button_->press();
+		in_attack_button_->press_left();
 	else if (target == Army::defend)
-		defend_button_->press();
+		defend_button_->press_left();
 }

@@ -23,6 +23,7 @@ void Connection::put_input(const sf::Packet& input)
 {
 	std::lock_guard guard(input_mtx_);
 	input_ = input;
+	input_cv_.notify_all();
 }
 
 std::optional<sf::Packet> Connection::get_input()
@@ -38,6 +39,7 @@ void Connection::put_update(const std::shared_ptr<sf::Packet>& update)
 {
 	std::lock_guard guard(update_mtx_);
 	update_ = update;
+	update_cv_.notify_all();
 }
 
 std::shared_ptr<sf::Packet> Connection::get_update()
@@ -66,10 +68,11 @@ void Connection::start_send_input()
 #ifdef TRACE_EFFICIENCY_SEND_RECEIVE
 				total_count++;
 #endif
-				
+
 				if (take_new_input)
 				{
-					std::lock_guard guard(input_mtx_);
+					std::unique_lock lock(input_mtx_);
+					input_cv_.wait(lock);
 					input = input_;
 					input_ = {};
 				}
@@ -86,8 +89,6 @@ void Connection::start_send_input()
 					else
 						take_new_input = false;
 				}
-				else
-					sleep(working_threads_sleep_time);
 			}
 			socket_->setBlocking(true);
 
@@ -100,6 +101,7 @@ void Connection::start_send_input()
 void Connection::stop_send_input()
 {
 	send_input_active_ = false;
+	input_cv_.notify_all();
 }
 
 //for server
@@ -166,7 +168,8 @@ void Connection::start_send_updates()
 #endif
 				if (take_new_packet)
 				{
-					std::lock_guard guard(update_mtx_);
+					std::unique_lock lock(update_mtx_);
+					update_cv_.wait(lock);
 					packet = update_;
 					update_.reset();
 				}
@@ -182,8 +185,6 @@ void Connection::start_send_updates()
 					else
 						take_new_packet = false;
 				}
-				else
-					sleep(working_threads_sleep_time);
 			}
 			socket_->setBlocking(true);
 
@@ -197,6 +198,7 @@ void Connection::start_send_updates()
 void Connection::stop_send_updates()
 {
 	send_updates_active_ = false;
+	update_cv_.notify_all();
 }
 
 //for client

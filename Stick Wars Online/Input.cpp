@@ -29,6 +29,7 @@ void Input::process_events(sf::RenderWindow& window)
 	sf::Event event{};
 
 	mouse_left = false;
+	mouse_right = false;
 	while (window.pollEvent(event))
 	{
 		switch (event.type)
@@ -40,10 +41,17 @@ void Input::process_events(sf::RenderWindow& window)
 			key_manage(event, false);
 			break;
 		case sf::Event::MouseButtonReleased:
+			mouse_position = sf::Mouse::getPosition(window);
+
 			if (event.mouseButton.button == sf::Mouse::Left)
 			{
 				mouse_left = true;
-				mouse_position = sf::Mouse::getPosition(window);
+				break;
+			}
+			if(event.mouseButton.button == sf::Mouse::Right)
+			{
+				mouse_right = true;
+				break;
 			}
 			break;
 		case sf::Event::Closed:
@@ -56,10 +64,10 @@ void Input::process_events(sf::RenderWindow& window)
 
 void Input::write_to_packet(sf::Packet& packet) const
 {
-	packet << a << d << w << s << k << left_arrow << right_arrow << space << shift << escape << mouse_left << mouse_position.x << mouse_position.y;
+	packet << a << d << w << s << k << left_arrow << right_arrow << space << shift << escape << mouse_left << mouse_right << mouse_position.x << mouse_position.y;
 }
 
 void Input::read_from_packet(sf::Packet& packet)
 {
-	packet >> a >> d >> w >> s >> k >> left_arrow >> right_arrow >> space >> shift >> escape >> mouse_left >> mouse_position.x >> mouse_position.y;
+	packet >> a >> d >> w >> s >> k >> left_arrow >> right_arrow >> space >> shift >> escape >> mouse_left >> mouse_right >> mouse_position.x >> mouse_position.y;
 }

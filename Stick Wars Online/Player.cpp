@@ -130,44 +130,60 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 			controlled_unit_->release();
 	}
 
-	if (not input.mouse_left)
-		return;
-
-	for (int i = 0; const auto& unit_buy_button : user_interface_->get_unit_buy_buttons())
+	if (input.mouse_left)
 	{
-		if (unit_buy_button->check_mouse_pressed(input.mouse_position))
+		for (int i = 0; const auto & unit_buy_button : user_interface_->get_unit_buy_buttons())
 		{
-			std::shared_ptr<Unit> unit;
-			if (i == Miner::id and money_ >= Miner::cost)
-				unit = std::static_pointer_cast<Unit>(std::make_shared<Miner>(spawn_point, get_correct_texture_id(my_miner, player_id_)));
-			else if (i == Swordsman::id and money_ >= Swordsman::cost)
-				unit = std::static_pointer_cast<Unit>(std::make_shared<Swordsman>(spawn_point, get_correct_texture_id(my_swordsman, player_id_)));
-
-			if (unit != nullptr and spawn_queue_->get_free_places() >= unit->get_places_requires())
+			if (unit_buy_button->check_mouse_pressed(input.mouse_position))
 			{
-				spawn_queue_->put_unit(unit, unit->get_wait_time());
-				money_ -= unit->get_cost();
-				unit_buy_button->press();
+				std::shared_ptr<Unit> unit;
+				if (i == Miner::id and money_ >= Miner::cost)
+					unit = std::static_pointer_cast<Unit>(std::make_shared<Miner>(spawn_point, get_correct_texture_id(my_miner, player_id_)));
+				else if (i == Swordsman::id and money_ >= Swordsman::cost)
+					unit = std::static_pointer_cast<Unit>(std::make_shared<Swordsman>(spawn_point, get_correct_texture_id(my_swordsman, player_id_)));
+
+				if (unit != nullptr and spawn_queue_->get_free_places() >= unit->get_places_requires())
+				{
+					spawn_queue_->put_unit(unit, unit->get_wait_time());
+					money_ -= unit->get_cost();
+					unit_buy_button->press_left();
+				}
+				return;
 			}
+			i++;
+		}
+
+		if (user_interface_->get_defend_button()->check_mouse_pressed(input.mouse_position))
+		{
+			army_->set_army_target(Army::defend);
+			user_interface_->get_defend_button()->press_left();
 			return;
 		}
-		i++;
-	}
+		if (user_interface_->get_in_attack_button()->check_mouse_pressed(input.mouse_position))
+		{
+			army_->set_army_target(Army::attack);
+			user_interface_->get_in_attack_button()->press_left();
+			return;
+		}
 
-	if (user_interface_->get_defend_button()->check_mouse_pressed(input.mouse_position))
-	{
-		army_->set_army_target(Army::defend);
-		user_interface_->get_defend_button()->press();
-		return;
+		handle_change_controlled_unit({ input.mouse_position.x + mouse_offset, input.mouse_position.y });
 	}
-	if (user_interface_->get_in_attack_button()->check_mouse_pressed(input.mouse_position))
+	else if(input.mouse_right)
 	{
-		army_->set_army_target(Army::attack);
-		user_interface_->get_in_attack_button()->press();
-		return;
+		for (int i = 0; const auto& unit_buy_button : user_interface_->get_unit_buy_buttons())
+		{
+			if (unit_buy_button->check_mouse_pressed(input.mouse_position))
+			{
+				if(spawn_queue_->remove_unit(i))
+				{
+					money_ += unit_buy_button->get_unit_cost();
+					unit_buy_button->press_right();
+				}
+				return;
+			}
+			i++;
+		}
 	}
-
-	handle_change_controlled_unit({ input.mouse_position.x + mouse_offset, input.mouse_position.y });
 }
 
 std::optional<sf::Vector2f> Player::get_controlled_unit_position() const

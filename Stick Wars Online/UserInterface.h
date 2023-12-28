@@ -26,7 +26,7 @@ public:
 	void set_text(const std::string& text, const sf::Font& font, sf::Vector2f offset);
 	void set_visible(bool visible);
 	[[nodiscard]] virtual bool check_mouse_pressed(sf::Vector2i mouse_position) const;
-	virtual void press();
+	virtual void press_left();
 	bool is_pressed();
 	void highlight(bool is_highlight, sf::Color color = sf::Color::Magenta);
 };
@@ -50,7 +50,8 @@ public:
 
 	void draw(DrawQueue& queue) const override;
 
-	void press() override;
+	void press_left() override;
+	void press_right();
 	void process_button(int elapsed_time);
 	int get_unit_cost() const;
 

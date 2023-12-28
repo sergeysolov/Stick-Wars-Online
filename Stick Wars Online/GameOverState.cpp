@@ -26,7 +26,7 @@ void GameOverState::update(sf::Time delta_time)
 void GameOverState::handle_input(Input& input, sf::Time delta_time)
 {
 	if (input.mouse_left and to_menu_button_->check_mouse_pressed(input.mouse_position))
-		to_menu_button_->press();
+		to_menu_button_->press_left();
 }
 
 void GameOverState::draw(DrawQueue& draw_queue)
@@ -87,7 +87,7 @@ void PauseState::handle_input(Input& input, const sf::Time delta_time)
 	GameOverState::handle_input(input, delta_time);
 	if (back_to_game_button_->check_mouse_pressed(input.mouse_position))
 	{
-		back_to_game_button_->press();
+		back_to_game_button_->press_left();
 	}
 }
 

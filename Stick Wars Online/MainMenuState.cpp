@@ -43,11 +43,11 @@ void MainMenuState::handle_input(Input& input, sf::Time delta_time)
 		return;
 
 	if (play_single_player_button_->check_mouse_pressed(input.mouse_position))
-		play_single_player_button_->press();
+		play_single_player_button_->press_left();
 	else if (play_multi_player_button_->check_mouse_pressed(input.mouse_position))
-		play_multi_player_button_->press();
+		play_multi_player_button_->press_left();
 	else if (exit_button_->check_mouse_pressed(input.mouse_position))
-		exit_button_->press();
+		exit_button_->press_left();
 }
 
 void MainMenuState::draw(DrawQueue& draw_queue)
@@ -140,13 +140,13 @@ void MultiplayerMenuState::handle_input(Input& input, sf::Time delta_time)
 		return;
 
 	if (back_button_->check_mouse_pressed(input.mouse_position))
-		back_button_->press();
+		back_button_->press_left();
 	else if (create_game_button_->check_mouse_pressed(input.mouse_position))
-		create_game_button_->press();
+		create_game_button_->press_left();
 	else if (connect_button_->check_mouse_pressed(input.mouse_position))
-		connect_button_->press();
+		connect_button_->press_left();
 	else if (start_game_button_->check_mouse_pressed(input.mouse_position))
-		start_game_button_->press();
+		start_game_button_->press_left();
 }
 
 void MultiplayerMenuState::draw(DrawQueue& draw_queue)

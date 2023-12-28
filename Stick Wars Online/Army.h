@@ -72,13 +72,14 @@ protected:
 
 class SpawnUnitQueue
 {
-	std::queue<std::pair<std::shared_ptr<Unit>, int>> units_queue_;
+	std::deque<std::pair<std::shared_ptr<Unit>, int>> units_queue_;
 	Army& army_;
 public:
 
 	SpawnUnitQueue(Army& army);
 
 	void put_unit(const std::shared_ptr<Unit>& unit, int spawn_time);
+	bool remove_unit(int unit_id);
 
 	void process(sf::Time delta_time);
 
