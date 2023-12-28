@@ -14,6 +14,7 @@ enum texture_ID
 	gold,
 	miner_buy_button,
 	swordsman_buy_button,
+	magikill_buy_button,
 	stick_man,
 	in_attack_button,
 	defend_button,

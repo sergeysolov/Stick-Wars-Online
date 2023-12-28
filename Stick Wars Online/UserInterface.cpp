@@ -164,13 +164,14 @@ UserInterface::UserInterface()
 	army_count_text_.setFont(text_font);
 	army_count_text_.setPosition({ 25, 170 });
 
-	//auto miner_creation = [] { return new Miner(UnitBuyButton::spawn_point, my_miner); };
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Miner::cost, Miner::wait_time, sf::Vector2f{ 130, 20 }, sf::Vector2f{ 0.15f, 0.15f },
 		miner_buy_button));
 
-	//auto swardsman_creation = [] { return new Swordsman(UnitBuyButton::spawn_point, my_swordsman); };
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Swordsman::cost, Swordsman::wait_time, sf::Vector2f{ 230, 20 }, sf::Vector2f{ 0.15f, 0.15f },
 		swordsman_buy_button));
+
+	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Magikill::cost, Magikill::wait_time, sf::Vector2f{ 330, 20 }, sf::Vector2f{ 0.15f, 0.15f }, 
+		magikill_buy_button));
 
 	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button));
 	defend_button_->highlight(true);

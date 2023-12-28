@@ -73,6 +73,7 @@ protected:
 class SpawnUnitQueue
 {
 	std::deque<std::pair<std::shared_ptr<Unit>, int>> units_queue_;
+	int queue_size_ = 0;
 	Army& army_;
 public:
 

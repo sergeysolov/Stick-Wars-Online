@@ -491,6 +491,7 @@ SpawnUnitQueue::SpawnUnitQueue(Army& army) : army_(army)
 void SpawnUnitQueue::put_unit(const std::shared_ptr<Unit>& unit, const int spawn_time)
 {
 	units_queue_.emplace_back(unit, spawn_time);
+	queue_size_ += unit->get_places_requires();
 }
 
 bool SpawnUnitQueue::remove_unit(const int unit_id)
@@ -502,6 +503,7 @@ bool SpawnUnitQueue::remove_unit(const int unit_id)
 
 	if(find_res.base() != units_queue_.end())
 	{
+		queue_size_ -= find_res.base()->first->get_places_requires();
 		units_queue_.erase(find_res.base());
 		return  true;
 	}
@@ -516,6 +518,7 @@ void SpawnUnitQueue::process(const sf::Time delta_time)
 		if (units_queue_.front().second <= 0)
 		{
 			army_.add_unit(units_queue_.front().first);
+			queue_size_ -= units_queue_.front().first->get_places_requires();
 			units_queue_.pop_front();
 		}
 	}
@@ -528,7 +531,7 @@ int SpawnUnitQueue::get_free_places() const
 
 int SpawnUnitQueue::get_army_count() const
 {
-	return army_.get_alive_units_count() + units_queue_.size();
+	return army_.get_alive_units_count() + queue_size_;
 }
 
 std::optional<int> SpawnUnitQueue::get_front_unit_id() const

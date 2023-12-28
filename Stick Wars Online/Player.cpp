@@ -136,13 +136,8 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 		{
 			if (unit_buy_button->check_mouse_pressed(input.mouse_position))
 			{
-				std::shared_ptr<Unit> unit;
-				if (i == Miner::id and money_ >= Miner::cost)
-					unit = std::static_pointer_cast<Unit>(std::make_shared<Miner>(spawn_point, get_correct_texture_id(my_miner, player_id_)));
-				else if (i == Swordsman::id and money_ >= Swordsman::cost)
-					unit = std::static_pointer_cast<Unit>(std::make_shared<Swordsman>(spawn_point, get_correct_texture_id(my_swordsman, player_id_)));
-
-				if (unit != nullptr and spawn_queue_->get_free_places() >= unit->get_places_requires())
+				const std::shared_ptr<Unit> unit(create_unit(i, player_id_));
+				if (money_ >= unit->get_cost() and spawn_queue_->get_free_places() >= unit->get_places_requires())
 				{
 					spawn_queue_->put_unit(unit, unit->get_wait_time());
 					money_ -= unit->get_cost();

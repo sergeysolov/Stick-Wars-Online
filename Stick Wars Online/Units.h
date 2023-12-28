@@ -161,3 +161,34 @@ public:
 
 	void write_to_packet(sf::Packet& packet) const override;
 };
+
+class Magikill final : public Unit
+{
+public:
+	constexpr static int id = 2;
+	constexpr static int places_requires = 8;
+	constexpr static float max_health = 100;
+	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f };
+	constexpr static float damage = 10.f;
+	constexpr static float attack_distance = 600.0f;
+	constexpr static int wait_time = 2000; // 15000
+	constexpr static int cost = 200; // 1500
+	inline const static AnimationParams animation_params = { {-300, 20}, 700, 1280, 13, {-0.4f, 0.4f} };
+
+	Magikill(sf::Vector2f spawn_point, texture_ID texture_id);
+
+	//void commit_attack() override;
+
+	int get_id() const override;
+	int get_places_requires() const override;
+	float get_max_health() const override;
+	sf::Vector2f get_max_speed() const override;
+	float get_damage() const override;
+	float get_attack_distance() const override;
+	int get_wait_time() const override;
+	int get_cost() const override;
+
+	void write_to_packet(sf::Packet& packet) const override;
+};
+
+Unit* create_unit(int id, size_t player_num);

@@ -1,5 +1,9 @@
 #include "Units.h"
 
+#include <functional>
+
+#include "Player.h"
+
 Unit::Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params) :
 	MapObject(spawn_point, id, animation_params), health_(health), health_bar_(health, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
 {
@@ -463,9 +467,72 @@ void Swordsman::write_to_packet(sf::Packet& packet) const
 	Unit::write_to_packet(packet);
 }
 
+Magikill::Magikill(const sf::Vector2f spawn_point, const texture_ID texture_id) :
+	Unit(texture_id, spawn_point, max_health, animation_params)
+{
+
+}
+
+int Magikill::get_id() const
+{
+	return id;
+}
+
+int Magikill::get_places_requires() const
+{
+	return places_requires;
+}
+
+float Magikill::get_max_health() const
+{
+	return max_health;
+}
+
+sf::Vector2f Magikill::get_max_speed() const
+{
+	return max_speed;
+}
+
+float Magikill::get_damage() const
+{
+	return damage;
+}
+
+float Magikill::get_attack_distance() const
+{
+	return attack_distance;
+}
+
+int Magikill::get_wait_time() const
+{
+	return wait_time;
+}
+
+int Magikill::get_cost() const
+{
+	return cost;
+}
+
+void Magikill::write_to_packet(sf::Packet& packet) const
+{
+	packet << id;
+	Unit::write_to_packet(packet);
+}
+
+Unit* create_unit(const int id, const size_t player_num)
+{
+	static std::unordered_map<int, std::function<Unit*(size_t)>> factory =
+	{ {Miner::id, [&] (const size_t player_id) { return new Miner(Player::spawn_point, Player::get_correct_texture_id(my_miner, player_id)); }},
+      {Swordsman::id, [&] (const size_t player_id) { return new Swordsman(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, player_id)); }},
+	  {Magikill::id, [&](const size_t player_id) { return new Magikill(Player::spawn_point, Player::get_correct_texture_id(my_miner, player_id)); }}
+	};
+	return factory[id](player_num);
+}
+
 int Swordsman::get_id() const
 {
 	return id;
 }
+
 
 
