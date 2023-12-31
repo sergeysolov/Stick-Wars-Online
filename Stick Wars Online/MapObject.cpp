@@ -1,8 +1,8 @@
 #include "MapObject.h"
 #include "MapObject.h"
 
-MapObject::MapObject(const sf::Vector2f spawnpoint, texture_ID id, const AnimationParams& animation_params)
-	: x_(spawnpoint.x), y_(spawnpoint.y), animation_params_(animation_params)
+MapObject::MapObject(const sf::Vector2f spawn_point, texture_ID id, const AnimationParams& animation_params)
+	: x_(spawn_point.x), y_(spawn_point.y), animation_params_(animation_params)
 {
 	sprite_.setTexture(texture_holder.get_texture(id));
 	sprite_.setTextureRect(sf::IntRect(animation_params.init_position.x, animation_params.init_position.y, animation_params.frame_width, animation_params.frame_height));
@@ -32,7 +32,7 @@ void MapObject::draw(DrawQueue& queue) const
 	queue.emplace(map_object, &sprite_);
 }
 
-const MapObject::AnimationParams& MapObject::get_animation_params() const
+const AnimationParams& MapObject::get_animation_params() const
 {
 	return animation_params_;
 }
@@ -97,7 +97,7 @@ void GoldMine::update_from_packet(sf::Packet& packet)
 
 Statue::Statue(sf::Vector2f position, texture_ID id, float max_health) :
  MapObject(position, id, animation_params), max_health_(max_health), health_(max_health),
-health_bar_(max_health_, health_, position, Bar<float>::statue_health_bar_size, Bar<float>::statue_health_bar_shift, Bar<float>::health_bar_color) 
+health_bar_(max_health_, health_, position, Bar<float>::statue_health_bar_size, Bar<float>::statue_health_bar_offset, Bar<float>::health_bar_color) 
 {
 	if (id == enemy_statue)
 		sprite_.scale({ -1.f, 1.f });
@@ -105,7 +105,12 @@ health_bar_(max_health_, health_, position, Bar<float>::statue_health_bar_size, 
 
 void Statue::cause_damage(const float damage)
 {
+	const float prev_health = health_;
 	health_ = std::clamp(health_ - damage, 0.f, max_health_);
+
+	if (const float actual_damage = prev_health - health_; abs(actual_damage) > 1e-5)
+		effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
+
 	health_bar_.update();
 }
 

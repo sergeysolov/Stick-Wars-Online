@@ -12,16 +12,16 @@ class ControlledUnit
 	bool is_me_ = true;
 
 	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
-	inline const static sf::Vector2f star_shift = { -15, -10 };
+	inline const static sf::Vector2f star_offset = { -15, -10 };
 
 	inline const static sf::Vector2f name_scale = { 0.8f, 0.8f };
-	inline const static sf::Vector2f name_shift = { -30.f, -50.f};
+	inline const static sf::Vector2f name_offset = { -30.f, -50.f};
 
 	static constexpr float heal_factor = 0.2f;
 
 public:
 	static constexpr float speed_boost_factor = 1.5f;
-	static constexpr float damage_boost_factor = 4.f; //x4
+	static constexpr float damage_boost_factor = 3.f; //x4
 
 	std::optional<sf::Vector2f> last_position = {};
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
@@ -40,9 +40,9 @@ class UserInterface;
 
 class Player
 {
-	size_t player_id_;
+	int player_id_;
 
-	int money_ = 500;
+	int money_ = 50000;
 
 	std::unique_ptr<Army> army_;
 	std::unique_ptr<SpawnUnitQueue> spawn_queue_;
@@ -57,9 +57,9 @@ class Player
 	void handle_change_controlled_unit(sf::Vector2i mouse_position) const;
 public:
 	inline static const sf::Vector2f spawn_point = { -100, 650 };
-	static texture_ID get_correct_texture_id(texture_ID texture_id, size_t player_id);
+	static texture_ID get_correct_texture_id(texture_ID texture_id, int player_id);
 
-	Player(size_t player_id, const std::string& name = "");
+	explicit Player(int player_id, const std::string& name = "");
 	void set_screen_place(float camera_position) const;
 
 	void update(sf::Time delta_time, Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, std::vector<std::shared_ptr<GoldMine>>& gold_mines);

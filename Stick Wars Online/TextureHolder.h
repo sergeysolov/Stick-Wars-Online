@@ -21,6 +21,7 @@ enum texture_ID
 	pause_button,
 
 	star,
+	stun_stars,
 
 	goldmine,
 
@@ -35,7 +36,14 @@ enum texture_ID
 	enemy_swordsman,
 	my_swordsman,
 	my_swordsman_blue,
-	my_swordsman_orange
+	my_swordsman_orange,
+
+	enemy_magikill,
+	my_magikill,
+	my_magikill_blue,
+	my_magikill_orange,
+
+	explosion_effect,
 };
 
 

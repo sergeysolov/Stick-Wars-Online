@@ -152,7 +152,7 @@ UserInterface::UserInterface()
 {
 	gold_sprite_.setTexture(texture_holder.get_texture(gold));
 	gold_sprite_.setPosition({ 20, 20 });
-	gold_sprite_.setScale({ 0.1, 0.1 });
+	gold_sprite_.setScale({ 0.1f, 0.1f });
 
 	money_count_text_.setFont(text_font);
 	money_count_text_.setPosition(20, 70);

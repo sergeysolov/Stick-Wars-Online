@@ -6,6 +6,7 @@
 #include <SFML/Network/Packet.hpp>
 
 #include "DrawQueue.h"
+#include "EffectsManager.h"
 
 constexpr float map_frame_width = 2100;
 
@@ -17,20 +18,8 @@ constexpr float y_map_max = 700;
 class MapObject
 {
 public:
-	struct AnimationParams
-	{
-		sf::Vector2i init_position;
-		int frame_height;
-		int frame_width;
-		int total_frames;
-		sf::Vector2f scale;
 
-		AnimationParams(sf::Vector2i init_position, uint16_t frame_height, uint16_t frame_width, uint16_t total_frames, sf::Vector2f scale)
-			: init_position(init_position), frame_height(frame_height), frame_width(frame_width), total_frames(total_frames), scale(scale)
-		{}
-	};
-
-	MapObject(sf::Vector2f spawnpoint, texture_ID id, const AnimationParams& animation_params);
+	MapObject(sf::Vector2f spawn_point, texture_ID id, const AnimationParams& animation_params);
 	virtual ~MapObject() = default;
 
 	const sf::Sprite& get_sprite() const;
@@ -78,13 +67,13 @@ public:
 		{map_frame_width * 3 - 550, 800},
 		{map_frame_width * 3 - 350, 680},};
 
-	const inline static AnimationParams animation_params = AnimationParams({ 0, 0 }, 538, 960, 10, { 0.2f, 0.2f });
+	const inline static AnimationParams animation_params = AnimationParams({ 0, 0 }, 538, 960, { 0.2f, 0.2f }, 10, 1);
 
 	GoldMine(sf::Vector2f position);
 
 	int mine(int gold_count);
 	bool empty() const;
-	const int max_gold_capacity = 4000; //4000
+	static constexpr int max_gold_capacity = 4000; //4000
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;
@@ -100,7 +89,7 @@ class Statue : public MapObject
 	float health_;
 	Bar<float> health_bar_;
 public:
-	inline const static AnimationParams animation_params = AnimationParams({ 0, 0 }, 817, 261, 1, { 1.f, 1.f });
+	inline const static AnimationParams animation_params = AnimationParams({ 0, 0 }, 817, 261, { 1.f, 1.f }, 1, 1);
 	constexpr static float my_max_health = 50000.0f;
 	constexpr static float enemy_max_health = 60000.0f; //12000
 

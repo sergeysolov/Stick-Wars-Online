@@ -17,6 +17,7 @@ int Game::run()
 
 		state_manager_.handle_input(input_, delta_time);
 		state_manager_.update(delta_time);
+
 		draw();
 
 		main_window_.display();
@@ -29,6 +30,8 @@ void Game::draw()
 	main_window_.clear();
 
 	state_manager_.draw(draw_queue_);
+
+	
 
 	while (not draw_queue_.empty())
 	{

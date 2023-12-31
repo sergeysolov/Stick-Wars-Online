@@ -4,10 +4,11 @@
 
 #include "Player.h"
 
-Unit::Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params) :
-	MapObject(spawn_point, id, animation_params), health_(health), health_bar_(health, health_, spawn_point, Bar<float>::unit_health_bar_size, Bar<float>::unit_health_bar_shift, Bar<float>::health_bar_color)
+Unit::Unit(const texture_ID id, const sf::Vector2f spawn_point, const float health, const AnimationParams& animation_params) :
+	MapObject(spawn_point, id, animation_params), health_(health), health_bar_(health, health_, spawn_point, Bar<float>::unit_bar_size, Bar<float>::unit_health_bar_offset, Bar<float>::health_bar_color)
 {
-	
+	stun_stars_sprite_.setTexture(texture_holder.get_texture(stun_stars));
+	stun_stars_sprite_.setScale(stun_sprite_scale);
 }
 
 void Unit::show_animation(const int delta_time)
@@ -15,9 +16,9 @@ void Unit::show_animation(const int delta_time)
 	if(not animation_complete())
 	{
 		cumulative_time_ += delta_time;
-		if (cumulative_time_ > animation_step)
+		if (cumulative_time_ > animation_params_.time_frame)
 		{
-			cumulative_time_ -= animation_step;
+			cumulative_time_ -= animation_params_.time_frame;
 			(current_frame_ += 1) %= animation_params_.total_frames;
 
 			if (current_frame_ == 0)
@@ -34,12 +35,13 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 
 	if (animation_type_ == attack_animation)
 	{
-		if(is_play_hit_sound and current_frame_ == 2 and get_id() > 0)
+		if(current_frame_ == get_damage_frame())
+			do_damage_flag_ = true;
+
+		if (is_play_hit_sound)
 			play_hit_sound();
 
 		y_shift = animation_params_.frame_height;
-		if (current_frame_ == 7)
-			do_damage_flag_ = true;
 	}
 
 	if (animation_type_ == die_animation)
@@ -49,20 +51,39 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 }
 
 
-void Unit::cause_damage(const float damage, const int direction)
+Unit::DamageType Unit::cause_damage(const float damage, const int direction, const int stun_time)
 {
+	const float prev_health = health_;
 	health_ = std::clamp(health_ - damage, 0.f, get_max_health());
+	stun_time_left_ += stun_time;
 	push(direction);
 	health_bar_.update();
-	if (damage > 0)
-		play_damage_sound();
-	if (health_ <= 0)
+
+	if (const float actual_damage = prev_health - health_; abs(actual_damage) > 1e-5)
+		effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
+
+	DamageType damage_type = damage > 0 ? is_damage : no_damage;
+	if (health_ <= 1e-5)
+	{
 		kill();
+		damage_type = is_kill;
+	}
+	return damage_type;
 }
 
 bool Unit::is_alive() const
 {
 	return health_ > 0;
+}
+
+int Unit::get_splash_count() const
+{
+	return 1;
+}
+
+int Unit::get_stun_time() const
+{
+	return 0;
 }
 
 sf::Vector2f Unit::get_speed() const
@@ -114,7 +135,7 @@ void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
 void Unit::write_to_packet(sf::Packet& packet) const
 {
 	MapObject::write_to_packet(packet);
-	packet << health_ << speed_.x << speed_.y << animation_type_ << was_move_.first << was_move_.second << prev_direction_
+	packet << health_ << speed_.x << speed_.y << stun_time_left_ << animation_type_ << was_move_.first << was_move_.second << prev_direction_
 		<< dead_ << do_damage_flag_;
 }
 
@@ -125,16 +146,11 @@ void Unit::update_from_packet(sf::Packet& packet)
 	const float prev_health = health_;
 
 	int animation_type;
-	packet >> health_ >> speed_.x >> speed_.y >> animation_type >> was_move_.first >> was_move_.second >> prev_direction_
+	packet >> health_ >> speed_.x >> speed_.y >> stun_time_left_ >> animation_type >> was_move_.first >> was_move_.second >> prev_direction_
 		>> dead_ >> do_damage_flag_;
 	animation_type_ = static_cast<AnimationType>(animation_type);
 
-	if (prev_health > health_)
-		play_damage_sound();
-	if (get_id() > 0 and prev_frame == 1 and current_frame_ == 2 and animation_type_ == attack_animation)
-		play_hit_sound();
-
-	cause_damage(0, 0);
+	cause_damage(0, 0, 0);
 	set_animation_frame(false);
 }
 
@@ -147,10 +163,13 @@ void Unit::set_screen_place(const float camera_position)
 {
 	MapObject::set_screen_place(camera_position);
 	health_bar_.set_position({ x_ - camera_position, y_ });
+	stun_stars_sprite_.setPosition({ x_ - camera_position + stun_sprite_offset.x, y_ + stun_sprite_offset.y});
 }
 
-void Unit::process_move(const sf::Time time)
+void Unit::process(const sf::Time time)
 {
+	stun_time_left_ = std::max(stun_time_left_ - time.asMilliseconds(), 0);
+
 	const float dx = time.asMilliseconds() * speed_.x;
 	const float dy = time.asMilliseconds() * speed_.y;
 
@@ -194,7 +213,7 @@ void Unit::process_move(const sf::Time time)
 
 void Unit::move(const sf::Vector2i direction, const sf::Time time)
 {
-	if(animation_type_ == attack_animation and current_frame_ < 8) // Can not move while attack
+	if((animation_type_ == attack_animation and current_frame_ < 7) or stun_time_left_ > 0) // Can not move while attack or urder stun
 		return;
 
 	was_move_ = { direction.x != 0, direction.y != 0 };
@@ -216,8 +235,6 @@ void Unit::kill()
 	animation_type_ = die_animation;
 	cumulative_time_++;
 	dead_ = true;
-
-	play_kill_sound();
 }
 
 void Unit::push(const int direction)
@@ -225,59 +242,17 @@ void Unit::push(const int direction)
 	speed_.x = std::clamp(speed_.x + direction * 0.3f, -0.8f, 0.8f);
 }
 
-void Unit::play_kill_sound()
+void Unit::play_hit_sound() const
 {
-	static constexpr int total_kill_sounds = 3;
-	static std::vector<sf::Sound> kill_sounds;
-	if (kill_sounds.empty())
-	{
-		for (int i = 0; i < total_kill_sounds; i++)
-		{
-			kill_sounds.emplace_back();
-			kill_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_kill));
-			kill_sounds.back().setVolume(sounds_volume);
-		}
-	}
-	static int idx = 0;
-	idx = (idx + 1) % total_kill_sounds;
-	kill_sounds[idx].play();
+
 }
 
-void Unit::play_damage_sound()
+void Unit::play_damage_sound() const
 {
-	static constexpr int total_damage_sounds = 8;
-	static std::vector<sf::Sound> damage_sounds;
-	if (damage_sounds.empty())
-	{
-		for (int i = 0; i < total_damage_sounds; i++)
-		{
-			damage_sounds.emplace_back();
-			damage_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_damage));
-			damage_sounds.back().setVolume(sounds_volume);
-		}
-	}
-	static int idx = 0;
-	idx = (idx + 1) % total_damage_sounds;
-	damage_sounds[idx].play();
 }
 
-void Unit::play_hit_sound()
+void Unit::play_kill_sound() const
 {
-	static constexpr int total_hit_sounds = 8;
-	static std::vector<sf::Sound> hit_sounds;
-	if (hit_sounds.empty())
-	{
-		for (int i = 0; i < total_hit_sounds; i++)
-		{
-			hit_sounds.emplace_back();
-			hit_sounds.back().setBuffer(sound_buffers_holder.get_sound_buffer(sward_hit));
-			hit_sounds.back().setVolume(sounds_volume);
-		}
-	}
-	static int idx = 0;
-	idx = (idx + 1) % total_hit_sounds;
-	if(hit_sounds[idx].getStatus() != sf::Sound::Playing)
-		hit_sounds[idx].play();
 }
 
 bool Unit::was_killed()
@@ -301,6 +276,8 @@ void Unit::draw(DrawQueue& queue) const
 		queue.emplace(alive_units, &sprite_);
 		if (abs(health_ - get_max_health()) > 1e-5)
 			health_bar_.draw(queue);
+		if (stun_time_left_ > 0)
+			queue.emplace(attributes_layer_2, &stun_stars_sprite_);
 	}
 	else
 		queue.emplace(dead_units,&sprite_);
@@ -308,18 +285,21 @@ void Unit::draw(DrawQueue& queue) const
 
 void Unit::commit_attack()
 {
-	if (animation_type_ != attack_animation)
+	if(stun_time_left_ == 0)
 	{
-		current_frame_ = 0;
-	}
-	animation_type_ = attack_animation;
+		if (animation_type_ != attack_animation)
+		{
+			current_frame_ = 0;
+		}
+		animation_type_ = attack_animation;
 
-	cumulative_time_++;
+		cumulative_time_++;
+	}
 }
 
 Miner::Miner(const sf::Vector2f spawn_point, const texture_ID texture_id)
 	: Unit(texture_id, spawn_point, max_health, animation_params),
-	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_health_bar_size, Bar<int>::miner_gold_count_bar_shift, Bar<int>::miner_gold_bar_color)
+	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::miner_gold_bar_color)
 {
 	
 }
@@ -335,12 +315,6 @@ void Miner::set_screen_place(const float camera_position)
 {
 	Unit::set_screen_place(camera_position);
 	gold_count_bar_.set_position({ x_ - camera_position, y_ });
-}
-
-void Miner::move(const sf::Vector2i direction, const sf::Time time)
-{
-	Unit::move(direction, time);
-	gold_count_bar_.set_position({ x_, y_ });
 }
 
 void Miner::fill_bag(const int gold_count)
@@ -383,6 +357,11 @@ float Miner::get_damage() const
 	return damage;
 }
 
+int Miner::get_damage_frame() const
+{
+	return damage_frame;
+}
+
 float Miner::get_attack_distance() const
 {
 	return attack_distance;
@@ -411,6 +390,22 @@ void Miner::update_from_packet(sf::Packet& packet)
 	Unit::update_from_packet(packet);
 }
 
+void Swordsman::play_hit_sound() const
+{
+	if(current_frame_ == hit_frame)
+		sound_manager.play_sound(sward_hit);
+}
+
+void Swordsman::play_damage_sound() const
+{
+	sound_manager.play_sound(sward_damage);
+}
+
+void Swordsman::play_kill_sound() const
+{
+	sound_manager.play_sound(sward_kill);
+}
+
 int Miner::get_id() const
 {
 	return id;
@@ -419,11 +414,6 @@ int Miner::get_id() const
 Swordsman::Swordsman(const sf::Vector2f spawn_point, const texture_ID texture_id)
 	: Unit(texture_id, spawn_point, max_health, animation_params)
 {
-}
-
-void Swordsman::commit_attack()
-{
-	Unit::commit_attack();
 }
 
 int Swordsman::get_places_requires() const
@@ -444,6 +434,16 @@ sf::Vector2f Swordsman::get_max_speed() const
 float Swordsman::get_damage() const
 {
 	return damage;
+}
+
+int Swordsman::get_damage_frame() const
+{
+	return damage_frame;
+}
+
+int Swordsman::get_splash_count() const
+{
+	return splash_count;
 }
 
 float Swordsman::get_attack_distance() const
@@ -467,10 +467,60 @@ void Swordsman::write_to_packet(sf::Packet& packet) const
 	Unit::write_to_packet(packet);
 }
 
+void Magikill::play_hit_sound() const
+{
+	if (current_frame_ == hit_frame)
+	{
+		sound_manager.play_sound(explosion_sound);
+		effects_manager.add_effect(std::make_unique<ExplosionEffect>(sf::Vector2f{x_, y_}, prev_direction_));
+	}
+	
+}
+
 Magikill::Magikill(const sf::Vector2f spawn_point, const texture_ID texture_id) :
-	Unit(texture_id, spawn_point, max_health, animation_params)
+	Unit(texture_id, spawn_point, max_health, animation_params),
+time_left_to_next_attack_bar_(attack_cooldown_time, time_left_to_next_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
 {
 
+}
+
+void Magikill::draw(DrawQueue& queue) const
+{
+	Unit::draw(queue);
+	if (is_alive() and time_left_to_next_attack_ > 0)
+		time_left_to_next_attack_bar_.draw(queue);
+}
+
+void Magikill::set_screen_place(const float camera_position)
+{
+	Unit::set_screen_place(camera_position);
+	time_left_to_next_attack_bar_.set_position({ x_ - camera_position, y_ });
+}
+
+void Magikill::commit_attack()
+{
+	if(time_left_to_next_attack_ == 0)
+		Unit::commit_attack();
+}
+
+bool Magikill::can_do_damage()
+{
+	if(time_left_to_next_attack_ == 0)
+	{
+		const bool temp = do_damage_flag_;
+		do_damage_flag_ = false;
+		if (temp)
+			time_left_to_next_attack_ = attack_cooldown_time;
+		return temp;
+	}
+	return false;
+}
+
+void Magikill::process(const sf::Time time)
+{
+	Unit::process(time);
+	time_left_to_next_attack_ = std::max(time_left_to_next_attack_ - time.asMilliseconds(), 0);
+	time_left_to_next_attack_bar_.update();
 }
 
 int Magikill::get_id() const
@@ -498,6 +548,21 @@ float Magikill::get_damage() const
 	return damage;
 }
 
+int Magikill::get_damage_frame() const
+{
+	return damage_frame;
+}
+
+int Magikill::get_splash_count() const
+{
+	return splash_count;
+}
+
+int Magikill::get_stun_time() const
+{
+	return stun_time;
+}
+
 float Magikill::get_attack_distance() const
 {
 	return attack_distance;
@@ -515,16 +580,23 @@ int Magikill::get_cost() const
 
 void Magikill::write_to_packet(sf::Packet& packet) const
 {
-	packet << id;
+	packet << id << time_left_to_next_attack_;
 	Unit::write_to_packet(packet);
 }
 
-Unit* create_unit(const int id, const size_t player_num)
+void Magikill::update_from_packet(sf::Packet& packet)
 {
-	static std::unordered_map<int, std::function<Unit*(size_t)>> factory =
-	{ {Miner::id, [&] (const size_t player_id) { return new Miner(Player::spawn_point, Player::get_correct_texture_id(my_miner, player_id)); }},
-      {Swordsman::id, [&] (const size_t player_id) { return new Swordsman(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, player_id)); }},
-	  {Magikill::id, [&](const size_t player_id) { return new Magikill(Player::spawn_point, Player::get_correct_texture_id(my_miner, player_id)); }}
+	packet >> time_left_to_next_attack_;
+	time_left_to_next_attack_bar_.update();
+	Unit::update_from_packet(packet);
+}
+
+Unit* create_unit(const int id, const int player_num)
+{
+	static std::unordered_map<int, std::function<Unit*(int)>> factory =
+	{ {Miner::id, [&] (const int player_id) { return new Miner(Player::spawn_point, Player::get_correct_texture_id(my_miner, player_id)); }},
+      {Swordsman::id, [&] (const int player_id) { return new Swordsman(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, player_id)); }},
+	  {Magikill::id, [&](const int player_id) { return new Magikill(Player::spawn_point, Player::get_correct_texture_id(my_magikill, player_id)); }}
 	};
 	return factory[id](player_num);
 }

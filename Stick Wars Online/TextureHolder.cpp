@@ -34,6 +34,11 @@ void TextureHolder::load_textures()
 	append(my_swordsman_orange, "Images/units/swordsman_orange.png");
 	append(enemy_swordsman, "Images/units/swordsman_enemy.png");
 
+	append(my_magikill, "Images/units/magikill.png");
+	append(my_magikill_blue, "Images/units/magikill_blue.png");
+	append(my_magikill_orange, "Images/units/magikill_orange.png");
+	append(enemy_magikill, "Images/units/magikill_enemy.png");
+
 	append(gold, "Images/attributes/gold.png");
 	append(miner_buy_button, "Images/attributes/miner_buy_button.png");
 	append(stick_man, "Images/attributes/stick_man.png");
@@ -41,11 +46,15 @@ void TextureHolder::load_textures()
 	append(magikill_buy_button, "Images/attributes/magikill_buy_button.png");
 	append(in_attack_button, "Images/attributes/in_attack_button.png");
 	append(defend_button, "Images/attributes/defend_button.png");
-	append(star, "Images/attributes/star.png");
 	append(pause_button, "Images/attributes/pause_button.png");
+
+	append(star, "Images/attributes/star.png");
+	append(stun_stars, "Images/attributes/stun_stars.png");
 
 	append(goldmine, "Images/objects/goldmine.png");
 
 	append(my_statue, "Images/objects/statue.png");
 	append(enemy_statue, "Images/objects/statue_enemy.png");
+
+	append(explosion_effect, "Images/effects/explosion.png");
 }

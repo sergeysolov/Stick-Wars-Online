@@ -14,10 +14,10 @@ void Army::play_in_attack_music(const bool play)
 		in_attack_sound = std::make_unique<sf::Sound>();
 		in_attack_sound->setBuffer(sound_buffers_holder.get_sound_buffer(in_attack_music));
 	}
-	if (play)
+	/*if (play)
 		in_attack_sound->play();
 	else
-		in_attack_sound->stop();
+		in_attack_sound->stop();*/
 }
 
 Army::Army(const float army_defend_line, const int id, const int size_factor) : texture_shift_(id)
@@ -110,7 +110,7 @@ int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<
 			continue;
 		}
 
-		unit->process_move(delta_time * (unit == controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
+		unit->process(delta_time * (unit == controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
 
 		//Give stand place with less number to unit if place become free
 		if (not defend_places_.empty() and unit->get_stand_place().first > defend_places_.begin()->first)
@@ -125,6 +125,7 @@ int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<
 			gold_count_mined += process_miner(miner, controlled_unit, gold_mines, delta_time);
 		else
 			process_warrior(unit, controlled_unit, enemy_armies, enemy_statue, delta_time);
+
 		++it;
 	}
 
@@ -180,12 +181,7 @@ void Army::update_from_packet(sf::Packet& packet)
 			{
 				int unit_id; packet_to_get_update >> unit_id;
 				if (unit_id != units[i]->get_id())
-				{
-					if (unit_id == Miner::id)
-						units[i] = std::make_shared<Miner>(Player::spawn_point, Player::get_correct_texture_id(my_miner, texture_shift_));
-					else if (unit_id == Swordsman::id)
-						units[i] = std::make_shared<Swordsman>(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, texture_shift_));
-				}
+					units[i] = std::shared_ptr<Unit>(create_unit(unit_id, texture_shift_));
 				units[i]->update_from_packet(packet_to_get_update);
 			}
 
@@ -196,11 +192,7 @@ void Army::update_from_packet(sf::Packet& packet)
 				while (units.size() < units_count)
 				{
 					int unit_id; packet_to_get_update >> unit_id;
-					std::shared_ptr<Unit> unit;
-					if (unit_id == Miner::id)
-						unit = std::make_shared<Miner>(Player::spawn_point, Player::get_correct_texture_id(my_miner, texture_shift_));
-					else if (unit_id == Swordsman::id)
-						unit = std::make_shared<Swordsman>(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, texture_shift_));
+					std::shared_ptr<Unit> unit(create_unit(unit_id, texture_shift_));
 					unit->update_from_packet(packet_to_get_update);
 					units.push_back(unit);
 				}
@@ -209,8 +201,8 @@ void Army::update_from_packet(sf::Packet& packet)
 	update_units_from_packet(units_, packet);
 	const auto prev_dead_units_count = dead_units_.size();
 	update_units_from_packet(dead_units_, packet);
-	if (dead_units_.size() > prev_dead_units_count)
-		Unit::play_kill_sound();
+	//if (dead_units_.size() > prev_dead_units_count)
+	//	Unit::play_kill_sound();
 }
 
 int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const
@@ -250,7 +242,8 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	if (miner->can_do_damage() and check_can_mine(find_nearest_goldmine()->get()).first)
 	{
 		const float gold_count = (miner == controlled_unit.get() ? ControlledUnit::damage_boost_factor : 1) * miner->get_damage();
-			miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(gold_count)));
+		miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(gold_count)));
+		sound_manager.play_sound(miner_hit);
 	}
 		
 
@@ -317,7 +310,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	return gold_count_mined;
 }
 
-void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time)
+void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const sf::Time delta_time)
 {
 	auto calculate_dx_dy_between_units = [&](const std::shared_ptr<Unit>& unit_target) -> sf::Vector2f
 		{
@@ -326,91 +319,111 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			return { dx, 5 * dy };
 		};
 
-	std::optional<decltype(enemy_armies[0]->get_units().end())> nearest_enemy = {};
+	using unit_iterator = decltype(enemy_armies[0]->get_units().end());
+	std::priority_queue < std::pair<float, unit_iterator>, std::vector < std::pair<float, unit_iterator>>, std::greater<>> enemies_by_distance;
 
-	float nearest_distance = 1E+15f;
+	//float nearest_distance = 1E+15f;
 	for (const auto enemy_army : enemy_armies)
 	{
 		for (auto it = enemy_army->get_units().begin(); it != enemy_army->get_units().end(); ++it)
 		{
-			if (it->get()->is_alive())
-			{
-				auto [dx, dy] = calculate_dx_dy_between_units(*it);
+			auto [dx, dy] = calculate_dx_dy_between_units(*it);
 
-				const float distance = abs(dx) + abs(dy);
-				if (distance < nearest_distance)
-				{
-					nearest_distance = distance;
-					nearest_enemy = it;
-				}
-			}
+			const float distance = abs(dx) + abs(dy);
+			enemies_by_distance.emplace(distance, it);
 		}
 	}
 
-	int is_enemy_nearby_to_attack = 0; //no enemy
-	sf::Vector2f distance_to_nearest_enemy = { 1E+15f, 1E+15f }; //inf, inf
+	//int is_enemy_nearby_to_attack = 0; //no enemy
+	//sf::Vector2f distance_to_nearest_enemy = { 1E+15f, 1E+15f }; //inf, inf
 
-	if (nearest_enemy)
-	{
-		distance_to_nearest_enemy = calculate_dx_dy_between_units(**nearest_enemy);
-		auto [dx, dy] = distance_to_nearest_enemy;
+	auto calculate_params_to_attack = [&](const unit_iterator& unit_it) -> std::pair<int, sf::Vector2f>
+		{
+			auto distance_to_nearest_enemy = calculate_dx_dy_between_units(*unit_it);
+			auto [dx, dy] = distance_to_nearest_enemy;
 
-		if (abs(dx) <= unit->get_attack_distance() and abs(dy) <= unit->get_attack_distance())
-			is_enemy_nearby_to_attack = (dx > 0 ? 1 : -1) * unit->get_direction();
-	}
+			int is_enemy_nearby_to_attack = 0;
+			if (abs(dx) <= unit->get_attack_distance() and abs(dy) <= unit->get_attack_distance())
+				is_enemy_nearby_to_attack = (dx > 0 ? 1 : -1) * unit->get_direction();
 
-	//const int direction_to_enemy_statue = (enemy_statue->get_coords().x - unit->get_coords().x > 0 ? 1 : -1) * unit->get_direction();
+			return { is_enemy_nearby_to_attack, distance_to_nearest_enemy };
+		};
+
+
 	const sf::Vector2f distance_to_statue = { enemy_statue->get_coords().x - unit->get_coords().x, 3 * (enemy_statue->get_coords().y + 180 - unit->get_coords().y) };
 	int can_attack_statue = 0;
 	if (abs(distance_to_statue.x) <= unit->get_attack_distance() and abs(distance_to_statue.y) <= unit->get_attack_distance())
 		can_attack_statue = (enemy_statue->get_coords().x - unit->get_coords().x > 0 ? 1 : -1) * unit->get_direction();
 
+	std::optional<unit_iterator> nearest_enemy = {};
+	if (not enemies_by_distance.empty())
+		nearest_enemy = enemies_by_distance.top().second;
+
 	// process causing damage
 	if (unit->can_do_damage())
 	{
-		if(is_enemy_nearby_to_attack == 1)
+		int enemies_damaged_count = 0;
+		const auto base_damage_multiplayer = unit == controlled_unit ? ControlledUnit::damage_boost_factor : 1;
+
+		while (enemies_damaged_count < unit->get_splash_count() and not enemies_by_distance.empty())
 		{
-			float damage_multiplier = 0;
-			const auto [dx, dy] = distance_to_nearest_enemy;
-			if (dx > 0 and unit->get_direction() == 1)
-			{
-				if (unit->get_direction() + (*nearest_enemy)->get()->get_direction() == 0)
-					damage_multiplier = 1;
-				else if (unit->get_direction() + (*nearest_enemy)->get()->get_direction() == 2)
-					damage_multiplier = 2;
-			}
-			else if (dx < 0 and unit->get_direction() == -1)
-			{
-				if (unit->get_direction() + (*nearest_enemy)->get()->get_direction() == 0)
-					damage_multiplier = 1;
-				else if (unit->get_direction() + (*nearest_enemy)->get()->get_direction() == -2)
-					damage_multiplier = 2;
-			}
+			const auto [is_enemy_nearby_to_attack, distance_to_nearest_enemy] = calculate_params_to_attack(enemies_by_distance.top().second);
 
-			if (unit == controlled_unit)
-				damage_multiplier *= ControlledUnit::damage_boost_factor;
+			if(is_enemy_nearby_to_attack == 0)
+				break;
+			if(is_enemy_nearby_to_attack == 1)
+			{
+				float damage_multiplier = 0;
+				const auto [dx, dy] = distance_to_nearest_enemy;
+				if (dx > 0 and unit->get_direction() == 1)
+				{
+					if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == 0)
+						damage_multiplier = 1;
+					else if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == 2)
+						damage_multiplier = 2;
+				}
+				else if (dx < 0 and unit->get_direction() == -1)
+				{
+					if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == 0)
+						damage_multiplier = 1;
+					else if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == -2)
+						damage_multiplier = 2;
+				}
 
-			(*nearest_enemy)->get()->cause_damage(unit->get_damage() * damage_multiplier, unit->get_direction());
+				damage_multiplier *= base_damage_multiplayer;
+				const auto damage_type = enemies_by_distance.top().second->get()->cause_damage(unit->get_damage() * damage_multiplier, unit->get_direction(), unit->get_stun_time());
+				if (damage_type == Unit::is_damage)
+					unit->play_damage_sound();
+				else if (damage_type == Unit::is_kill)
+					unit->play_kill_sound();
+				enemies_damaged_count += damage_multiplier > 1e-4;
+			}
+			enemies_by_distance.pop();
 		}
-  		else if(can_attack_statue == 1)
-  			enemy_statue->cause_damage(unit->get_damage() * (unit == controlled_unit ? ControlledUnit::damage_boost_factor : 1.f));
+  		if(can_attack_statue == 1 and enemies_damaged_count < unit->get_splash_count())
+  			enemy_statue->cause_damage(unit->get_damage() * base_damage_multiplayer);
 	}
 
 	if (unit == controlled_unit)
 		return;
 
+	std::optional<std::pair<int, sf::Vector2f>> params_to_attack;
+
 	if(nearest_enemy)
-		if (abs(distance_to_nearest_enemy.x) + 450 * (*nearest_enemy)->get()->get_speed().x * (distance_to_nearest_enemy.x > 0 ? 1 : -1) <= unit->get_attack_distance() and abs(distance_to_nearest_enemy.y) <= unit->get_attack_distance())
+	{
+		params_to_attack = calculate_params_to_attack(*nearest_enemy);
+		if (abs(params_to_attack->second.x) + 450 * (*nearest_enemy)->get()->get_speed().x * (params_to_attack->second.x > 0 ? 1 : -1) <= unit->get_attack_distance() and abs(params_to_attack->second.y) <= unit->get_attack_distance())
 		{
-			if (is_enemy_nearby_to_attack < 0)
+			if (params_to_attack->first < 0)
 				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
 			unit->commit_attack();
 			return;
 		}
+	}
 
 	if (army_target_ == defend)
 	{
-		if (abs(distance_to_nearest_enemy.x) < Unit::trigger_attack_radius and abs(distance_to_nearest_enemy.y / 5) < Unit::trigger_attack_radius) // y / 5
+		if (params_to_attack and abs(params_to_attack->second.x) < Unit::trigger_attack_radius and abs(params_to_attack->second.y / 5) < Unit::trigger_attack_radius) // y / 5
 		{
 			if (unit->target_unit == nullptr)
 				unit->target_unit = **nearest_enemy;
@@ -455,7 +468,10 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			return;
 		}
 
-		const float dist_to_enemy = abs(distance_to_nearest_enemy.x) + abs(distance_to_nearest_enemy.y);
+
+		float dist_to_enemy = 1E+15f;
+		if(params_to_attack)
+			dist_to_enemy = abs(params_to_attack->second.x) + abs(params_to_attack->second.y);
 		const float dist_to_statue = abs(distance_to_statue.x) + abs(distance_to_statue.y);
 
 		if (dist_to_statue < dist_to_enemy)
@@ -586,13 +602,16 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);
 	}
 
-	static constexpr float reinforcement_count = 50;
+	static constexpr float reinforcement_count = 20;
 
 	if(enemy_statue.get_health() < Army::prev_hit_points_of_enemy_statue - Statue::enemy_max_health / reinforcement_count)
 	{
 		Army::prev_hit_points_of_enemy_statue -= Statue::enemy_max_health / reinforcement_count;
 
-		const int count = queue.army_.get_max_size() / 8;
+		const int count = queue.army_.get_max_size() / 2 - Magikill::places_requires; // / 8
+		if (queue.get_free_places() >= Magikill::places_requires)
+			queue.put_unit(std::shared_ptr<Unit>(create_unit(Magikill::id, -1)), 100);
+
 		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 100);
 	}

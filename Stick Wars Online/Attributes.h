@@ -2,7 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include "DrawQueue.h"
 
-template <typename  T>
+template <typename T>
 class Bar
 {
 protected:
@@ -13,16 +13,17 @@ protected:
 	sf::RectangleShape bar_;
 	sf::RectangleShape total_bar_;
 public:
-	inline const static sf::Vector2f unit_health_bar_size = { 70, 3 };
+	inline const static sf::Vector2f unit_bar_size = { 70, 3 };
 	inline const static sf::Vector2f statue_health_bar_size = { 100, 15 };
 
-	inline const static sf::Vector2f unit_health_bar_shift = { -32, 50 };
-	inline const static sf::Vector2f statue_health_bar_shift = { -32, 60 };
+	inline const static sf::Vector2f unit_health_bar_offset = { -32, 50 };
+	inline const static sf::Vector2f statue_health_bar_offset = { -32, 60 };
 
-	inline const static sf::Vector2f miner_gold_count_bar_shift = { -32, 35 };
+	inline const static sf::Vector2f unit_second_attribute_bar_offset = { -32, 35 };
 
 	inline const static sf::Color health_bar_color = sf::Color{ 255, 0, 100 };
 	inline const static sf::Color miner_gold_bar_color = sf::Color{ 210, 160, 30 };
+	inline const static sf::Color magikill_cooldown_time_bar_color = sf::Color{60, 160, 250};
 
 	Bar(T max_value, const T& value, sf::Vector2f position, sf::Vector2f size, sf::Vector2f shift, sf::Color color);
 	void update();

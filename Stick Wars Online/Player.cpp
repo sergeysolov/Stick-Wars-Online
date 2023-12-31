@@ -38,10 +38,10 @@ void ControlledUnit::draw(DrawQueue& queue)
 	if (unit_ != nullptr)
 	{
 		star_sprite_.setPosition(unit_->get_sprite().getPosition());
-		star_sprite_.move(star_shift);
+		star_sprite_.move(star_offset);
 
 		name_text_.setPosition(unit_->get_sprite().getPosition());
-		name_text_.move(name_shift);
+		name_text_.move(name_offset);
 
 		queue.emplace(attributes_layer_1, &name_text_);
 		if(is_me_)
@@ -52,7 +52,7 @@ void ControlledUnit::draw(DrawQueue& queue)
 void ControlledUnit::heal() const
 {
 	if (unit_ != nullptr)
-		unit_->cause_damage(-unit_->get_max_health() * heal_factor, 0);
+		unit_->cause_damage(-unit_->get_max_health() * heal_factor, 0, 0);
 }
 
 
@@ -77,12 +77,12 @@ void Player::handle_change_controlled_unit(const sf::Vector2i mouse_position) co
 		*controlled_unit_ = nullptr;
 }
 
-texture_ID Player::get_correct_texture_id(const texture_ID texture_id, const size_t player_id)
+texture_ID Player::get_correct_texture_id(const texture_ID texture_id, const int player_id)
 {
 	return static_cast<texture_ID>(static_cast<int>(texture_id) + player_id);
 }
 
-Player::Player(const size_t player_id, const std::string& name) : player_id_(player_id)
+Player::Player(const int player_id, const std::string& name) : player_id_(player_id)
 {
 	army_ = std::make_unique<Army>(Army::defend_lines[player_id], player_id);
 	spawn_queue_ = std::make_unique<SpawnUnitQueue>(*army_);
@@ -116,15 +116,15 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 			const sf::Vector2i direction = { static_cast<int>(input.d) - static_cast<int>(input.a),
 		static_cast<int>(input.s) - static_cast<int>(input.w) };
 
-			if (direction.x != 0 or direction.y != 0)
+			if (input.space)
+				controlled_unit_->get_unit()->commit_attack();
+			else if (direction.x != 0 or direction.y != 0)
 			{
 				controlled_unit_->get_unit()->move(direction, delta_time);
 				controlled_unit_->last_position = controlled_unit_->get_unit()->get_coords();
 			}
-			if (input.space)
-				controlled_unit_->get_unit()->commit_attack();
 			else if (input.k)
-				controlled_unit_->get_unit()->cause_damage(1E+10, 0);
+				controlled_unit_->get_unit()->cause_damage(1E+10, 0, 0);
 		}
 		else
 			controlled_unit_->release();

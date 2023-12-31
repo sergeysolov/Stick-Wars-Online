@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClCompile Include="Army.cpp" />
     <ClCompile Include="ConnectionHandler.cpp" />
+    <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Game.cpp">
       <LanguageStandard Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">stdcpp20</LanguageStandard>
     </ClCompile>
@@ -157,6 +158,7 @@
     <ClInclude Include="BaseState.h" />
     <ClInclude Include="ConnectionHandler.h" />
     <ClInclude Include="DrawQueue.h" />
+    <ClInclude Include="EffectsManager.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameOverState.h" />
     <ClInclude Include="Input.h" />

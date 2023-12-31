@@ -10,6 +10,7 @@ enum DrawPriority
 	alive_units,
 	attributes_layer_0,
 	attributes_layer_1,
+	attributes_layer_2,
 	interface_layer_0,
 	interface_layer_1,
 };

@@ -14,6 +14,8 @@ void PlayState::set_objects_screen_place() const
 
 	my_statue_->set_screen_place(camera_position_);
 	enemy_statue_->set_screen_place(camera_position_);
+
+	effects_manager.set_screen_place(camera_position_);
 }
 
 void PlayState::move_camera(const float step)
@@ -117,6 +119,7 @@ void PlayState::update(const sf::Time delta_time)
 		//if (enemy_behaviour == 0)
 		process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
 		enemy_spawn_queue_->process(delta_time);
+		effects_manager.process(delta_time.asMilliseconds());
 
 		if(server_handler != nullptr)
 		{
@@ -133,6 +136,8 @@ void PlayState::update(const sf::Time delta_time)
 			update_packet << gold_mines_.size();
 			for (const auto& gold_mine : gold_mines_)
 				gold_mine->write_to_packet(update_packet);
+
+			effects_manager.write_to_packet(update_packet);
 
 			server_handler->put_update_to_clients(update_packet);
 		}
@@ -157,6 +162,8 @@ void PlayState::update(const sf::Time delta_time)
 
 			for (const auto& gold_mine : gold_mines_)
 				gold_mine->update_from_packet(*packet);
+
+			effects_manager.update_from_packet(*packet);
 		}
 	}
 
@@ -254,5 +261,7 @@ void PlayState::draw(DrawQueue& draw_queue)
 		player.draw(draw_queue);
 
 	pause_button_->draw(draw_queue);
+
+	effects_manager.draw(draw_queue);
 }
 
