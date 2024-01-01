@@ -89,6 +89,12 @@ class TextEffect : public Effect
 protected:
 	sf::Text text_;
 	TextEffect(const std::string& text, int time, sf::Vector2f position);
+
+	constexpr static int total_time = 1000;
+	const inline static sf::Vector2f offset = { 0, -10 };
+	constexpr static float y_range = 200;
+
+	sf::Vector2f get_offset() const override;
 public:
 
 	void draw(DrawQueue& draw_queue) override;
@@ -98,15 +104,10 @@ public:
 
 class DropDamageEffect : public TextEffect
 {
-	constexpr static int total_time = 1000;
-	const inline static sf::Vector2f offset = { 0, -10 };
-	constexpr static float y_range = 200;
 	int damage_;
 public:
 	constexpr static int id = 1;
 	DropDamageEffect(sf::Vector2f position, int damage);
-
-	sf::Vector2f get_offset() const override;
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;
@@ -114,21 +115,54 @@ public:
 	int get_id() const override;
 };
 
+class DropMoneyEffect : public TextEffect
+{
+	int money_;
+public:
+	constexpr static int id = 2;
+	DropMoneyEffect(sf::Vector2f position, int money);
+
+	int get_id() const override;
+};
+
 
 class EffectsManager
 {
-	static Effect* create_effect(int effect_id);
+protected:
+	static Effect* create_effect(int effect_id, sf::Vector2f position, int param);
 
 	std::vector<std::unique_ptr<Effect>> effects_;
+	
 public:
+	virtual ~EffectsManager() = default;
 
-	void add_effect(std::unique_ptr<Effect>&& effect);
-	void process(int delta_time);
+	virtual void add_effect(std::unique_ptr<Effect>&& effect);
+	virtual void process(int delta_time);
 	void draw(DrawQueue& draw_queue) const;
 	void set_screen_place(float camera_position) const;
+
+};
+
+
+class SharedEffectManager : public EffectsManager
+{
+	std::vector<std::unique_ptr<Effect>> added_effects_;
+public:
+	void add_effect(std::unique_ptr<Effect>&& effect) override;
+	void process(int delta_time) override;
 
 	void write_to_packet(sf::Packet& packet) const;
 	void update_from_packet(sf::Packet& packet);
 };
 
-inline EffectsManager effects_manager;
+class PrivateEffectManager : public EffectsManager
+{
+	bool is_active_ = true;
+public:
+	void set_active(bool is_active);
+	void add_effect(std::unique_ptr<Effect>&& effect) override;
+
+};
+
+inline SharedEffectManager shared_effects_manager;
+inline PrivateEffectManager private_effect_manager;

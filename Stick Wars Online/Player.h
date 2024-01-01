@@ -12,7 +12,7 @@ class ControlledUnit
 	bool is_me_ = true;
 
 	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
-	inline const static sf::Vector2f star_offset = { -15, -10 };
+	inline const static sf::Vector2f star_offset = { -15, -15 };
 
 	inline const static sf::Vector2f name_scale = { 0.8f, 0.8f };
 	inline const static sf::Vector2f name_offset = { -30.f, -50.f};
@@ -42,7 +42,7 @@ class Player
 {
 	int player_id_;
 
-	int money_ = 50000;
+	int money_ = 500;
 
 	std::unique_ptr<Army> army_;
 	std::unique_ptr<SpawnUnitQueue> spawn_queue_;

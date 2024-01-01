@@ -120,7 +120,8 @@ public:
 	constexpr static int wait_time = 6000;
 	constexpr static int cost = 250;
 	constexpr static int gold_bag_capacity = 200;
-	inline const static AnimationParams animation_params = { {-300, 2}, 700, 1280, {-0.4f, 0.4f }, 13, 70 };
+	inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
+
 
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
@@ -162,13 +163,13 @@ public:
 	constexpr static float max_health = 300;
 	inline const static sf::Vector2f max_speed = { 0.3f, 0.2f };
 	constexpr static float damage = 30.f;
-	constexpr static int damage_frame = 7;
+	constexpr static int damage_frame = 13;
 	constexpr static int hit_frame = 2;
 	constexpr static int splash_count = 3;
 	constexpr static float attack_distance = 150.0f;
 	constexpr static int wait_time = 3500;
 	constexpr static int cost = 150;
-	inline const static AnimationParams animation_params = { {-300, 20}, 700, 1280, {-0.4f, 0.4f}, 13, 70 };
+	inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 30 };
 
 	Swordsman(sf::Vector2f spawn_point, texture_ID texture_id);
 
@@ -194,7 +195,7 @@ class Magikill final : public Unit
 	void play_hit_sound() const override;
 public:
 	constexpr static int id = 2;
-	constexpr static int places_requires = 2;
+	constexpr static int places_requires = 8;
 	constexpr static float max_health = 100;
 	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
 	constexpr static float damage = 20.f;
@@ -203,10 +204,10 @@ public:
 	constexpr static int splash_count = 1000;
 	constexpr static int stun_time = 3000;
 	constexpr static float attack_distance = 500.0f;
-	constexpr static int wait_time = 2000; // 15000
-	constexpr static int cost = 200; // 1500
-	constexpr static int attack_cooldown_time = 5000;
-	inline const static AnimationParams animation_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 50 };
+	constexpr static int wait_time = 15000; // 15000
+	constexpr static int cost = 1600; // 1500
+	constexpr static int attack_cooldown_time = 7000;
+	inline const static AnimationParams animation_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
 
 	Magikill(sf::Vector2f spawn_point, texture_ID texture_id);
 

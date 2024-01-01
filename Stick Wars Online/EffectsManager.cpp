@@ -1,6 +1,7 @@
 ﻿#include "EffectsManager.h"
 
 #include <functional>
+#include <ranges>
 
 int AnimationParams::get_total_time() const
 {
@@ -19,7 +20,7 @@ bool Effect::update(const int delta_time)
 
 void Effect::write_to_packet(sf::Packet& packet) const
 {
-	packet << position_.x << position_.y << time_;
+	packet << position_.x << position_.y;
 }
 
 void Effect::update_from_packet(sf::Packet& packet)
@@ -118,7 +119,7 @@ DropDamageEffect::DropDamageEffect(const sf::Vector2f position, const int damage
 		text_.setFillColor(sf::Color::Green);
 }
 
-sf::Vector2f DropDamageEffect::get_offset() const
+sf::Vector2f TextEffect::get_offset() const
 {
 	const float y_offset = -static_cast<float>(total_time - time_) / static_cast<float>(total_time) * y_range;
 	return { 0, y_offset };
@@ -149,14 +150,34 @@ int DropDamageEffect::get_id() const
 	return id;
 }
 
-Effect* EffectsManager::create_effect(const int effect_id)
+DropMoneyEffect::DropMoneyEffect(const sf::Vector2f position, const int money) : TextEffect("+" + std::to_string(money), total_time, position), money_(money)
 {
-	static std::unordered_map<int, std::function<Effect* ()>> factory =
+	text_.setFillColor(sf::Color::Yellow);
+}
+
+int DropMoneyEffect::get_id() const
+{
+	return id;
+}
+
+Effect* EffectsManager::create_effect(const int effect_id, const sf::Vector2f position, const int param)
+{
+	static std::unordered_map<int, std::function<Effect*(sf::Vector2f, int)>> factory =
 	{
-		{ExplosionEffect::id, [] {return new ExplosionEffect({0.f, 0.f}, 1); }},
-		{DropDamageEffect::id, [] {return new DropDamageEffect({0.f, 0.f}, 100); }}
+		{ExplosionEffect::id, [] (const sf::Vector2f pos, const int p)
+		{
+			return new ExplosionEffect(pos, p);
+		}},
+		{DropDamageEffect::id, [](const sf::Vector2f pos, const int p)
+		{
+			return new DropDamageEffect(pos, p);
+		}},
+		{DropMoneyEffect::id, [](const sf::Vector2f pos, const int p)
+		{
+			return new DropMoneyEffect(pos, p);
+		}}
 	};
-	return factory[effect_id]();
+	return factory[effect_id](position, param);
 }
 
 void EffectsManager::add_effect(std::unique_ptr<Effect>&& effect)
@@ -166,14 +187,15 @@ void EffectsManager::add_effect(std::unique_ptr<Effect>&& effect)
 
 void EffectsManager::process(const int delta_time)
 {
-	for (auto it = effects_.begin(); it != effects_.end(); ++it)
+	for (size_t i = 0; i < effects_.size(); )
 	{
-		if(it->get()->update(delta_time))
+		if (effects_[i]->update(delta_time))
 		{
-			std::swap(*it, effects_.back());
+			std::swap(effects_[i], effects_.back());
 			effects_.pop_back();
-			break;
 		}
+		else
+			i++;
 	}
 }
 
@@ -193,37 +215,48 @@ void EffectsManager::set_screen_place(const float camera_position) const
 	}
 }
 
-void EffectsManager::write_to_packet(sf::Packet& packet) const
+
+void SharedEffectManager::add_effect(std::unique_ptr<Effect>&& effect)
 {
-	packet << effects_.size();
-	for (const auto& effect : effects_)
+	added_effects_.push_back(std::move(effect));
+}
+
+void SharedEffectManager::process(const int delta_time)
+{
+	std::ranges::move(added_effects_, std::back_inserter(effects_));
+	added_effects_.clear();
+	EffectsManager::process(delta_time);
+}
+
+void SharedEffectManager::write_to_packet(sf::Packet& packet) const
+{
+	packet << added_effects_.size();
+	for (const auto& effect : added_effects_)
 		effect->write_to_packet(packet);
 }
 
-void EffectsManager::update_from_packet(sf::Packet& packet)
+void SharedEffectManager::update_from_packet(sf::Packet& packet)
 {
-	size_t effects_size;
-	packet >> effects_size;
+	size_t new_effects_count;
+	packet >> new_effects_count;
 
-	for (int i = 0; i < std::min(effects_size, effects_.size()); i++)
+	for (size_t i = 0; i < new_effects_count; i++)
 	{
-		int effect_id; packet >> effect_id;
-		if (effect_id != effects_[i]->get_id())
-			effects_[i].reset(create_effect(effect_id));
-		effects_[i]->update_from_packet(packet);
+		int effect_id, param; sf::Vector2f position;
+		packet >> effect_id >> param >> position.x >> position.y;
+		added_effects_.emplace_back(create_effect(effect_id, position, param));
 	}
+}
 
-	if (effects_size < effects_.size())
-		effects_.resize(effects_size);
-	else
-	{
-		while (effects_.size() < effects_size)
-		{
-			int effect_id; packet >> effect_id;
-			effects_.emplace_back(create_effect(effect_id));
-			effects_.back()->update_from_packet(packet);
-		}
-	}
+void PrivateEffectManager::set_active(const bool is_active)
+{
+	is_active_ = is_active;
+}
+
+void PrivateEffectManager::add_effect(std::unique_ptr<Effect>&& effect)
+{
+	if(is_active_)
+		EffectsManager::add_effect(std::move(effect));
 }
 
 

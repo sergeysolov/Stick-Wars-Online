@@ -109,7 +109,7 @@ void Statue::cause_damage(const float damage)
 	health_ = std::clamp(health_ - damage, 0.f, max_health_);
 
 	if (const float actual_damage = prev_health - health_; abs(actual_damage) > 1e-5)
-		effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
+		shared_effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
 
 	health_bar_.update();
 }

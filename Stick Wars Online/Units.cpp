@@ -60,7 +60,7 @@ Unit::DamageType Unit::cause_damage(const float damage, const int direction, con
 	health_bar_.update();
 
 	if (const float actual_damage = prev_health - health_; abs(actual_damage) > 1e-5)
-		effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
+		shared_effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
 
 	DamageType damage_type = damage > 0 ? is_damage : no_damage;
 	if (health_ <= 1e-5)
@@ -135,19 +135,15 @@ void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
 void Unit::write_to_packet(sf::Packet& packet) const
 {
 	MapObject::write_to_packet(packet);
-	packet << health_ << speed_.x << speed_.y << stun_time_left_ << animation_type_ << was_move_.first << was_move_.second << prev_direction_
-		<< dead_ << do_damage_flag_;
+	packet << health_ << speed_.x << stun_time_left_ << animation_type_ << prev_direction_;// << was_move_.first;
 }
 
 void Unit::update_from_packet(sf::Packet& packet)
 {
-	const auto prev_frame = current_frame_;
 	MapObject::update_from_packet(packet);
-	const float prev_health = health_;
 
 	int animation_type;
-	packet >> health_ >> speed_.x >> speed_.y >> stun_time_left_ >> animation_type >> was_move_.first >> was_move_.second >> prev_direction_
-		>> dead_ >> do_damage_flag_;
+	packet >> health_ >> speed_.x >> stun_time_left_ >> animation_type >> prev_direction_;// >> was_move_.first;
 	animation_type_ = static_cast<AnimationType>(animation_type);
 
 	cause_damage(0, 0, 0);
@@ -213,7 +209,7 @@ void Unit::process(const sf::Time time)
 
 void Unit::move(const sf::Vector2i direction, const sf::Time time)
 {
-	if((animation_type_ == attack_animation and current_frame_ < 7) or stun_time_left_ > 0) // Can not move while attack or urder stun
+	if((animation_type_ == attack_animation and current_frame_ < get_damage_frame()) or stun_time_left_ > 0) // Can not move while attack or urder stun
 		return;
 
 	was_move_ = { direction.x != 0, direction.y != 0 };
@@ -331,6 +327,11 @@ bool Miner::is_bag_filled() const
 int Miner::flush_bag()
 {
 	const int gold_count = gold_count_in_bag_;
+	if(gold_count > 0)
+	{
+		private_sound_manager.play_sound(money_sound);
+		private_effect_manager.add_effect(std::make_unique<DropMoneyEffect>(sf::Vector2f{ x_, y_ }, gold_count));
+	}
 	gold_count_in_bag_ = 0;
 	gold_count_bar_.update();
 	return gold_count;
@@ -385,7 +386,13 @@ void Miner::write_to_packet(sf::Packet& packet) const
 
 void Miner::update_from_packet(sf::Packet& packet)
 {
+	const int prev_gold_count_ = gold_count_in_bag_;
 	packet >> gold_count_in_bag_;
+	if(prev_gold_count_ > gold_count_in_bag_)
+	{
+		private_sound_manager.play_sound(money_sound);
+		private_effect_manager.add_effect(std::make_unique<DropMoneyEffect>(sf::Vector2f{ x_, y_ }, prev_gold_count_));
+	}
 	gold_count_bar_.update();
 	Unit::update_from_packet(packet);
 }
@@ -393,17 +400,17 @@ void Miner::update_from_packet(sf::Packet& packet)
 void Swordsman::play_hit_sound() const
 {
 	if(current_frame_ == hit_frame)
-		sound_manager.play_sound(sward_hit);
+		shared_sound_manager.play_sound(sward_hit);
 }
 
 void Swordsman::play_damage_sound() const
 {
-	sound_manager.play_sound(sward_damage);
+	shared_sound_manager.play_sound(sward_damage);
 }
 
 void Swordsman::play_kill_sound() const
 {
-	sound_manager.play_sound(sward_kill);
+	shared_sound_manager.play_sound(sward_kill);
 }
 
 int Miner::get_id() const
@@ -471,8 +478,8 @@ void Magikill::play_hit_sound() const
 {
 	if (current_frame_ == hit_frame)
 	{
-		sound_manager.play_sound(explosion_sound);
-		effects_manager.add_effect(std::make_unique<ExplosionEffect>(sf::Vector2f{x_, y_}, prev_direction_));
+		shared_sound_manager.play_sound(explosion_sound);
+		shared_effects_manager.add_effect(std::make_unique<ExplosionEffect>(sf::Vector2f{x_, y_}, prev_direction_));
 	}
 	
 }
@@ -593,12 +600,21 @@ void Magikill::update_from_packet(sf::Packet& packet)
 
 Unit* create_unit(const int id, const int player_num)
 {
-	static std::unordered_map<int, std::function<Unit*(int)>> factory =
-	{ {Miner::id, [&] (const int player_id) { return new Miner(Player::spawn_point, Player::get_correct_texture_id(my_miner, player_id)); }},
-      {Swordsman::id, [&] (const int player_id) { return new Swordsman(Player::spawn_point, Player::get_correct_texture_id(my_swordsman, player_id)); }},
-	  {Magikill::id, [&](const int player_id) { return new Magikill(Player::spawn_point, Player::get_correct_texture_id(my_magikill, player_id)); }}
+	static std::unordered_map<int, std::function<Unit*(int, sf::Vector2f)>> factory =
+	{ {Miner::id, [] (const int player_id, const sf::Vector2f spawn_point)
+	{
+		return new Miner(spawn_point, Player::get_correct_texture_id(my_miner, player_id));
+	}},
+      {Swordsman::id, [] (const int player_id, const sf::Vector2f spawn_point)
+      {
+	      return new Swordsman(spawn_point, Player::get_correct_texture_id(my_swordsman, player_id));
+      }},
+	  {Magikill::id, [](const int player_id, const sf::Vector2f spawn_point)
+	  {
+		  return new Magikill(spawn_point, Player::get_correct_texture_id(my_magikill, player_id));
+	  }}
 	};
-	return factory[id](player_num);
+	return factory[id](player_num, player_num >= 0 ? Player::spawn_point : enemy_spawn_point);
 }
 
 int Swordsman::get_id() const

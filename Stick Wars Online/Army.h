@@ -14,7 +14,7 @@ class Army
 {
 	constexpr static int max_soldiers_in_row = 5;
 	constexpr static float row_width = 80;
-	constexpr static int dead_unit_time_to_delete = 60000;
+	constexpr static int dead_unit_time_to_delete = 30000;
 
 	
 public:
@@ -93,5 +93,7 @@ public:
 };
 
 bool random(float probability);
+
+static const sf::Vector2f enemy_spawn_point = { map_frame_width * 3 + 100, 650 };
 
 void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue);

@@ -243,7 +243,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	{
 		const float gold_count = (miner == controlled_unit.get() ? ControlledUnit::damage_boost_factor : 1) * miner->get_damage();
 		miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(gold_count)));
-		sound_manager.play_sound(miner_hit);
+		shared_sound_manager.play_sound(miner_hit);
 	}
 		
 
@@ -251,7 +251,9 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	if (is_ally())
 	{
 		if (miner->get_coords().x <= x_map_min + 200)
+		{
 			gold_count_mined = miner->flush_bag();
+		}
 	}
 	else if (miner->get_coords().x >= x_map_max - 200)
 		miner->flush_bag();
@@ -572,9 +574,7 @@ bool random(const float probability)
 
 void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue)
 {
-	static const sf::Vector2f enemy_spawn_point = { map_frame_width * 3 + 100, 650 };
 	static constexpr int invoke_enemy_time = 8000;
-	
 
 	if (queue.units_queue_.empty() and queue.get_free_places() >= Swordsman::places_requires)
 	{
@@ -602,14 +602,16 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);
 	}
 
-	static constexpr float reinforcement_count = 20;
+	static constexpr float reinforcement_count = 50;
 
 	if(enemy_statue.get_health() < Army::prev_hit_points_of_enemy_statue - Statue::enemy_max_health / reinforcement_count)
 	{
 		Army::prev_hit_points_of_enemy_statue -= Statue::enemy_max_health / reinforcement_count;
 
-		const int count = queue.army_.get_max_size() / 2 - Magikill::places_requires; // / 8
-		if (queue.get_free_places() >= Magikill::places_requires)
+		const int magikill_count = queue.army_.get_max_size() / Army::size_per_one_player;
+		const int count = queue.army_.get_max_size() / 2 - Magikill::places_requires * magikill_count; // / 8
+
+		for (int i = 0; i < magikill_count and queue.get_free_places() >= Magikill::places_requires; i++)
 			queue.put_unit(std::shared_ptr<Unit>(create_unit(Magikill::id, -1)), 100);
 
 		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)

@@ -216,7 +216,12 @@ void Player::write_to_packet(sf::Packet& packet) const
 void Player::update_from_packet(sf::Packet& packet)
 {
 	int army_count;
+	const int prev_money_ = money_;
 	packet >> player_id_ >> money_ >> army_count;
+
+	private_effect_manager.set_active(controlled_unit_->get_is_me());
+	private_sound_manager.set_active(controlled_unit_->get_is_me());
+
 	army_->update_from_packet(packet);
 	int controlled_unit_idx;
 	packet >> controlled_unit_idx;
@@ -245,6 +250,9 @@ void Player::update(const sf::Time delta_time, Army& enemy_army, const std::shar
 
 		controlled_unit_->heal();
 	}
+
+	private_effect_manager.set_active(controlled_unit_->get_is_me());
+	private_sound_manager.set_active(controlled_unit_->get_is_me());
 
 	//army processing
 	spawn_queue_->process(delta_time);
