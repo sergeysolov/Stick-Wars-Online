@@ -32,7 +32,7 @@ protected:
 	Bar<float> health_bar_;
 
 	sf::Vector2f speed_ = { 0.f, 0.f };
-	constexpr static float acceleration = 0.002f; // 0.002
+	constexpr static float acceleration = 0.001f; // 0.002
 
 	sf::Sprite stun_stars_sprite_;
 	inline static const sf::Vector2f stun_sprite_offset = { -30.f,10.f };
@@ -88,13 +88,14 @@ public:
 
 	virtual void commit_attack();
 	virtual bool can_do_damage();
-	DamageType cause_damage(float damage, int direction, int stun_time);
+	std::pair<float, DamageType> cause_damage(float damage, int direction, int stun_time);
 	bool is_alive() const;
 	
 	bool was_killed();
 
 	void draw(DrawQueue& queue) const override;
-	
+
+	sf::FloatRect get_unit_rect() const;
 	std::pair<int, sf::Vector2f> get_stand_place() const;
 	std::pair<int, sf::Vector2f> extract_stand_place();
 	void set_stand_place(std::map<int, sf::Vector2f>& places);
@@ -115,12 +116,13 @@ public:
 	constexpr static float max_health = 100;
 	inline const static sf::Vector2f max_speed = { 0.2f, 0.2f };
 	constexpr static float damage = 10.f;
-	constexpr static int damage_frame = 7;
+	constexpr static int damage_frame = 15;
 	constexpr static float attack_distance = 150.0f;
 	constexpr static int wait_time = 6000;
 	constexpr static int cost = 250;
 	constexpr static int gold_bag_capacity = 200;
-	inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
+	inline const static AnimationParams animation_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 20, 50 };
+	//inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
 
 
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
@@ -160,7 +162,7 @@ public:
 
 	constexpr static int id = 1;
 	constexpr static int places_requires = 1;
-	constexpr static float max_health = 300;
+	constexpr static float max_health = 1500; // 300
 	inline const static sf::Vector2f max_speed = { 0.3f, 0.2f };
 	constexpr static float damage = 30.f;
 	constexpr static int damage_frame = 13;
@@ -169,7 +171,8 @@ public:
 	constexpr static float attack_distance = 150.0f;
 	constexpr static int wait_time = 3500;
 	constexpr static int cost = 150;
-	inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 30 };
+	inline const static AnimationParams animation_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 20, 30 };
+	//inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 30 };
 
 	Swordsman(sf::Vector2f spawn_point, texture_ID texture_id);
 
@@ -198,7 +201,7 @@ public:
 	constexpr static int places_requires = 8;
 	constexpr static float max_health = 100;
 	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
-	constexpr static float damage = 20.f;
+	constexpr static float damage = 500.f; //20
 	constexpr static int damage_frame = 14;
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 1000;
@@ -206,8 +209,9 @@ public:
 	constexpr static float attack_distance = 500.0f;
 	constexpr static int wait_time = 15000; // 15000
 	constexpr static int cost = 1600; // 1500
-	constexpr static int attack_cooldown_time = 7000;
-	inline const static AnimationParams animation_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
+	constexpr static int attack_cooldown_time = 2000; // 7000
+	inline const static AnimationParams animation_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 21, 40 };
+	//inline const static AnimationParams animation_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
 
 	Magikill(sf::Vector2f spawn_point, texture_ID texture_id);
 

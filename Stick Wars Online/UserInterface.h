@@ -69,20 +69,25 @@ class UserInterface
 	sf::Text army_count_text_;
 	sf::Text money_count_text_;
 
+	sf::Text total_damage_text_;
+	sf::Text total_kills_text_;
+
 	std::vector<std::unique_ptr<UnitBuyButton>> unit_buy_buttons_;
 
 	std::unique_ptr<Button> in_attack_button_;
 	std::unique_ptr<Button> defend_button_;
+	std::unique_ptr<Button> escape_button_;
 
 public:
 	UserInterface();
 
-	void update(int money_count, int army_count, std::optional<int> unit_queue_id, sf::Time delta_time);
+	void update(Army::ArmyReturnType values, int army_count, std::optional<int> unit_queue_id, sf::Time delta_time);
 	void draw(DrawQueue& queue) const;
 
 	std::vector<std::unique_ptr<UnitBuyButton>>& get_unit_buy_buttons();
 	std::unique_ptr<Button>& get_in_attack_button();
 	std::unique_ptr<Button>& get_defend_button();
+	std::unique_ptr<Button>& get_escape_button();
 
 	void write_to_packet(sf::Packet& packet) const;
 	void update_from_packet(sf::Packet& packet, Army::ArmyTarget target) const;

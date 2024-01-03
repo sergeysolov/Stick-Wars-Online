@@ -21,7 +21,7 @@ class ControlledUnit
 
 public:
 	static constexpr float speed_boost_factor = 1.5f;
-	static constexpr float damage_boost_factor = 3.f; //x4
+	static constexpr float damage_boost_factor = 1000.f; //x3 x4
 
 	std::optional<sf::Vector2f> last_position = {};
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
@@ -42,7 +42,9 @@ class Player
 {
 	int player_id_;
 
-	int money_ = 500;
+	int money_ = 2500; //500
+	float total_damage_ = 0;
+	int total_kills_ = 0;
 
 	std::unique_ptr<Army> army_;
 	std::unique_ptr<SpawnUnitQueue> spawn_queue_;

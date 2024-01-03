@@ -18,6 +18,7 @@ enum texture_ID
 	stick_man,
 	in_attack_button,
 	defend_button,
+	escape_button,
 	pause_button,
 
 	star,

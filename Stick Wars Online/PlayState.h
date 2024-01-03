@@ -6,8 +6,8 @@
 #include "StateManager.h"
 #include "Player.h"
 
-constexpr float max_camera_position = map_frame_width * 2;
-constexpr float min_camera_position = 0;
+constexpr float max_camera_position = map_frame_width * 2 + 150; // map_frame_width * 2
+constexpr float min_camera_position = 0; // 0
 constexpr float start_camera_position = 0;
 
 static int enemy_behaviour = 0;
@@ -43,6 +43,10 @@ public:
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;
 	void draw(DrawQueue& draw_queue) override;
+
+protected:
+	void write_to_packet();
+	void update_from_packet();
 
 };
 

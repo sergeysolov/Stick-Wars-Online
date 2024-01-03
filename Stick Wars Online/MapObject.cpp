@@ -1,5 +1,6 @@
 #include "MapObject.h"
-#include "MapObject.h"
+
+#include "SoundBufHolder.h"
 
 MapObject::MapObject(const sf::Vector2f spawn_point, texture_ID id, const AnimationParams& animation_params)
 	: x_(spawn_point.x), y_(spawn_point.y), animation_params_(animation_params)
@@ -103,15 +104,19 @@ health_bar_(max_health_, health_, position, Bar<float>::statue_health_bar_size, 
 		sprite_.scale({ -1.f, 1.f });
 }
 
-void Statue::cause_damage(const float damage)
+float Statue::cause_damage(const float damage)
 {
 	const float prev_health = health_;
 	health_ = std::clamp(health_ - damage, 0.f, max_health_);
 
-	if (const float actual_damage = prev_health - health_; abs(actual_damage) > 1e-5)
+	const float actual_damage = prev_health - health_;
+	if (abs(actual_damage) > 1e-5)
 		shared_effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
 
 	health_bar_.update();
+
+	shared_sound_manager.play_sound(statue_damage_sound);
+	return actual_damage;
 }
 
 void Statue::draw(DrawQueue& queue) const
@@ -128,7 +133,7 @@ void Statue::set_screen_place(const float camera_position)
 
 bool Statue::is_destroyed() const
 {
-	return health_ <= 0;
+	return health_ <= 1e-5;
 }
 
 float Statue::get_health() const

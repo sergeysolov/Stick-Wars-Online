@@ -44,22 +44,26 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 	for (const auto goldmine_position : GoldMine::goldmine_positions)
 		gold_mines_.emplace_back(new GoldMine(goldmine_position));
 
+	
+
 	if(client_handler == nullptr)
 	{
+		music_manager.play_new_background_music();
 		if (server_handler != nullptr)
 		{
 			players_.emplace_back(0, server_handler->get_player_name());
 			for (const auto& client : server_handler->get_connections())
 				players_.emplace_back(client.get_id(), client.get_name());
 
-			sf::Packet players_info;
-			players_info << static_cast<int>(server_handler->get_connections().size() + 1);
-			players_info << 0 << server_handler->get_player_name();
+			sf::Packet init_packet;
+			init_packet << static_cast<int>(server_handler->get_connections().size() + 1);
+			init_packet << 0 << server_handler->get_player_name();
 			for (const auto& client : server_handler->get_connections())
-				players_info << client.get_id() << client.get_name();
-
+				init_packet << client.get_id() << client.get_name();
+			music_manager.write_to_packet(init_packet);
+			
 			for (const auto& client : server_handler->get_connections())
-				client.get_socket().send(players_info);
+				client.get_socket().send(init_packet);
 
 			server_handler->start_receive_input();
 			server_handler->start_send_updates();
@@ -74,16 +78,17 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 	}
 	else
 	{
-		sf::Packet players_info;
-		client_handler->get_server().get_socket().receive(players_info);
+		sf::Packet init_packet;
+		client_handler->get_server().get_socket().receive(init_packet);
 		int players_number;
-		players_info >> players_number;
+		init_packet >> players_number;
 		for (int i = 0; i < players_number; i++)
 		{
 			int id; std::string player_name;
-			players_info >> id >> player_name;
+			init_packet >> id >> player_name;
 			players_.emplace_back(id, player_name);
 		}
+		music_manager.update_from_packet(init_packet);
 		enemy_army_ = std::make_unique<Army>(Army::enemy_defend_line, -1, players_.size());
 		client_handler->start_send_input();
 		client_handler->start_receive_updates();
@@ -103,11 +108,12 @@ PlayState::~PlayState()
 		server_handler->stop_receive_input();
 		server_handler->stop_send_updates();
 	}
+	music_manager.stop_all();
 }
 
 void PlayState::update(const sf::Time delta_time)
 {
-	if(client_handler == nullptr)
+	if (client_handler == nullptr)
 	{
 		std::vector<Army*> ally_armies;
 		for (auto& player : players_)
@@ -116,60 +122,19 @@ void PlayState::update(const sf::Time delta_time)
 			player.update(delta_time, *enemy_army_, enemy_statue_, gold_mines_);
 		}
 
+		private_effect_manager.set_active(false);
+		private_sound_manager.set_active(false);
+
 		enemy_army_->process(ally_armies, my_statue_, nullptr, gold_mines_, delta_time);
-		//if (enemy_behaviour == 0)
 		process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
 		enemy_spawn_queue_->process(delta_time);
 
-		if(server_handler != nullptr)
-		{
-			sf::Packet update_packet;
-			update_packet << players_.size();
-			for (auto& player : players_)
-				player.write_to_packet(update_packet);
-
-			my_statue_->write_to_packet(update_packet);
-			enemy_statue_->write_to_packet(update_packet);
-
-			enemy_army_->write_to_packet(update_packet);
-
-			update_packet << gold_mines_.size();
-			for (const auto& gold_mine : gold_mines_)
-				gold_mine->write_to_packet(update_packet);
-
-			shared_effects_manager.write_to_packet(update_packet);
-
-			shared_sound_manager.write_to_packet(update_packet);
-
-			server_handler->put_update_to_clients(update_packet);
-		}
+		if (server_handler != nullptr)
+			write_to_packet();
 	}
 	else
-	{
-		if(const auto packet = client_handler->get_update_from_server(); packet != nullptr)
-		{
-			size_t players_count;
-			*packet >> players_count;
-			for (auto& player : players_)
-				player.update_from_packet(*packet);
+		update_from_packet();
 
-			my_statue_->update_from_packet(*packet);
-			enemy_statue_->update_from_packet(*packet);
-
-			enemy_army_->update_from_packet(*packet);
-
-			size_t gold_mines_count;
-			*packet >> gold_mines_count;
-			gold_mines_.resize(gold_mines_count);
-
-			for (const auto& gold_mine : gold_mines_)
-				gold_mine->update_from_packet(*packet);
-
-			shared_effects_manager.update_from_packet(*packet);
-
-			shared_sound_manager.update_from_packet(*packet);
-		}
-	}
 	shared_effects_manager.process(delta_time.asMilliseconds());
 	private_effect_manager.process(delta_time.asMilliseconds());
 
@@ -270,5 +235,55 @@ void PlayState::draw(DrawQueue& draw_queue)
 
 	shared_effects_manager.draw(draw_queue);
 	private_effect_manager.draw(draw_queue);
+}
+
+void PlayState::write_to_packet()
+{
+	sf::Packet update_packet;
+	update_packet << players_.size();
+	for (auto& player : players_)
+		player.write_to_packet(update_packet);
+
+	my_statue_->write_to_packet(update_packet);
+	enemy_statue_->write_to_packet(update_packet);
+
+	enemy_army_->write_to_packet(update_packet);
+
+	update_packet << gold_mines_.size();
+	for (const auto& gold_mine : gold_mines_)
+		gold_mine->write_to_packet(update_packet);
+
+	shared_effects_manager.write_to_packet(update_packet);
+
+	shared_sound_manager.write_to_packet(update_packet);
+
+	server_handler->put_update_to_clients(update_packet);
+}
+
+void PlayState::update_from_packet()
+{
+	if (const auto packet = client_handler->get_update_from_server(); packet != nullptr)
+	{
+		size_t players_count;
+		*packet >> players_count;
+		for (auto& player : players_)
+			player.update_from_packet(*packet);
+
+		my_statue_->update_from_packet(*packet);
+		enemy_statue_->update_from_packet(*packet);
+
+		enemy_army_->update_from_packet(*packet);
+
+		size_t gold_mines_count;
+		*packet >> gold_mines_count;
+		gold_mines_.resize(gold_mines_count);
+
+		for (const auto& gold_mine : gold_mines_)
+			gold_mine->update_from_packet(*packet);
+
+		shared_effects_manager.update_from_packet(*packet);
+
+		shared_sound_manager.update_from_packet(*packet);
+	}
 }
 

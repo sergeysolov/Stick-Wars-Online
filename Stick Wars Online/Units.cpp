@@ -51,7 +51,7 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 }
 
 
-Unit::DamageType Unit::cause_damage(const float damage, const int direction, const int stun_time)
+std::pair<float, Unit::DamageType> Unit::cause_damage(const float damage, const int direction, const int stun_time)
 {
 	const float prev_health = health_;
 	health_ = std::clamp(health_ - damage, 0.f, get_max_health());
@@ -59,7 +59,8 @@ Unit::DamageType Unit::cause_damage(const float damage, const int direction, con
 	push(direction);
 	health_bar_.update();
 
-	if (const float actual_damage = prev_health - health_; abs(actual_damage) > 1e-5)
+	const float actual_damage = prev_health - health_;
+	if (abs(actual_damage) > 1e-5)
 		shared_effects_manager.add_effect(std::make_unique<DropDamageEffect>(sf::Vector2f{ x_, y_ }, actual_damage));
 
 	DamageType damage_type = damage > 0 ? is_damage : no_damage;
@@ -68,7 +69,7 @@ Unit::DamageType Unit::cause_damage(const float damage, const int direction, con
 		kill();
 		damage_type = is_kill;
 	}
-	return damage_type;
+	return {actual_damage, damage_type};
 }
 
 bool Unit::is_alive() const
@@ -277,6 +278,15 @@ void Unit::draw(DrawQueue& queue) const
 	}
 	else
 		queue.emplace(dead_units,&sprite_);
+}
+
+sf::FloatRect Unit::get_unit_rect() const
+{
+	const sf::FloatRect sprite_rect = sprite_.getGlobalBounds();
+	const float rect_width = sprite_rect.width / 7;
+	const float y_offset = sprite_rect.height / 6;
+	const sf::Vector2f rect_position = sprite_.getPosition();
+	return  { sf::Vector2f{rect_position.x - rect_width / 2, rect_position.y + y_offset}, {rect_width, sprite_rect.height - 2.5f * y_offset } };
 }
 
 void Unit::commit_attack()

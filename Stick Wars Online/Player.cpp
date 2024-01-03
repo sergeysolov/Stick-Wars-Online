@@ -67,7 +67,7 @@ void Player::handle_change_controlled_unit(const sf::Vector2i mouse_position) co
 {
 	bool changed_controlled_unit = false;
 	for (const auto& unit : army_->get_units())
-		if (unit->get_sprite().getGlobalBounds().contains(static_cast<float>(mouse_position.x), static_cast<float>(mouse_position.y)))
+		if (unit->get_unit_rect().contains(static_cast<float>(mouse_position.x), static_cast<float>(mouse_position.y)))
 		{
 			*controlled_unit_ = unit;
 			changed_controlled_unit = true;
@@ -160,6 +160,12 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 			user_interface_->get_in_attack_button()->press_left();
 			return;
 		}
+		if(user_interface_->get_escape_button()->check_mouse_pressed(input.mouse_position))
+		{
+			army_->set_army_target(Army::escape);
+			user_interface_->get_escape_button()->press_left();
+			return;
+		}
 
 		handle_change_controlled_unit({ input.mouse_position.x + mouse_offset, input.mouse_position.y });
 	}
@@ -200,7 +206,7 @@ size_t Player::get_id() const
 
 void Player::write_to_packet(sf::Packet& packet) const
 {
-	packet << player_id_ << money_ << spawn_queue_->get_army_count();
+	packet << player_id_ << money_ << total_damage_ << total_kills_ << spawn_queue_->get_army_count();
 	army_->write_to_packet(packet);
 	if (controlled_unit_->get_unit() != nullptr)
 	{
@@ -217,7 +223,7 @@ void Player::update_from_packet(sf::Packet& packet)
 {
 	int army_count;
 	const int prev_money_ = money_;
-	packet >> player_id_ >> money_ >> army_count;
+	packet >> player_id_ >> money_ >> total_damage_ >> total_kills_ >> army_count;
 
 	private_effect_manager.set_active(controlled_unit_->get_is_me());
 	private_sound_manager.set_active(controlled_unit_->get_is_me());
@@ -236,7 +242,7 @@ void Player::update_from_packet(sf::Packet& packet)
 
 	user_interface_->update_from_packet(packet, army_->get_army_target());
 
-	user_interface_->update(money_, army_count, {}, sf::Time(sf::milliseconds(0)));
+	user_interface_->update({ money_, total_damage_, total_kills_ }, army_count, {}, sf::Time(sf::milliseconds(0)));
 }
 
 void Player::update(const sf::Time delta_time, Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, std::vector<std::shared_ptr<GoldMine>>& gold_mines)
@@ -256,6 +262,10 @@ void Player::update(const sf::Time delta_time, Army& enemy_army, const std::shar
 
 	//army processing
 	spawn_queue_->process(delta_time);
-	money_ += army_->process(std::vector{&enemy_army}, enemy_statue, controlled_unit_->get_unit(), gold_mines, delta_time);
-	user_interface_->update(money_, spawn_queue_->get_army_count(), spawn_queue_->get_front_unit_id(), delta_time);
+	const auto [gold_count, damage, kills] = army_->process(std::vector{&enemy_army}, enemy_statue, controlled_unit_->get_unit(), gold_mines, delta_time);
+	money_ += gold_count;
+	total_damage_ += damage;
+	total_kills_ += kills;
+
+	user_interface_->update({money_, total_damage_, total_kills_}, spawn_queue_->get_army_count(), spawn_queue_->get_front_unit_id(), delta_time);
 }

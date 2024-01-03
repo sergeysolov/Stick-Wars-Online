@@ -46,6 +46,7 @@ void TextureHolder::load_textures()
 	append(magikill_buy_button, "Images/attributes/magikill_buy_button.png");
 	append(in_attack_button, "Images/attributes/in_attack_button.png");
 	append(defend_button, "Images/attributes/defend_button.png");
+	append(escape_button, "Images/attributes/escape_button.png");
 	append(pause_button, "Images/attributes/pause_button.png");
 
 	append(star, "Images/attributes/star.png");

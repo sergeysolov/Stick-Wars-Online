@@ -84,9 +84,10 @@ void Army::set_screen_place(const float camera_position) const
 		dead_unit->set_screen_place(camera_position);
 }
 
-int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, const sf::Time delta_time)
+Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, const sf::Time delta_time)
 {
-	int gold_count_mined = 0;
+	ArmyReturnType result;
+
 	for (auto it = units_.begin(); it != units_.end();)
 	{
 		auto& unit = *it;
@@ -122,10 +123,16 @@ int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<
 
 		// Process unit's behaviour
 		if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
-			gold_count_mined += process_miner(miner, controlled_unit, gold_mines, delta_time);
+			result.gold_count += process_miner(miner, controlled_unit, gold_mines, delta_time);
 		else
-			process_warrior(unit, controlled_unit, enemy_armies, enemy_statue, delta_time);
-
+		{
+			auto [damage, kills] = process_warrior(unit, controlled_unit, enemy_armies, enemy_statue, delta_time);
+			if (unit == controlled_unit)
+			{
+				result.damage += damage;
+				result.kills += kills;
+			}
+		}
 		++it;
 	}
 
@@ -143,7 +150,7 @@ int Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<
 			break;
 		}
 	}
-	return gold_count_mined;
+	return result;
 }
 
 bool Army::is_ally() const
@@ -260,7 +267,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 
 	if (miner != controlled_unit.get())
 	{
-		if (miner->is_bag_filled())
+		if (miner->is_bag_filled() or army_target_ == escape)
 		{
 			int x_direction = is_ally() ? -1 : 1;
 			miner->move({ x_direction, 0 }, delta_time);
@@ -312,7 +319,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	return gold_count_mined;
 }
 
-void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const sf::Time delta_time)
+std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const sf::Time delta_time)
 {
 	auto calculate_dx_dy_between_units = [&](const std::shared_ptr<Unit>& unit_target) -> sf::Vector2f
 		{
@@ -361,10 +368,15 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 	if (not enemies_by_distance.empty())
 		nearest_enemy = enemies_by_distance.top().second;
 
+
+	float caused_damage_by_controlled_unit = 0.f;
+	int kill_count_by_controlled_unit = 0;
+
 	// process causing damage
 	if (unit->can_do_damage())
 	{
 		int enemies_damaged_count = 0;
+
 		const auto base_damage_multiplayer = unit == controlled_unit ? ControlledUnit::damage_boost_factor : 1;
 
 		while (enemies_damaged_count < unit->get_splash_count() and not enemies_by_distance.empty())
@@ -393,21 +405,27 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 				}
 
 				damage_multiplier *= base_damage_multiplayer;
-				const auto damage_type = enemies_by_distance.top().second->get()->cause_damage(unit->get_damage() * damage_multiplier, unit->get_direction(), unit->get_stun_time());
+				const auto [actual_damage, damage_type] = enemies_by_distance.top().second->get()->cause_damage(unit->get_damage() * damage_multiplier, unit->get_direction(), unit->get_stun_time());
 				if (damage_type == Unit::is_damage)
 					unit->play_damage_sound();
 				else if (damage_type == Unit::is_kill)
+				{
 					unit->play_kill_sound();
+					kill_count_by_controlled_unit += 1;
+				}
+				caused_damage_by_controlled_unit += actual_damage;
 				enemies_damaged_count += damage_multiplier > 1e-4;
 			}
 			enemies_by_distance.pop();
 		}
   		if(can_attack_statue == 1 and enemies_damaged_count < unit->get_splash_count())
-  			enemy_statue->cause_damage(unit->get_damage() * base_damage_multiplayer);
+			caused_damage_by_controlled_unit += enemy_statue->cause_damage(unit->get_damage() * base_damage_multiplayer);
 	}
 
+	const std::pair res = { caused_damage_by_controlled_unit, kill_count_by_controlled_unit };
+
 	if (unit == controlled_unit)
-		return;
+		return res;
 
 	std::optional<std::pair<int, sf::Vector2f>> params_to_attack;
 
@@ -419,7 +437,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			if (params_to_attack->first < 0)
 				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
 			unit->commit_attack();
-			return;
+			return res;
 		}
 	}
 
@@ -467,7 +485,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			if (can_attack_statue < 0)
 				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
 			unit->commit_attack();
-			return;
+			return res;
 		}
 
 
@@ -483,7 +501,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 			const int y_direction = dy > 0 ? 1 : -1;
 			const sf::Vector2i direction = { abs(dx) > 3 ? x_direction : 0, abs(dy) > 3 and abs(dx) < 200 ? y_direction : 0 };
 			unit->move(direction, delta_time);
-			return;
+			return res;
 		}
 	}
 
@@ -500,6 +518,7 @@ void Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_
 		else
 			unit->target_unit.reset();
 	}
+	return res;
 }
 
 SpawnUnitQueue::SpawnUnitQueue(Army& army) : army_(army)
@@ -574,7 +593,7 @@ bool random(const float probability)
 
 void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue)
 {
-	static constexpr int invoke_enemy_time = 8000;
+	static constexpr int invoke_enemy_time = 1000;
 
 	if (queue.units_queue_.empty() and queue.get_free_places() >= Swordsman::places_requires)
 	{
@@ -608,8 +627,8 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		Army::prev_hit_points_of_enemy_statue -= Statue::enemy_max_health / reinforcement_count;
 
-		const int magikill_count = queue.army_.get_max_size() / Army::size_per_one_player;
-		const int count = queue.army_.get_max_size() / 2 - Magikill::places_requires * magikill_count; // / 8
+		const int magikill_count = queue.army_.get_max_size();// / Army::size_per_one_player;
+		const int count = queue.army_.get_max_size() / 4 * 3; // / 8
 
 		for (int i = 0; i < magikill_count and queue.get_free_places() >= Magikill::places_requires; i++)
 			queue.put_unit(std::shared_ptr<Unit>(create_unit(Magikill::id, -1)), 100);

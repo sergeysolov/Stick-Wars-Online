@@ -15,6 +15,7 @@ protected:
 	sf::Text text_;
 public:
 	explicit GameOverState(StateManager& state_manager, const std::string& text);
+	~GameOverState() override;
 	void update(sf::Time delta_time) override;
 	void handle_input(Input& input, sf::Time delta_time) override;
 	void draw(DrawQueue& draw_queue) override;

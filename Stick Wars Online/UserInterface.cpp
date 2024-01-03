@@ -164,6 +164,12 @@ UserInterface::UserInterface()
 	army_count_text_.setFont(text_font);
 	army_count_text_.setPosition({ 25, 170 });
 
+	total_damage_text_.setFont(text_font);
+	total_damage_text_.setPosition({ 20, 250 });
+	total_kills_text_.setFont(text_font);
+	total_kills_text_.setPosition({ 20, 300 });
+
+
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Miner::cost, Miner::wait_time, sf::Vector2f{ 130, 20 }, sf::Vector2f{ 0.15f, 0.15f },
 		miner_buy_button));
 
@@ -176,9 +182,10 @@ UserInterface::UserInterface()
 	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button));
 	defend_button_->highlight(true);
 	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, in_attack_button));
+	escape_button_.reset(new Button({ 800.f, 20.f }, { 0.15f, 0.15f }, escape_button));
 }
 
-void UserInterface::update(const int money_count, const int army_count, const std::optional<int> unit_queue_id, const sf::Time delta_time)
+void UserInterface::update(Army::ArmyReturnType values, const int army_count, const std::optional<int> unit_queue_id, const sf::Time delta_time)
 {
 	// update army count text
 	const std::string str = std::to_string(army_count) + "/" + std::to_string(Army::size_per_one_player);
@@ -188,30 +195,43 @@ void UserInterface::update(const int money_count, const int army_count, const st
 	{
 		in_attack_button_->highlight(true);
 		defend_button_->highlight(false);
+		escape_button_->highlight(false);
 	}
 	else if(defend_button_->is_pressed())
 	{
 		in_attack_button_->highlight(false);
 		defend_button_->highlight(true);
+		escape_button_->highlight(false);
+	}
+	else if(escape_button_->is_pressed())
+	{
+		in_attack_button_->highlight(false);
+		defend_button_->highlight(false);
+		escape_button_->highlight(true);
 	}
 
 	//process units queue and units spawn
 	if (unit_queue_id)
 		unit_buy_buttons_[*unit_queue_id]->process_button(delta_time.asMilliseconds());
 
-	money_count_text_.setString(std::to_string(money_count));
+	money_count_text_.setString(std::to_string(values.gold_count));
+	total_damage_text_.setString("damage: " + std::to_string(static_cast<int>(values.damage)));
+	total_kills_text_.setString("kills: " + std::to_string(values.kills));
 }
 
 void UserInterface::draw(DrawQueue& queue) const
 {
 	queue.emplace(interface_layer_0, &gold_sprite_);
 	queue.emplace(interface_layer_0, &money_count_text_);
+	queue.emplace(interface_layer_0, &total_damage_text_);
+	queue.emplace(interface_layer_0, &total_kills_text_);
 
 	for (const auto& unit_button : unit_buy_buttons_)
 		unit_button->draw(queue);
 
 	in_attack_button_->draw(queue);
 	defend_button_->draw(queue);
+	escape_button_->draw(queue);
 
 	queue.emplace(interface_layer_0, &stick_man_);
 	queue.emplace(interface_layer_0, &army_count_text_);
@@ -232,13 +252,18 @@ std::unique_ptr<Button>& UserInterface::get_defend_button()
 	return defend_button_;
 }
 
+std::unique_ptr<Button>& UserInterface::get_escape_button()
+{
+	return escape_button_;
+}
+
 void UserInterface::write_to_packet(sf::Packet& packet) const
 {
 	for (const auto& unit_buy_button : unit_buy_buttons_)
 		unit_buy_button->write_to_packet(packet);
 }
 
-void UserInterface::update_from_packet(sf::Packet& packet, Army::ArmyTarget target) const
+void UserInterface::update_from_packet(sf::Packet& packet, const Army::ArmyTarget target) const
 {
 	for (const auto& unit_buy_button : unit_buy_buttons_)
 		unit_buy_button->update_from_packet(packet);
@@ -247,4 +272,6 @@ void UserInterface::update_from_packet(sf::Packet& packet, Army::ArmyTarget targ
 		in_attack_button_->press_left();
 	else if (target == Army::defend)
 		defend_button_->press_left();
+	else if (target == Army::escape)
+		escape_button_->press_left();
 }

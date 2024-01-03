@@ -53,11 +53,19 @@ GameOverState::GameOverState(StateManager& state_manager, const std::string& tex
 	to_menu_button_->get_text().setFont(text_font);
 	to_menu_button_->get_text().setString("Quit to menu");
 	to_menu_button_->get_text().move({ 45, 25 });
+
+	music_manager.pause_background_music();
 }
+
+GameOverState::~GameOverState()
+{
+	music_manager.continue_background_music();
+}
+
 
 VictoryState::VictoryState(StateManager& state_manager) : GameOverState(state_manager, "Victory!")
 {
-
+	music_manager.play_music(victory_music);
 }
 
 DefeatState::DefeatState(StateManager& state_manager) : GameOverState(state_manager, "Defeat!")

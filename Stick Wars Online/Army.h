@@ -15,7 +15,6 @@ class Army
 	constexpr static int max_soldiers_in_row = 5;
 	constexpr static float row_width = 80;
 	constexpr static int dead_unit_time_to_delete = 30000;
-
 	
 public:
 	enum ArmyTarget
@@ -24,6 +23,16 @@ public:
 		escape,
 		defend,
 	};
+
+	struct ArmyReturnType
+	{
+		int gold_count = 0;
+		float damage = 0;
+		int kills = 0;
+	};
+
+	constexpr static float escape_line = 150;
+	constexpr static float enemy_escape_line = map_frame_width * 3 - 150;
 
 	inline static float prev_hit_points_of_enemy_statue;
 	constexpr static std::array<float, 3> defend_lines = { 900, 1500, 2300 };
@@ -46,7 +55,7 @@ public:
 	void draw(DrawQueue& queue) const;
 	void set_screen_place(float camera_position) const;
 
-	int process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
+	ArmyReturnType process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
 
 	[[nodiscard]] bool is_ally() const;
 
@@ -55,7 +64,7 @@ public:
 
 protected:
 	int process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const;
-	void process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time);
+	std::pair<float, int> process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time);
 
 	int max_size_ = size_per_one_player;
 	int texture_shift_; // is equal to player id
