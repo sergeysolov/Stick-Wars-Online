@@ -45,12 +45,19 @@ protected:
 };
 
 
+class BarbedWire : public MapObject
+{
+	inline const static AnimationParams animation_params = { {0, 0}, 512, 678, {0.3f, 0.25f}, 1, 1 };
+public:
+	BarbedWire(sf::Vector2f position);
+};
+
 
 class GoldMine : public MapObject
 {
 public:
 	inline const static std::array<sf::Vector2f, 16> goldmine_positions = 
-		{ sf::Vector2f{250, 750},
+		{ sf::Vector2f{320, 785},
 		{350, 670},
 		{700, 790},
 		{800, 670},

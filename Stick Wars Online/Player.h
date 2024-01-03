@@ -21,7 +21,7 @@ class ControlledUnit
 
 public:
 	static constexpr float speed_boost_factor = 1.5f;
-	static constexpr float damage_boost_factor = 1000.f; //x3 x4
+	static constexpr float damage_boost_factor = 3.f; //x3 x4
 
 	std::optional<sf::Vector2f> last_position = {};
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;

@@ -2,7 +2,7 @@
 
 #include <ranges>
 
-void PlayState::set_objects_screen_place() const
+void PlayState::set_objects_screen_place()
 {
 	for (const auto& player : players_)
 		player.set_screen_place(camera_position_);
@@ -17,6 +17,9 @@ void PlayState::set_objects_screen_place() const
 
 	shared_effects_manager.set_screen_place(camera_position_);
 	private_effect_manager.set_screen_place(camera_position_);
+
+	my_barbed_wire_.set_screen_place(camera_position_);
+	enemy_barbed_wire_.set_screen_place(camera_position_);
 }
 
 void PlayState::move_camera(const float step)
@@ -25,7 +28,7 @@ void PlayState::move_camera(const float step)
 	background_sprite_.setTextureRect({ static_cast<int>(camera_position_), 0, static_cast<int>(map_frame_width), 1050 });
 }
 
-PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager)
+PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), my_barbed_wire_({ Army::escape_line - 110, 780.f }), enemy_barbed_wire_({Army::enemy_escape_line + 110, 780.f})
 {
 	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
@@ -226,6 +229,9 @@ void PlayState::draw(DrawQueue& draw_queue)
 	for (const auto& gold_mine : gold_mines_)
 		gold_mine->draw(draw_queue);
 
+	my_barbed_wire_.draw(draw_queue);
+	enemy_barbed_wire_.draw(draw_queue);
+
 	enemy_army_->draw(draw_queue);
 
 	for (const auto& player : players_)
@@ -237,7 +243,7 @@ void PlayState::draw(DrawQueue& draw_queue)
 	private_effect_manager.draw(draw_queue);
 }
 
-void PlayState::write_to_packet()
+void PlayState::write_to_packet() const
 {
 	sf::Packet update_packet;
 	update_packet << players_.size();

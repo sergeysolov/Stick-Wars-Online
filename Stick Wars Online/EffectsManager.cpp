@@ -44,7 +44,6 @@ bool SpriteEffect::update(const int delta_time)
 
 	const auto animation_params = get_animation_params();
 	const int current_frame = (animation_params.get_total_time() - time_) / animation_params.time_frame;
-	//const int current_frame = static_cast<int>(static_cast<float>(animation_params.get_total_time() - time_) / static_cast<float>(animation_params.get_total_time()) * static_cast<float>(animation_params.total_frames));
 
 	int x_shift = animation_params.init_position.x + animation_params.frame_width * (current_frame % animation_params.frames_in_one_row);
 	int y_shift = animation_params.init_position.y + animation_params.frame_height * (current_frame / animation_params.frames_in_one_row);

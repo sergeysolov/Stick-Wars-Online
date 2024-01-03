@@ -7,7 +7,7 @@ Game::Game(const unsigned width, const unsigned height, const char* title)
 
 int Game::run()
 {
-	main_window_.setFramerateLimit(90);
+	main_window_.setFramerateLimit(60);
 	state_manager_.switch_state(main_menu);
 	while (main_window_.isOpen())
 	{
@@ -30,8 +30,6 @@ void Game::draw()
 	main_window_.clear();
 
 	state_manager_.draw(draw_queue_);
-
-	
 
 	while (not draw_queue_.empty())
 	{

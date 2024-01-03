@@ -58,13 +58,8 @@ void SoundManager::play_sound(const sound_buffer_id sound_id)
 
 	idx = (idx + 1) % sounds.size();
 	if (sounds[idx].getStatus() != sf::Sound::Playing)
-	{
 		sounds[idx].play();
-		if (sound_id == background_music_0)
-			sounds[idx].setLoop(true);
-	}
 }
-
 
 SharedSoundManager::SharedSoundManager(const std::unordered_map<sound_buffer_id, SoundParams>& sounds_params) : SoundManager(sounds_params)
 {

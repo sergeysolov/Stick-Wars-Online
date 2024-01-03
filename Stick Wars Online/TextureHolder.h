@@ -25,6 +25,7 @@ enum texture_ID
 	stun_stars,
 
 	goldmine,
+	barbed_wire,
 
 	my_statue,
 	enemy_statue,

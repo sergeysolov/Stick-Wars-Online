@@ -32,7 +32,7 @@ protected:
 	Bar<float> health_bar_;
 
 	sf::Vector2f speed_ = { 0.f, 0.f };
-	constexpr static float acceleration = 0.001f; // 0.002
+	constexpr static float acceleration = 0.0015f; // 0.002
 
 	sf::Sprite stun_stars_sprite_;
 	inline static const sf::Vector2f stun_sprite_offset = { -30.f,10.f };
@@ -61,6 +61,7 @@ public:
 
 	constexpr static float trigger_attack_radius = 500.f;
 	std::shared_ptr<Unit> target_unit;
+	bool try_escape = false;
 
 	Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params);
 
@@ -88,6 +89,7 @@ public:
 
 	virtual void commit_attack();
 	virtual bool can_do_damage();
+	bool can_be_damaged() const;
 	std::pair<float, DamageType> cause_damage(float damage, int direction, int stun_time);
 	bool is_alive() const;
 	
@@ -124,7 +126,6 @@ public:
 	inline const static AnimationParams animation_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 20, 50 };
 	//inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
 
-
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
 	Miner(sf::Vector2f spawn_point, texture_ID texture_id);
@@ -154,7 +155,6 @@ public:
 
 class Swordsman final : public Unit
 {
-
 	void play_hit_sound() const override;
 public:
 	void play_damage_sound() const override;

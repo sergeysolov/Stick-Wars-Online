@@ -62,6 +62,17 @@ void MapObject::set_y_scale()
 	sprite_.setScale({ scale_factor * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
 }
 
+BarbedWire::BarbedWire(const sf::Vector2f position) : MapObject(position, barbed_wire, animation_params)
+{
+	if (x_ < (x_map_max + x_map_min) / 2)
+	{
+		sprite_.scale({ -1, 1 });
+		sprite_.rotate(-60.f);
+	}
+	else
+		sprite_.rotate(60.f);
+}
+
 
 GoldMine::GoldMine(const sf::Vector2f position) : MapObject(position, goldmine, animation_params)
 {
@@ -115,7 +126,8 @@ float Statue::cause_damage(const float damage)
 
 	health_bar_.update();
 
-	shared_sound_manager.play_sound(statue_damage_sound);
+	if(actual_damage > 1e-5)
+		shared_sound_manager.play_sound(statue_damage_sound);
 	return actual_damage;
 }
 
@@ -143,13 +155,11 @@ float Statue::get_health() const
 
 void Statue::write_to_packet(sf::Packet& packet) const
 {
-	//MapObject::write_to_packet(packet);
 	packet << health_;
 }
 
 void Statue::update_from_packet(sf::Packet& packet)
 {
-	//MapObject::update_from_packet(packet);
 	packet >> health_;
 	cause_damage(0);
 }

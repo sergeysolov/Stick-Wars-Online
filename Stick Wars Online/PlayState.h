@@ -18,7 +18,11 @@ class Player;
 class PlayState : public BaseState
 {
 	StateManager& state_manager_;
+
 	sf::Sprite background_sprite_;
+	BarbedWire my_barbed_wire_;
+	BarbedWire enemy_barbed_wire_;
+
 	std::unique_ptr<Button> pause_button_;
 	sf::Text camera_position_text_;
 	sf::Text enemy_army_count_text_;
@@ -34,7 +38,7 @@ class PlayState : public BaseState
 	std::vector<std::shared_ptr<GoldMine>> gold_mines_;//shared 
 
 	void move_camera(float step);
-	void set_objects_screen_place() const;
+	void set_objects_screen_place();
 
 public:
 	explicit PlayState(StateManager& state_manager);
@@ -45,7 +49,7 @@ public:
 	void draw(DrawQueue& draw_queue) override;
 
 protected:
-	void write_to_packet();
+	void write_to_packet() const;
 	void update_from_packet();
 
 };

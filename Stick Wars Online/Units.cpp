@@ -53,6 +53,9 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 
 std::pair<float, Unit::DamageType> Unit::cause_damage(const float damage, const int direction, const int stun_time)
 {
+	if (not can_be_damaged())
+		return { 0.f, no_damage };
+
 	const float prev_health = health_;
 	health_ = std::clamp(health_ - damage, 0.f, get_max_health());
 	stun_time_left_ += stun_time;
@@ -174,7 +177,26 @@ void Unit::process(const sf::Time time)
 
 	if(abs(dx) > min_shift or abs(dy) > min_shift)
 	{
-		x_ = std::clamp(x_ + dx, x_map_min, x_map_max);
+		float left_wall = Army::escape_line, right_wall = Army::enemy_escape_line;
+
+		if(try_escape)
+		{
+			left_wall = x_map_min;
+			right_wall = x_map_max;
+		}
+
+		x_ += dx;
+		if(x_ < left_wall)
+		{
+			x_ = left_wall;
+			speed_.x = 0;
+		}
+		else if(x_ > right_wall)
+		{
+			x_ = right_wall;
+			speed_.x = 0;
+		}
+
 		y_ = std::clamp(y_ + dy, y_map_min, y_map_max);
 
 		sprite_.setPosition({ x_, y_ });
@@ -206,6 +228,8 @@ void Unit::process(const sf::Time time)
 			speed_.y -= speed_.y / abs(speed_.y) * acceleration * time.asMilliseconds();
 	}
 	was_move_ = {false, false};
+
+	try_escape = x_ < Army::escape_line or x_ > Army::enemy_escape_line;
 }
 
 void Unit::move(const sf::Vector2i direction, const sf::Time time)
@@ -264,6 +288,11 @@ bool Unit::can_do_damage()
 	const bool temp = do_damage_flag_;
 	do_damage_flag_ = false;
 	return temp;
+}
+
+bool Unit::can_be_damaged() const
+{
+	return x_ > min_camera_position and x_ < max_camera_position + map_frame_width;
 }
 
 void Unit::draw(DrawQueue& queue) const

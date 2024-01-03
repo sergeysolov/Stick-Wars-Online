@@ -208,8 +208,6 @@ void Army::update_from_packet(sf::Packet& packet)
 	update_units_from_packet(units_, packet);
 	const auto prev_dead_units_count = dead_units_.size();
 	update_units_from_packet(dead_units_, packet);
-	//if (dead_units_.size() > prev_dead_units_count)
-	//	Unit::play_kill_sound();
 }
 
 int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const
@@ -257,12 +255,12 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	int gold_count_mined = 0;
 	if (is_ally())
 	{
-		if (miner->get_coords().x <= x_map_min + 200)
+		if (miner->get_coords().x <= escape_line + 10)
 		{
 			gold_count_mined = miner->flush_bag();
 		}
 	}
-	else if (miner->get_coords().x >= x_map_max - 200)
+	else if (miner->get_coords().x >= enemy_escape_line - 10)
 		miner->flush_bag();
 
 	if (miner != controlled_unit.get())
@@ -270,6 +268,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 		if (miner->is_bag_filled() or army_target_ == escape)
 		{
 			int x_direction = is_ally() ? -1 : 1;
+			miner->try_escape = true;
 			miner->move({ x_direction, 0 }, delta_time);
 		}
 		else if (miner->attached_goldmine != nullptr)
@@ -331,7 +330,6 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 	using unit_iterator = decltype(enemy_armies[0]->get_units().end());
 	std::priority_queue < std::pair<float, unit_iterator>, std::vector < std::pair<float, unit_iterator>>, std::greater<>> enemies_by_distance;
 
-	//float nearest_distance = 1E+15f;
 	for (const auto enemy_army : enemy_armies)
 	{
 		for (auto it = enemy_army->get_units().begin(); it != enemy_army->get_units().end(); ++it)
@@ -342,9 +340,6 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 			enemies_by_distance.emplace(distance, it);
 		}
 	}
-
-	//int is_enemy_nearby_to_attack = 0; //no enemy
-	//sf::Vector2f distance_to_nearest_enemy = { 1E+15f, 1E+15f }; //inf, inf
 
 	auto calculate_params_to_attack = [&](const unit_iterator& unit_it) -> std::pair<int, sf::Vector2f>
 		{
@@ -389,7 +384,7 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 			{
 				float damage_multiplier = 0;
 				const auto [dx, dy] = distance_to_nearest_enemy;
-				if (dx > 0 and unit->get_direction() == 1)
+				if (dx >= 0 and unit->get_direction() == 1)
 				{
 					if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == 0)
 						damage_multiplier = 1;
@@ -429,6 +424,15 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 
 	std::optional<std::pair<int, sf::Vector2f>> params_to_attack;
 
+	if (army_target_ == escape)
+	{
+		int x_direction = is_ally() ? -1 : 1;
+		unit->try_escape = true;
+		unit->move({ x_direction, 0 }, delta_time);
+		unit->target_unit.reset();
+		return res;
+	}
+
 	if(nearest_enemy)
 	{
 		params_to_attack = calculate_params_to_attack(*nearest_enemy);
@@ -443,12 +447,19 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 
 	if (army_target_ == defend)
 	{
-		if (params_to_attack and abs(params_to_attack->second.x) < Unit::trigger_attack_radius and abs(params_to_attack->second.y / 5) < Unit::trigger_attack_radius) // y / 5
+		bool go_to_stand_place = true;
+		if (params_to_attack and abs(params_to_attack->second.x) < Unit::trigger_attack_radius and abs(params_to_attack->second.y / 5) < Unit::trigger_attack_radius)
 		{
-			if (unit->target_unit == nullptr)
+			go_to_stand_place = false;
+			if (unit->target_unit == nullptr) // y / 5
 				unit->target_unit = **nearest_enemy;
+			if(not (**nearest_enemy)->can_be_damaged())
+			{
+				unit->target_unit.reset();
+				go_to_stand_place = true;
+			}
 		}
-		else
+		if(go_to_stand_place)
 		{
 			unit->target_unit.reset();
 			if (unit->get_stand_place().second.x > 1E+10)
@@ -542,7 +553,7 @@ bool SpawnUnitQueue::remove_unit(const int unit_id)
 	{
 		queue_size_ -= find_res.base()->first->get_places_requires();
 		units_queue_.erase(find_res.base());
-		return  true;
+		return true;
 	}
 	return false;
 }
@@ -593,7 +604,7 @@ bool random(const float probability)
 
 void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue)
 {
-	static constexpr int invoke_enemy_time = 1000;
+	static constexpr int invoke_enemy_time = 8000;
 
 	if (queue.units_queue_.empty() and queue.get_free_places() >= Swordsman::places_requires)
 	{
@@ -627,7 +638,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	{
 		Army::prev_hit_points_of_enemy_statue -= Statue::enemy_max_health / reinforcement_count;
 
-		const int magikill_count = queue.army_.get_max_size();// / Army::size_per_one_player;
+		const int magikill_count = 2 * queue.army_.get_max_size() / Army::size_per_one_player;// / Army::size_per_one_player;
 		const int count = queue.army_.get_max_size() / 4 * 3; // / 8
 
 		for (int i = 0; i < magikill_count and queue.get_free_places() >= Magikill::places_requires; i++)

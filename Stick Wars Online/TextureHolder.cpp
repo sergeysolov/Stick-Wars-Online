@@ -53,6 +53,7 @@ void TextureHolder::load_textures()
 	append(stun_stars, "Images/attributes/stun_stars.png");
 
 	append(goldmine, "Images/objects/goldmine.png");
+	append(barbed_wire, "Images/objects/barbed_wire.png");
 
 	append(my_statue, "Images/objects/statue.png");
 	append(enemy_statue, "Images/objects/statue_enemy.png");

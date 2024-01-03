@@ -161,7 +161,6 @@ class PrivateEffectManager : public EffectsManager
 public:
 	void set_active(bool is_active);
 	void add_effect(std::unique_ptr<Effect>&& effect) override;
-
 };
 
 inline SharedEffectManager shared_effects_manager;
