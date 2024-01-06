@@ -19,7 +19,7 @@ class MapObject
 {
 public:
 
-	MapObject(sf::Vector2f spawn_point, texture_ID id, const SpriteParams& animation_params);
+	MapObject(sf::Vector2f spawn_point, texture_ID id, const SpriteParams& sprite_params);
 	virtual ~MapObject() = default;
 
 	const sf::Sprite& get_sprite() const;
@@ -56,25 +56,25 @@ public:
 class GoldMine : public MapObject
 {
 public:
-	inline const static std::array<sf::Vector2f, 16> goldmine_positions = 
-		{ sf::Vector2f{320, 785},
-		{350, 670},
-		{700, 790},
-		{800, 670},
-		{1100, 670},
-		{1400, 690},
-		{1150, 760},
-		{1380, 780},
-		{1950, 700},
-		{2200, 760},
-		{2400, 750},
-		{2600, 690},
-		{2650, 780},
-		{map_frame_width * 3 - 1050, 700},
-		{map_frame_width * 3 - 550, 800},
-		{map_frame_width * 3 - 350, 680},};
+	inline const static std::array<sf::Vector2f, 16> goldmine_positions =
+	{ sf::Vector2f{320, 785},
+	{350, 670},
+	{700, 790},
+	{800, 670},
+	{1100, 670},
+	{1400, 690},
+	{1150, 760},
+	{1380, 780},
+	{1950, 700},
+	{2200, 760},
+	{2400, 750},
+	{2600, 690},
+	{2650, 780},
+	{map_frame_width * 3 - 1050, 700},
+	{map_frame_width * 3 - 550, 800},
+	{map_frame_width * 3 - 350, 680}, };
 
-	const inline static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 538, 960, { 0.2f, 0.2f }, {{0, 10}});
+	const inline static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 538, 960, { 0.2f, 0.2f }, { {1, 10 }});
 
 	GoldMine(sf::Vector2f position);
 

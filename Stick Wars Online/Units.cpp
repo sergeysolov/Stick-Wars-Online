@@ -13,7 +13,7 @@ Unit::Unit(const texture_ID id, const sf::Vector2f spawn_point, const float heal
 
 void Unit::show_animation(const int delta_time)
 {
-	if(not animation_complete())
+	if (not animation_complete())
 	{
 		const SpriteParams::AnimationParams params = sprite_params_.animations[std::max(walk_animation, animation_type_)];
 
