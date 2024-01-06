@@ -5,25 +5,30 @@
 #include "TextureHolder.h"
 #include "DrawQueue.h"
 
-struct AnimationParams
+struct SpriteParams
 {
 	sf::Vector2i init_position;
 	int frame_height;
 	int frame_width;
 	sf::Vector2f scale;
-	int total_frames;
-	int frames_in_one_row = total_frames;
-	int time_frame;
 
-	AnimationParams(const sf::Vector2i init_position, const int frame_height, const int frame_width, const sf::Vector2f scale, const int total_frames, const int time_frame)
-		: init_position(init_position), frame_height(frame_height), frame_width(frame_width), scale(scale), total_frames(total_frames), time_frame(time_frame)
+	struct AnimationParams
+	{
+		int time_frame;
+		int total_frames;
+		int frames_in_one_row = total_frames;
+
+		[[nodiscard]] int get_total_time() const;
+
+		AnimationParams(const int time_frame, const int total_frames) : time_frame(time_frame), total_frames(total_frames) {}
+		AnimationParams(const int time_frame, const int total_frames, const int frames_in_one_row) : time_frame(time_frame), total_frames(total_frames), frames_in_one_row(frames_in_one_row) {};
+	};
+
+	std::vector<AnimationParams> animations;
+
+	SpriteParams(const sf::Vector2i init_position, const int frame_height, const int frame_width, const sf::Vector2f scale, const std::vector<AnimationParams>& animations)
+		: init_position(init_position), frame_height(frame_height), frame_width(frame_width), scale(scale), animations(animations)
 	{}
-
-	AnimationParams(const sf::Vector2i init_position, const int frame_height, const int frame_width, const sf::Vector2f scale, const int total_frames, const int time_frame, const int frames_in_one_row)
-		: init_position(init_position), frame_height(frame_height), frame_width(frame_width), scale(scale), total_frames(total_frames), frames_in_one_row(frames_in_one_row), time_frame(time_frame)
-	{}
-
-	[[nodiscard]] int get_total_time() const;
 };
 
 class Effect
@@ -55,7 +60,7 @@ protected:
 	SpriteEffect(texture_ID id, int time, sf::Vector2f position);
 
 public:
-	virtual const AnimationParams& get_animation_params() const = 0;
+	virtual const SpriteParams& get_sprite_params() const = 0;
 
 	void draw(DrawQueue& draw_queue) override;
 	bool update(int delta_time) override;
@@ -69,12 +74,12 @@ class ExplosionEffect : public SpriteEffect
 	int direction_;
 
 	const inline static sf::Vector2f offset = { 100.f, -120.f }; // 130, -120
-	const inline static AnimationParams animation_params = { {0, 0}, 194, 200, {2.f, 2.f}, 15, 45, 5 };
+	const inline static SpriteParams sprite_params = { {0, -5}, 194, 200, {2.f, 2.f}, {{45, 15, 5}} };
 public:
 	constexpr static int id = 0;
 
 	ExplosionEffect(sf::Vector2f position, int direction);
-	const AnimationParams& get_animation_params() const override;
+	const SpriteParams& get_sprite_params() const override;
 	sf::Vector2f get_offset() const override;
 
 	int get_id() const override;

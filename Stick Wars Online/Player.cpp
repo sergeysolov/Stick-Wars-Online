@@ -136,7 +136,7 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 		{
 			if (unit_buy_button->check_mouse_pressed(input.mouse_position))
 			{
-				const std::shared_ptr<Unit> unit(create_unit(i, player_id_));
+				const std::shared_ptr<Unit> unit(UnitFactory::create_unit(i, player_id_));
 				if (money_ >= unit->get_cost() and spawn_queue_->get_free_places() >= unit->get_places_requires())
 				{
 					spawn_queue_->put_unit(unit, unit->get_wait_time());

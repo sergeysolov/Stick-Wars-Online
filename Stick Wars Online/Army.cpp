@@ -188,7 +188,7 @@ void Army::update_from_packet(sf::Packet& packet)
 			{
 				int unit_id; packet_to_get_update >> unit_id;
 				if (unit_id != units[i]->get_id())
-					units[i] = std::shared_ptr<Unit>(create_unit(unit_id, texture_shift_));
+					units[i] = std::shared_ptr<Unit>(UnitFactory::create_unit(unit_id, texture_shift_));
 				units[i]->update_from_packet(packet_to_get_update);
 			}
 
@@ -199,7 +199,7 @@ void Army::update_from_packet(sf::Packet& packet)
 				while (units.size() < units_count)
 				{
 					int unit_id; packet_to_get_update >> unit_id;
-					std::shared_ptr<Unit> unit(create_unit(unit_id, texture_shift_));
+					std::shared_ptr<Unit> unit(UnitFactory::create_unit(unit_id, texture_shift_));
 					unit->update_from_packet(packet_to_get_update);
 					units.push_back(unit);
 				}
@@ -642,7 +642,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 		const int count = queue.army_.get_max_size() / 4 * 3; // / 8
 
 		for (int i = 0; i < magikill_count and queue.get_free_places() >= Magikill::places_requires; i++)
-			queue.put_unit(std::shared_ptr<Unit>(create_unit(Magikill::id, -1)), 100);
+			queue.put_unit(std::shared_ptr<Unit>(UnitFactory::create_unit(Magikill::id, -1)), 100);
 
 		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 100);

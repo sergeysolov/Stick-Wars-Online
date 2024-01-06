@@ -179,6 +179,9 @@ UserInterface::UserInterface()
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Magikill::cost, Magikill::wait_time, sf::Vector2f{ 330, 20 }, sf::Vector2f{ 0.15f, 0.15f }, 
 		magikill_buy_button));
 
+	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Spearton::cost, Spearton::wait_time, sf::Vector2f{ 430, 20 }, sf::Vector2f{ 0.15f, 0.15f },
+		spearton_buy_button));
+
 	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button));
 	defend_button_->highlight(true);
 	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, in_attack_button));

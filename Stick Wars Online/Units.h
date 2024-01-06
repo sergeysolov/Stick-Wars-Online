@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <memory>
 
 #include <SFML/Graphics.hpp>
@@ -16,7 +17,9 @@ public:
 		no_animation = -1,
 		walk_animation,
 		attack_animation,
-		die_animation
+		die_animation,
+		second_attack_animation,
+		defend_animation
 	};
 
 	enum DamageType
@@ -63,7 +66,7 @@ public:
 	std::shared_ptr<Unit> target_unit;
 	bool try_escape = false;
 
-	Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params);
+	Unit(texture_ID id, sf::Vector2f spawn_point, float health, const SpriteParams& animation_params);
 
 	virtual int get_id() const = 0;
 	virtual int get_places_requires() const = 0;
@@ -112,7 +115,7 @@ class Miner final : public Unit
 	Bar<int> gold_count_bar_;
 
 public:
-
+	texture_ID base_texture_id = my_miner;
 	constexpr static int id = 0;
 	constexpr static int places_requires = 1;
 	constexpr static float max_health = 100;
@@ -123,8 +126,10 @@ public:
 	constexpr static int wait_time = 6000;
 	constexpr static int cost = 250;
 	constexpr static int gold_bag_capacity = 200;
-	inline const static AnimationParams animation_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 20, 50 };
-	//inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
+	inline const static SpriteParams sprite_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{50, 20}, //walk
+																																															{50, 21}, // attack
+																																															{40, 21}} }; // death
+	//inline const static SpriteParams sprite_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
 
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
@@ -171,8 +176,11 @@ public:
 	constexpr static float attack_distance = 150.0f;
 	constexpr static int wait_time = 3500;
 	constexpr static int cost = 150;
-	inline const static AnimationParams animation_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 20, 30 };
-	//inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 30 };
+
+	inline const static SpriteParams sprite_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{40, 20},
+																																															{30, 21},
+																																															{45, 21}} };
+	//inline const static SpriteParams sprite_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 30 };
 
 	Swordsman(sf::Vector2f spawn_point, texture_ID texture_id);
 
@@ -210,8 +218,10 @@ public:
 	constexpr static int wait_time = 15000; // 15000
 	constexpr static int cost = 1600; // 1500
 	constexpr static int attack_cooldown_time = 7000; // 7000
-	inline const static AnimationParams animation_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 21, 40 };
-	//inline const static AnimationParams animation_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
+	inline const static SpriteParams sprite_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{35, 21},
+																																															{50, 21},
+																																															{60, 21}} };
+	//inline const static SpriteParams sprite_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
 
 	Magikill(sf::Vector2f spawn_point, texture_ID texture_id);
 
@@ -238,4 +248,51 @@ public:
 	void update_from_packet(sf::Packet& packet) override;
 };
 
-Unit* create_unit(int id, int player_num);
+
+class Spearton final : public Unit
+{
+	int time_left_to_second_attack_ = 5000;
+public:
+	constexpr static int id = 3;
+	constexpr static int places_requires = 3;
+	constexpr static float max_health = 2000;
+	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
+	constexpr static float damage = 100.f;
+	constexpr static int damage_frame = 14;
+	constexpr static int hit_frame = 14;
+	constexpr static float attack_distance = 200.0f;
+	constexpr static int wait_time = 7000;
+	constexpr static int cost = 600;
+	inline const static SpriteParams sprite_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{35, 21},
+																																															{50, 21},
+																																															{60, 21}} };
+
+	Spearton(sf::Vector2f spawn_point, texture_ID texture_id);
+	void process(sf::Time time) override;
+
+	int get_id() const override;
+	int get_places_requires() const override;
+	float get_max_health() const override;
+	sf::Vector2f get_max_speed() const override;
+	float get_damage() const override;
+	int get_damage_frame() const override;
+	float get_attack_distance() const override;
+	int get_wait_time() const override;
+	int get_cost() const override;
+
+	void write_to_packet(sf::Packet& packet) const override;
+	void update_from_packet(sf::Packet& packet) override;
+};
+
+
+class UnitFactory
+{
+	inline static std::unordered_map<int, std::function<Unit*(int, sf::Vector2f)>> factory_;
+
+	template <typename T>
+	static void register_unit(int unit_id, texture_ID base_texture_id);
+public:
+	static Unit* create_unit(int id, int player_num);
+
+	static void init();
+};

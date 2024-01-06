@@ -3,7 +3,6 @@
 #include "DrawQueue.h"
 #include "Input.h"
 #include "StateManager.h"
-#include "EffectsManager.h"
 
 class Game
 {

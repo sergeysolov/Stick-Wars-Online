@@ -61,6 +61,9 @@ public:
 
 class StateManager;
 
+//class Army;
+//struct ArmyReturnType;
+
 class UserInterface
 {
 	sf::Sprite gold_sprite_;

@@ -3,7 +3,6 @@
 #include "Input.h"
 #include "UserInterface.h"
 
-
 class ControlledUnit
 {
 	std::shared_ptr<Unit> unit_;
@@ -70,7 +69,7 @@ public:
 
 	[[nodiscard]] std::optional<sf::Vector2f> get_controlled_unit_position() const;
 
-	[[nodiscard]] Army& get_Army() const;
+	Army& get_Army() const;
 	[[nodiscard]] size_t get_id() const;
 
 	void write_to_packet(sf::Packet& packet) const;

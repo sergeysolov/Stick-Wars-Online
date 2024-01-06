@@ -14,6 +14,8 @@ static int enemy_behaviour = 0;
 
 class StateManager;
 class Player;
+class Army;
+class SpawnUnitQueue;
 
 class PlayState : public BaseState
 {

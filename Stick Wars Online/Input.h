@@ -11,6 +11,8 @@ public:
 	bool w = false;
 	bool s = false;
 	bool k = false;
+	bool e = false;
+	bool f = false;
 	bool left_arrow = false;
 	bool right_arrow = false;
 	bool space = false;

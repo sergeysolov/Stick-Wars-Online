@@ -19,14 +19,14 @@ class MapObject
 {
 public:
 
-	MapObject(sf::Vector2f spawn_point, texture_ID id, const AnimationParams& animation_params);
+	MapObject(sf::Vector2f spawn_point, texture_ID id, const SpriteParams& animation_params);
 	virtual ~MapObject() = default;
 
 	const sf::Sprite& get_sprite() const;
 	sf::Vector2f get_coords() const;
 	virtual void set_screen_place(float camera_position);
 	virtual void draw(DrawQueue& queue) const;
-	const AnimationParams& get_animation_params() const;
+	const SpriteParams& get_animation_params() const;
 	int get_cumulative_time() const;
 
 	virtual void write_to_packet(sf::Packet& packet) const;
@@ -36,7 +36,7 @@ protected:
 	float x_;
 	float y_;
 	sf::Sprite sprite_;
-	AnimationParams animation_params_;
+	SpriteParams sprite_params_;
 	uint16_t current_frame_ = 0;
 	int cumulative_time_ = 0;
 
@@ -47,7 +47,7 @@ protected:
 
 class BarbedWire : public MapObject
 {
-	inline const static AnimationParams animation_params = { {0, 0}, 512, 678, {0.3f, 0.25f}, 1, 1 };
+	inline const static SpriteParams sprite_params = { {0, 0}, 512, 678, {0.3f, 0.25f}, {} };
 public:
 	BarbedWire(sf::Vector2f position);
 };
@@ -74,7 +74,7 @@ public:
 		{map_frame_width * 3 - 550, 800},
 		{map_frame_width * 3 - 350, 680},};
 
-	const inline static AnimationParams animation_params = AnimationParams({ 0, 0 }, 538, 960, { 0.2f, 0.2f }, 10, 1);
+	const inline static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 538, 960, { 0.2f, 0.2f }, {{0, 10}});
 
 	GoldMine(sf::Vector2f position);
 
@@ -96,7 +96,7 @@ class Statue : public MapObject
 	float health_;
 	Bar<float> health_bar_;
 public:
-	inline const static AnimationParams animation_params = AnimationParams({ 0, 0 }, 817, 261, { 1.f, 1.f }, 1, 1);
+	inline const static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 817, 261, { 1.f, 1.f }, {});
 	constexpr static float my_max_health = 50000.0f;
 	constexpr static float enemy_max_health = 100000.0f; //12000
 

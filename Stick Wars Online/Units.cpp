@@ -4,7 +4,7 @@
 
 #include "Player.h"
 
-Unit::Unit(const texture_ID id, const sf::Vector2f spawn_point, const float health, const AnimationParams& animation_params) :
+Unit::Unit(const texture_ID id, const sf::Vector2f spawn_point, const float health, const SpriteParams& animation_params) :
 	MapObject(spawn_point, id, animation_params), health_(health), health_bar_(health, health_, spawn_point, Bar<float>::unit_bar_size, Bar<float>::unit_health_bar_offset, Bar<float>::health_bar_color)
 {
 	stun_stars_sprite_.setTexture(texture_holder.get_texture(stun_stars));
@@ -15,11 +15,13 @@ void Unit::show_animation(const int delta_time)
 {
 	if(not animation_complete())
 	{
+		const SpriteParams::AnimationParams params = sprite_params_.animations[std::max(walk_animation, animation_type_)];
+
 		cumulative_time_ += delta_time;
-		if (cumulative_time_ > animation_params_.time_frame)
+		if (cumulative_time_ > params.time_frame)
 		{
-			cumulative_time_ -= animation_params_.time_frame;
-			(current_frame_ += 1) %= animation_params_.total_frames;
+			cumulative_time_ -= params.time_frame;
+			(current_frame_ += 1) %= params.total_frames;
 
 			if (current_frame_ == 0)
 				cumulative_time_ = 0;
@@ -40,9 +42,9 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 			play_hit_sound();
 	}
 
-	const int y_shift = animation_type_ * animation_params_.frame_height;
+	const int y_shift = std::max(walk_animation, animation_type_) * sprite_params_.frame_height;
 
-	sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
+	sprite_.setTextureRect({ sprite_params_.init_position.x + sprite_params_.frame_width * current_frame_, sprite_params_.init_position.y + y_shift, sprite_params_.frame_width, sprite_params_.frame_height });
 }
 
 
@@ -93,12 +95,14 @@ sf::Vector2f Unit::get_speed() const
 void Unit::set_y_scale()
 {
 	const float scale_factor = ( scale_y_param_a * sprite_.getPosition().y + scale_y_param_b);
-	sprite_.setScale({ scale_factor * prev_direction_ * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
+	sprite_.setScale({ scale_factor * prev_direction_ * sprite_params_.scale.x, scale_factor * sprite_params_.scale.y });
 }
 
 bool Unit::animation_complete()
 {
-	if (current_frame_ == animation_params_.total_frames - 1)
+	if (animation_type_ == no_animation)
+		return true;
+	if (current_frame_ == sprite_params_.animations[animation_type_].total_frames - 1)
 	{
 		if (animation_type_ == die_animation)
 			return true;
@@ -328,7 +332,7 @@ void Unit::commit_attack()
 }
 
 Miner::Miner(const sf::Vector2f spawn_point, const texture_ID texture_id)
-	: Unit(texture_id, spawn_point, max_health, animation_params),
+	: Unit(texture_id, spawn_point, max_health, sprite_params),
 	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::miner_gold_bar_color)
 {
 	
@@ -453,8 +457,13 @@ int Miner::get_id() const
 }
 
 Swordsman::Swordsman(const sf::Vector2f spawn_point, const texture_ID texture_id)
-	: Unit(texture_id, spawn_point, max_health, animation_params)
+	: Unit(texture_id, spawn_point, max_health, sprite_params)
 {
+}
+
+int Swordsman::get_id() const
+{
+	return id;
 }
 
 int Swordsman::get_places_requires() const
@@ -519,7 +528,7 @@ void Magikill::play_hit_sound() const
 }
 
 Magikill::Magikill(const sf::Vector2f spawn_point, const texture_ID texture_id) :
-	Unit(texture_id, spawn_point, max_health, animation_params),
+	Unit(texture_id, spawn_point, max_health, sprite_params),
 time_left_to_next_attack_bar_(attack_cooldown_time, time_left_to_next_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
 {
 
@@ -632,28 +641,97 @@ void Magikill::update_from_packet(sf::Packet& packet)
 	Unit::update_from_packet(packet);
 }
 
-Unit* create_unit(const int id, const int player_num)
+Spearton::Spearton(sf::Vector2f spawn_point, texture_ID texture_id) : Unit(texture_id, spawn_point, max_health, sprite_params)
 {
-	static std::unordered_map<int, std::function<Unit*(int, sf::Vector2f)>> factory =
-	{ {Miner::id, [] (const int player_id, const sf::Vector2f spawn_point)
-	{
-		return new Miner(spawn_point, Player::get_correct_texture_id(my_miner, player_id));
-	}},
-      {Swordsman::id, [] (const int player_id, const sf::Vector2f spawn_point)
-      {
-	      return new Swordsman(spawn_point, Player::get_correct_texture_id(my_swordsman, player_id));
-      }},
-	  {Magikill::id, [](const int player_id, const sf::Vector2f spawn_point)
-	  {
-		  return new Magikill(spawn_point, Player::get_correct_texture_id(my_magikill, player_id));
-	  }}
-	};
-	return factory[id](player_num, player_num >= 0 ? Player::spawn_point : enemy_spawn_point);
+
 }
 
-int Swordsman::get_id() const
+void Spearton::process(sf::Time time)
+{
+	Unit::process(time);
+	time_left_to_second_attack_ = std::max(time_left_to_second_attack_ - time.asMilliseconds(), 0);
+}
+
+int Spearton::get_id() const
 {
 	return id;
+}
+
+int Spearton::get_places_requires() const
+{
+	return places_requires;
+}
+
+float Spearton::get_max_health() const
+{
+	return max_health;
+}
+
+sf::Vector2f Spearton::get_max_speed() const
+{
+	return max_speed;
+}
+
+float Spearton::get_damage() const
+{
+	return damage;
+}
+
+int Spearton::get_damage_frame() const
+{
+	return damage_frame;
+}
+
+float Spearton::get_attack_distance() const
+{
+	return attack_distance;
+}
+
+int Spearton::get_wait_time() const
+{
+	return wait_time;
+}
+
+int Spearton::get_cost() const
+{
+	return cost;
+}
+
+void Spearton::write_to_packet(sf::Packet& packet) const
+{
+	packet << id << time_left_to_second_attack_;
+	Unit::write_to_packet(packet);
+}
+
+void Spearton::update_from_packet(sf::Packet& packet)
+{
+	packet >> time_left_to_second_attack_;
+	Unit::update_from_packet(packet);
+}
+
+template <typename T>
+void UnitFactory::register_unit(const int unit_id, texture_ID base_texture_id)
+{
+	factory_[unit_id] = [base_texture_id](const int player_num, const sf::Vector2f spawn_point)
+		{
+			return new T(spawn_point, Player::get_correct_texture_id(base_texture_id, player_num));
+		};
+}
+
+Unit* UnitFactory::create_unit(const int id, const int player_num)
+{
+	return factory_[id](player_num, player_num >= 0 ? Player::spawn_point : enemy_spawn_point);
+}
+
+void UnitFactory::init()
+{
+	if(factory_.empty())
+	{
+		register_unit<Miner>(Miner::id, my_miner);
+		register_unit<Swordsman>(Swordsman::id, my_swordsman);
+		register_unit<Spearton>(Spearton::id, my_swordsman);
+		register_unit<Magikill>(Magikill::id, my_magikill);
+	}
 }
 
 
