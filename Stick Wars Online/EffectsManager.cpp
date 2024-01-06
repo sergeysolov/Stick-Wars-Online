@@ -3,9 +3,9 @@
 #include <functional>
 #include <ranges>
 
-int AnimationParams::get_total_time() const
+int SpriteParams::AnimationParams::get_total_time() const
 {
-	return total_frames * time_frame;
+	return time_frame * total_frames;
 }
 
 Effect::Effect(const int time, const sf::Vector2f position) : position_(position), time_(time)
@@ -42,11 +42,11 @@ bool SpriteEffect::update(const int delta_time)
 {
 	const bool to_delete = Effect::update(delta_time);
 
-	const auto animation_params = get_animation_params();
-	const int current_frame = (animation_params.get_total_time() - time_) / animation_params.time_frame;
+	const auto animation_params = get_sprite_params();
+	const int current_frame = (animation_params.animations[0].get_total_time() - time_) / animation_params.animations[0].time_frame;
 
-	int x_shift = animation_params.init_position.x + animation_params.frame_width * (current_frame % animation_params.frames_in_one_row);
-	int y_shift = animation_params.init_position.y + animation_params.frame_height * (current_frame / animation_params.frames_in_one_row);
+	int x_shift = animation_params.init_position.x + animation_params.frame_width * (current_frame % animation_params.animations[0].frames_in_one_row);
+	int y_shift = animation_params.init_position.y + animation_params.frame_height * (current_frame / animation_params.animations[0].frames_in_one_row);
 
 	sprite_.setTextureRect({ x_shift, y_shift, animation_params.frame_width, animation_params.frame_height });
 
@@ -58,12 +58,12 @@ void SpriteEffect::set_screen_place(const float camera_position)
 	sprite_.setPosition({ position_.x - camera_position + get_offset().x, position_.y + get_offset().y });
 }
 
-ExplosionEffect::ExplosionEffect(const sf::Vector2f position, const int direction) : SpriteEffect(explosion_effect, animation_params.get_total_time(), position), direction_(direction)
+ExplosionEffect::ExplosionEffect(const sf::Vector2f position, const int direction) : SpriteEffect(explosion_effect, animation_params.animations[0].get_total_time(), position), direction_(direction)
 {
 	sprite_.setScale(animation_params.scale);
 }
 
-const AnimationParams& ExplosionEffect::get_animation_params() const
+const SpriteParams& ExplosionEffect::get_sprite_params() const
 {
 	return animation_params;
 }

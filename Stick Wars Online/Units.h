@@ -63,7 +63,7 @@ public:
 	std::shared_ptr<Unit> target_unit;
 	bool try_escape = false;
 
-	Unit(texture_ID id, sf::Vector2f spawn_point, float health, const AnimationParams& animation_params);
+	Unit(texture_ID id, sf::Vector2f spawn_point, float health, const SpriteParams& animation_params);
 
 	virtual int get_id() const = 0;
 	virtual int get_places_requires() const = 0;
@@ -123,8 +123,10 @@ public:
 	constexpr static int wait_time = 6000;
 	constexpr static int cost = 250;
 	constexpr static int gold_bag_capacity = 200;
-	inline const static AnimationParams animation_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 20, 50 };
-	//inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
+	inline const static SpriteParams sprite_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{50, 20}, //walk
+																																														{50, 21}, // attack
+																																														{40, 21}} }; // death
+	//inline const static AnimationParams sprite_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 50 };
 
 	std::shared_ptr<GoldMine> attached_goldmine = nullptr;
 
@@ -171,8 +173,10 @@ public:
 	constexpr static float attack_distance = 150.0f;
 	constexpr static int wait_time = 3500;
 	constexpr static int cost = 150;
-	inline const static AnimationParams animation_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 20, 30 };
-	//inline const static AnimationParams animation_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 30 };
+	inline const static SpriteParams sprite_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{40, 20},
+																																															{30, 21},
+																																															{45, 21}} };
+	//inline const static AnimationParams sprite_params = { {-50, 100}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 20, 30 };
 
 	Swordsman(sf::Vector2f spawn_point, texture_ID texture_id);
 
@@ -210,8 +214,10 @@ public:
 	constexpr static int wait_time = 15000; // 15000
 	constexpr static int cost = 1600; // 1500
 	constexpr static int attack_cooldown_time = 7000; // 7000
-	inline const static AnimationParams animation_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 21, 40 };
-	//inline const static AnimationParams animation_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
+	inline const static SpriteParams sprite_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{35, 21},
+																																															{50, 21},
+																																															{60, 21}} };
+	//inline const static AnimationParams sprite_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
 
 	Magikill(sf::Vector2f spawn_point, texture_ID texture_id);
 

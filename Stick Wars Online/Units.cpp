@@ -4,7 +4,7 @@
 
 #include "Player.h"
 
-Unit::Unit(const texture_ID id, const sf::Vector2f spawn_point, const float health, const AnimationParams& animation_params) :
+Unit::Unit(const texture_ID id, const sf::Vector2f spawn_point, const float health, const SpriteParams& animation_params) :
 	MapObject(spawn_point, id, animation_params), health_(health), health_bar_(health, health_, spawn_point, Bar<float>::unit_bar_size, Bar<float>::unit_health_bar_offset, Bar<float>::health_bar_color)
 {
 	stun_stars_sprite_.setTexture(texture_holder.get_texture(stun_stars));
@@ -13,13 +13,15 @@ Unit::Unit(const texture_ID id, const sf::Vector2f spawn_point, const float heal
 
 void Unit::show_animation(const int delta_time)
 {
-	if(not animation_complete())
+	if (not animation_complete())
 	{
+		const SpriteParams::AnimationParams params = sprite_params_.animations[std::max(walk_animation, animation_type_)];
+
 		cumulative_time_ += delta_time;
-		if (cumulative_time_ > animation_params_.time_frame)
+		if (cumulative_time_ > params.time_frame)
 		{
-			cumulative_time_ -= animation_params_.time_frame;
-			(current_frame_ += 1) %= animation_params_.total_frames;
+			cumulative_time_ -= params.time_frame;
+			(current_frame_ += 1) %= params.total_frames;
 
 			if (current_frame_ == 0)
 				cumulative_time_ = 0;
@@ -40,9 +42,9 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 			play_hit_sound();
 	}
 
-	const int y_shift = animation_type_ * animation_params_.frame_height;
+	const int y_shift = animation_type_ * sprite_params_.frame_height;
 
-	sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
+	sprite_.setTextureRect({ sprite_params_.init_position.x + sprite_params_.frame_width * current_frame_, sprite_params_.init_position.y + y_shift, sprite_params_.frame_width, sprite_params_.frame_height });
 }
 
 
@@ -93,12 +95,14 @@ sf::Vector2f Unit::get_speed() const
 void Unit::set_y_scale()
 {
 	const float scale_factor = ( scale_y_param_a * sprite_.getPosition().y + scale_y_param_b);
-	sprite_.setScale({ scale_factor * prev_direction_ * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
+	sprite_.setScale({ scale_factor * prev_direction_ * sprite_params_.scale.x, scale_factor * sprite_params_.scale.y });
 }
 
 bool Unit::animation_complete()
 {
-	if (current_frame_ == animation_params_.total_frames - 1)
+	if (animation_type_ == no_animation)
+		return true;
+	if (current_frame_ == sprite_params_.animations[animation_type_].total_frames - 1)
 	{
 		if (animation_type_ == die_animation)
 			return true;
@@ -328,7 +332,7 @@ void Unit::commit_attack()
 }
 
 Miner::Miner(const sf::Vector2f spawn_point, const texture_ID texture_id)
-	: Unit(texture_id, spawn_point, max_health, animation_params),
+	: Unit(texture_id, spawn_point, max_health, sprite_params),
 	gold_count_bar_(gold_bag_capacity, gold_count_in_bag_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::miner_gold_bar_color)
 {
 	
@@ -453,7 +457,7 @@ int Miner::get_id() const
 }
 
 Swordsman::Swordsman(const sf::Vector2f spawn_point, const texture_ID texture_id)
-	: Unit(texture_id, spawn_point, max_health, animation_params)
+	: Unit(texture_id, spawn_point, max_health, sprite_params)
 {
 }
 
@@ -519,7 +523,7 @@ void Magikill::play_hit_sound() const
 }
 
 Magikill::Magikill(const sf::Vector2f spawn_point, const texture_ID texture_id) :
-	Unit(texture_id, spawn_point, max_health, animation_params),
+	Unit(texture_id, spawn_point, max_health, sprite_params),
 time_left_to_next_attack_bar_(attack_cooldown_time, time_left_to_next_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
 {
 

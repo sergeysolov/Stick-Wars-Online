@@ -2,8 +2,8 @@
 
 #include "SoundBufHolder.h"
 
-MapObject::MapObject(const sf::Vector2f spawn_point, texture_ID id, const AnimationParams& animation_params)
-	: x_(spawn_point.x), y_(spawn_point.y), animation_params_(animation_params)
+MapObject::MapObject(const sf::Vector2f spawn_point, texture_ID id, const SpriteParams& animation_params)
+	: x_(spawn_point.x), y_(spawn_point.y), sprite_params_(animation_params)
 {
 	sprite_.setTexture(texture_holder.get_texture(id));
 	sprite_.setTextureRect(sf::IntRect(animation_params.init_position.x, animation_params.init_position.y, animation_params.frame_width, animation_params.frame_height));
@@ -33,9 +33,9 @@ void MapObject::draw(DrawQueue& queue) const
 	queue.emplace(map_object, &sprite_);
 }
 
-const AnimationParams& MapObject::get_animation_params() const
+const SpriteParams& MapObject::get_animation_params() const
 {
-	return animation_params_;
+	return sprite_params_;
 }
 
 int MapObject::get_cumulative_time() const
@@ -59,10 +59,10 @@ void MapObject::set_y_scale()
 {
 	
 	const float scale_factor = scale_y_param_a * sprite_.getPosition().y + scale_y_param_b;
-	sprite_.setScale({ scale_factor * animation_params_.scale.x, scale_factor * animation_params_.scale.y });
+	sprite_.setScale({ scale_factor * sprite_params_.scale.x, scale_factor * sprite_params_.scale.y });
 }
 
-BarbedWire::BarbedWire(const sf::Vector2f position) : MapObject(position, barbed_wire, animation_params)
+BarbedWire::BarbedWire(const sf::Vector2f position) : MapObject(position, barbed_wire, sprite_params)
 {
 	if (x_ < (x_map_max + x_map_min) / 2)
 	{
@@ -74,7 +74,7 @@ BarbedWire::BarbedWire(const sf::Vector2f position) : MapObject(position, barbed
 }
 
 
-GoldMine::GoldMine(const sf::Vector2f position) : MapObject(position, goldmine, animation_params)
+GoldMine::GoldMine(const sf::Vector2f position) : MapObject(position, goldmine, sprite_params)
 {
 
 }
@@ -84,8 +84,8 @@ int GoldMine::mine(int gold_count)
  	if (gold_count > gold_capacity_)
 		gold_count = gold_capacity_;
 	gold_capacity_ -= gold_count;
-	current_frame_ = static_cast<uint16_t>((1.f - static_cast<float>(gold_capacity_) / static_cast<float>(max_gold_capacity)) * static_cast<float>(animation_params_.total_frames));
-	sprite_.setTextureRect({ animation_params_.init_position.x + current_frame_ * animation_params_.frame_width, animation_params_.init_position.y, animation_params_.frame_width, animation_params_.frame_height });
+	current_frame_ = static_cast<uint16_t>((1.f - static_cast<float>(gold_capacity_) / static_cast<float>(max_gold_capacity)) * static_cast<float>(sprite_params_.animations[0].total_frames));
+	sprite_.setTextureRect({ sprite_params_.init_position.x + current_frame_ * sprite_params_.frame_width, sprite_params_.init_position.y, sprite_params_.frame_width, sprite_params_.frame_height });
 	return gold_count;
 }
 
@@ -108,7 +108,7 @@ void GoldMine::update_from_packet(sf::Packet& packet)
 }
 
 Statue::Statue(sf::Vector2f position, texture_ID id, float max_health) :
- MapObject(position, id, animation_params), max_health_(max_health), health_(max_health),
+ MapObject(position, id, sprite_params), max_health_(max_health), health_(max_health),
 health_bar_(max_health_, health_, position, Bar<float>::statue_health_bar_size, Bar<float>::statue_health_bar_offset, Bar<float>::health_bar_color) 
 {
 	if (id == enemy_statue)
