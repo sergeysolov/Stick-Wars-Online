@@ -46,6 +46,11 @@ enum texture_ID
 	my_magikill_blue,
 	my_magikill_orange,
 
+	enemy_spearton,
+	my_spearton,
+	my_spearton_blue,
+	my_spearton_orange,
+
 	explosion_effect,
 };
 

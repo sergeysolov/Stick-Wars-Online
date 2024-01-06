@@ -256,16 +256,16 @@ public:
 	constexpr static int id = 3;
 	constexpr static int places_requires = 3;
 	constexpr static float max_health = 2000;
-	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
+	inline const static sf::Vector2f max_speed = { 0.25f, 0.175f }; // { 0.2f, 0.15f }
 	constexpr static float damage = 100.f;
 	constexpr static int damage_frame = 14;
 	constexpr static int hit_frame = 14;
 	constexpr static float attack_distance = 200.0f;
 	constexpr static int wait_time = 7000;
 	constexpr static int cost = 600;
-	inline const static SpriteParams sprite_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{35, 21},
-																																															{50, 21},
-																																															{60, 21}} };
+	inline const static SpriteParams sprite_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{40, 21},
+																																															{30, 21},
+																																															{45, 21}} };
 
 	Spearton(sf::Vector2f spawn_point, texture_ID texture_id);
 	void process(sf::Time time) override;

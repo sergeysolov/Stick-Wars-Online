@@ -729,7 +729,7 @@ void UnitFactory::init()
 	{
 		register_unit<Miner>(Miner::id, my_miner);
 		register_unit<Swordsman>(Swordsman::id, my_swordsman);
-		register_unit<Spearton>(Spearton::id, my_swordsman);
+		register_unit<Spearton>(Spearton::id, my_spearton);
 		register_unit<Magikill>(Magikill::id, my_magikill);
 	}
 }
