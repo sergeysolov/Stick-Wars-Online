@@ -13,10 +13,10 @@ class Unit : public MapObject
 public:
 	enum AnimationType
 	{
-		no_animation,
+		no_animation = -1,
 		walk_animation,
-		die_animation,
-		attack_animation
+		attack_animation,
+		die_animation
 	};
 
 	enum DamageType
@@ -162,9 +162,9 @@ public:
 
 	constexpr static int id = 1;
 	constexpr static int places_requires = 1;
-	constexpr static float max_health = 1500; // 300
+	constexpr static float max_health = 400; // 300
 	inline const static sf::Vector2f max_speed = { 0.3f, 0.2f };
-	constexpr static float damage = 30.f;
+	constexpr static float damage = 40.f;
 	constexpr static int damage_frame = 13;
 	constexpr static int hit_frame = 2;
 	constexpr static int splash_count = 3;
@@ -201,7 +201,7 @@ public:
 	constexpr static int places_requires = 8;
 	constexpr static float max_health = 100;
 	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
-	constexpr static float damage = 500.f; //20
+	constexpr static float damage = 25.f; //20
 	constexpr static int damage_frame = 14;
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 1000;
@@ -209,7 +209,7 @@ public:
 	constexpr static float attack_distance = 500.0f;
 	constexpr static int wait_time = 15000; // 15000
 	constexpr static int cost = 1600; // 1500
-	constexpr static int attack_cooldown_time = 2000; // 7000
+	constexpr static int attack_cooldown_time = 7000; // 7000
 	inline const static AnimationParams animation_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, 21, 40 };
 	//inline const static AnimationParams animation_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
 

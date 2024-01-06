@@ -31,8 +31,6 @@ void Unit::show_animation(const int delta_time)
 
 void Unit::set_animation_frame(const bool is_play_hit_sound)
 {
-	int y_shift = 0; // if walk_animation
-
 	if (animation_type_ == attack_animation)
 	{
 		if(current_frame_ == get_damage_frame())
@@ -40,12 +38,9 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 
 		if (is_play_hit_sound)
 			play_hit_sound();
-
-		y_shift = animation_params_.frame_height;
 	}
 
-	if (animation_type_ == die_animation)
-		y_shift = animation_params_.frame_height * 2;
+	const int y_shift = animation_type_ * animation_params_.frame_height;
 
 	sprite_.setTextureRect({ animation_params_.init_position.x + animation_params_.frame_width * current_frame_, animation_params_.init_position.y + y_shift, animation_params_.frame_width, animation_params_.frame_height });
 }

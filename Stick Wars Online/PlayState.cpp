@@ -28,7 +28,7 @@ void PlayState::move_camera(const float step)
 	background_sprite_.setTextureRect({ static_cast<int>(camera_position_), 0, static_cast<int>(map_frame_width), 1050 });
 }
 
-PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), my_barbed_wire_({ Army::escape_line - 110, 780.f }), enemy_barbed_wire_({Army::enemy_escape_line + 110, 780.f})
+PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), my_barbed_wire_({ Army::escape_line - 140, 780.f }), enemy_barbed_wire_({Army::enemy_escape_line + 140, 780.f})
 {
 	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
 	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
