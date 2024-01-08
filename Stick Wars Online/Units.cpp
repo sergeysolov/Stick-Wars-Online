@@ -41,6 +41,11 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 		if (is_play_hit_sound)
 			play_hit_sound();
 	}
+	else if(animation_type_ == second_attack_animation)
+	{
+		if (current_frame_ == get_second_attack_damage_frame())
+			do_damage_flag_ = true;
+	}
 
 	const int y_shift = std::max(walk_animation, animation_type_) * sprite_params_.frame_height;
 
@@ -87,6 +92,11 @@ int Unit::get_stun_time() const
 	return 0;
 }
 
+int Unit::get_second_attack_damage_frame() const
+{
+	return 0;
+}
+
 sf::Vector2f Unit::get_speed() const
 {
 	return speed_;
@@ -106,13 +116,13 @@ bool Unit::animation_complete()
 	{
 		if (animation_type_ == die_animation)
 			return true;
-		if (animation_type_ == attack_animation)
+		if (animation_type_ == attack_animation or animation_type_ == second_attack_animation)
 		{
 			animation_type_ = no_animation;
 			return false;
 		}
 	}
-	if (cumulative_time_ > 0)
+	if (cumulative_time_ != 0)
 		return false;
 	return true;
 }
@@ -233,7 +243,7 @@ void Unit::process(const sf::Time time)
 
 void Unit::move(const sf::Vector2i direction, const sf::Time time)
 {
-	if((animation_type_ == attack_animation and current_frame_ < get_damage_frame()) or stun_time_left_ > 0) // Can not move while attack or urder stun
+	if((animation_type_ == attack_animation and current_frame_ < get_damage_frame()) or (animation_type_ == second_attack_animation and current_frame_ < get_second_attack_damage_frame()) or stun_time_left_ > 0) // Can not move while attack or urder stun
 		return;
 
 	was_move_ = { direction.x != 0, direction.y != 0 };
@@ -265,6 +275,10 @@ void Unit::push(const int direction)
 void Unit::play_hit_sound() const
 {
 
+}
+
+void Unit::play_second_attack_hit_sound() const
+{
 }
 
 void Unit::play_damage_sound() const
@@ -329,6 +343,10 @@ void Unit::commit_attack()
 
 		cumulative_time_++;
 	}
+}
+
+void Unit::commit_second_attack()
+{
 }
 
 Miner::Miner(const sf::Vector2f spawn_point, const texture_ID texture_id)
@@ -641,15 +659,88 @@ void Magikill::update_from_packet(sf::Packet& packet)
 	Unit::update_from_packet(packet);
 }
 
-Spearton::Spearton(sf::Vector2f spawn_point, texture_ID texture_id) : Unit(texture_id, spawn_point, max_health, sprite_params)
+void Spearton::play_second_attack_hit_sound() const
+{
+	shared_sound_manager.play_sound(spearton_second_attack_sound);
+}
+
+void Spearton::push(const int direction)
+{
+	if(animation_type_ != second_attack_animation)
+		Unit::push(direction);
+}
+
+bool Spearton::animation_complete()
+{
+	if (animation_type_ == second_attack_animation and second_attack_start_delay_time_ > 0)
+		return true;
+	return Unit::animation_complete();
+}
+
+void Spearton::draw(DrawQueue& queue) const
+{
+	Unit::draw(queue);
+	if (is_alive() and time_left_to_second_attack_ > 0)
+		time_left_to_second_attack_bar_.draw(queue);
+}
+
+void Spearton::set_screen_place(float camera_position)
+{
+	Unit::set_screen_place(camera_position);
+	time_left_to_second_attack_bar_.set_position({ x_ - camera_position, y_ });
+}
+
+Spearton::Spearton(sf::Vector2f spawn_point, texture_ID texture_id) : Unit(texture_id, spawn_point, max_health, sprite_params),
+                                                                      time_left_to_second_attack_bar_(second_attack_cooldown_time, time_left_to_second_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
 {
 
 }
 
-void Spearton::process(sf::Time time)
+void Spearton::process(const sf::Time time)
 {
 	Unit::process(time);
 	time_left_to_second_attack_ = std::max(time_left_to_second_attack_ - time.asMilliseconds(), 0);
+	time_left_to_second_attack_bar_.update();
+	second_attack_start_delay_time_ = std::max(second_attack_start_delay_time_ - time.asMilliseconds(), 0);
+}
+
+void Spearton::commit_attack()
+{
+	Unit::commit_attack();
+	current_damage_type_ = common;
+}
+
+bool Spearton::can_do_damage()
+{
+	if (current_damage_type_ == common)
+		return Unit::can_do_damage();
+	if (time_left_to_second_attack_ == 0)
+	{
+		const bool temp = do_damage_flag_;
+		do_damage_flag_ = false;
+		if (temp)
+			time_left_to_second_attack_ = second_attack_cooldown_time;
+		return temp;
+	}
+	return false;
+}
+
+void Spearton::commit_second_attack()
+{
+	if(time_left_to_second_attack_ == 0 and stun_time_left_ == 0)
+	{
+		shared_sound_manager.play_sound(spearton_second_attack_sound);
+		current_damage_type_ = sparta;
+		if (animation_type_ != second_attack_animation)
+		{
+			current_frame_ = 0;
+		}
+		set_animation_frame();
+		animation_type_ = second_attack_animation;
+		second_attack_start_delay_time_ = second_attack_start_delay_time;
+
+		cumulative_time_++;
+	}
 }
 
 int Spearton::get_id() const
@@ -674,7 +765,9 @@ sf::Vector2f Spearton::get_max_speed() const
 
 float Spearton::get_damage() const
 {
-	return damage;
+	if(current_damage_type_ == common)
+		return damage;
+	return second_attack_damage;
 }
 
 int Spearton::get_damage_frame() const
@@ -682,9 +775,30 @@ int Spearton::get_damage_frame() const
 	return damage_frame;
 }
 
+int Spearton::get_splash_count() const
+{
+	if(current_damage_type_ == common)
+		return Unit::get_splash_count();
+	return second_attack_splash_count;
+}
+
+int Spearton::get_stun_time() const
+{
+	if(current_damage_type_ == common)
+		return Unit::get_stun_time();
+	return second_attack_stun_time;
+}
+
+int Spearton::get_second_attack_damage_frame() const
+{
+	return second_attack_damage_frame;
+}
+
 float Spearton::get_attack_distance() const
 {
-	return attack_distance;
+	if(current_damage_type_ == common)
+		return attack_distance;
+	return second_attack_distance;
 }
 
 int Spearton::get_wait_time() const

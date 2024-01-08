@@ -18,8 +18,9 @@ public:
 		walk_animation,
 		attack_animation,
 		die_animation,
-		second_attack_animation,
-		defend_animation
+		defend_animation,
+		defend_attack_animation,
+		second_attack_animation
 	};
 
 	enum DamageType
@@ -52,12 +53,13 @@ protected:
 	std::pair<int, sf::Vector2f> stand_place_ = { 0,  { 1E+15f, 1E+15f } };
 
 	void set_y_scale() override;
-	bool animation_complete();
+	virtual bool animation_complete();
 	void set_animation_frame(bool is_play_hit_sound=true);
 	virtual void kill();
-	void push(int direction);
+	virtual void push(int direction);
 
 	virtual void play_hit_sound() const;
+	virtual void play_second_attack_hit_sound() const;
 public:
 	virtual void play_damage_sound() const;
 	virtual void play_kill_sound() const;
@@ -80,6 +82,7 @@ public:
 	virtual int get_cost() const = 0;
 
 	virtual int get_damage_frame() const = 0;
+	virtual int get_second_attack_damage_frame() const;
 
 	sf::Vector2f get_speed() const;
 	int get_direction() const;
@@ -91,6 +94,7 @@ public:
 	virtual void move(sf::Vector2i direction, sf::Time time);
 
 	virtual void commit_attack();
+	virtual void commit_second_attack();
 	virtual bool can_do_damage();
 	bool can_be_damaged() const;
 	std::pair<float, DamageType> cause_damage(float damage, int direction, int stun_time);
@@ -251,7 +255,15 @@ public:
 
 class Spearton final : public Unit
 {
-	int time_left_to_second_attack_ = 5000;
+	enum damage_type
+	{
+		common,
+		sparta
+	};
+
+	void play_second_attack_hit_sound() const override;
+	void push(int direction) override;
+	bool animation_complete() override;
 public:
 	constexpr static int id = 3;
 	constexpr static int places_requires = 3;
@@ -259,29 +271,54 @@ public:
 	inline const static sf::Vector2f max_speed = { 0.25f, 0.175f }; // { 0.2f, 0.15f }
 	constexpr static float damage = 100.f;
 	constexpr static int damage_frame = 14;
-	constexpr static int hit_frame = 14;
 	constexpr static float attack_distance = 200.0f;
+	constexpr static int hit_frame = 14;
+	constexpr static float second_attack_damage = 70.f;
+	constexpr static int second_attack_splash_count = 12;
+	constexpr static int second_attack_stun_time = 3000;
+	constexpr static int second_attack_damage_frame = 15;
+	constexpr static int second_attack_cooldown_time = 60000;
+	constexpr static int second_attack_start_delay_time = 1500;
+	constexpr static float second_attack_distance = 400.f;
 	constexpr static int wait_time = 7000;
 	constexpr static int cost = 600;
-	inline const static SpriteParams sprite_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2}, {{40, 21},
-																																															{30, 21},
-																																															{45, 21}} };
+	inline const static SpriteParams sprite_params = { {-50 / 2, 150 / 2}, 1080 / 4, 1920 / 4, {-0.6f * 2, 0.6f * 2},
+		{{40, 21},
+					 {30, 21},
+					 {45, 21},
+					 {40, 13},
+					 {30, 13},
+					 {45, 21}} };
+
+	void draw(DrawQueue& queue) const override;
+	void set_screen_place(float camera_position) override;
 
 	Spearton(sf::Vector2f spawn_point, texture_ID texture_id);
 	void process(sf::Time time) override;
+	void commit_attack() override;
+	bool can_do_damage() override;
+	void commit_second_attack() override;
 
 	int get_id() const override;
 	int get_places_requires() const override;
 	float get_max_health() const override;
 	sf::Vector2f get_max_speed() const override;
-	float get_damage() const override;
+	float get_damage() const override;																	
 	int get_damage_frame() const override;
+	int get_splash_count() const override;
+	int get_stun_time() const override;
+	int get_second_attack_damage_frame() const override;
 	float get_attack_distance() const override;
 	int get_wait_time() const override;
 	int get_cost() const override;
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;
+private:
+	damage_type current_damage_type_ = common;
+	int time_left_to_second_attack_ = second_attack_cooldown_time;
+	Bar<int> time_left_to_second_attack_bar_;
+	int second_attack_start_delay_time_ = second_attack_start_delay_time;
 };
 
 

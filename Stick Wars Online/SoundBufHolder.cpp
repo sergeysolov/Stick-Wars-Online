@@ -21,6 +21,8 @@ SoundBuffersHolder::SoundBuffersHolder()
 	append(sward_damage, "Sounds/unit_sounds/sward_damage.wav");
 	append(sward_kill, "Sounds/unit_sounds/sward_kill.wav");
 
+	append(spearton_second_attack_sound, "Sounds/unit_sounds/spearton_second_attack_sound.mp3");
+
 	append(explosion_sound, "Sounds/unit_sounds/explosion_sound.mp3");
 
 	append(in_attack_music, "Sounds/music/in_attack_music.wav");

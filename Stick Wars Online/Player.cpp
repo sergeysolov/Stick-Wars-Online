@@ -118,6 +118,8 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 
 			if (input.space)
 				controlled_unit_->get_unit()->commit_attack();
+			else if (input.f)
+				controlled_unit_->get_unit()->commit_second_attack();
 			else if (direction.x != 0 or direction.y != 0)
 			{
 				controlled_unit_->get_unit()->move(direction, delta_time);

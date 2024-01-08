@@ -16,6 +16,8 @@ enum sound_buffer_id
 	sward_damage,
 	sward_kill,
 
+	spearton_second_attack_sound,
+
 	statue_damage_sound,
 
 	explosion_sound,
@@ -105,6 +107,7 @@ inline SharedSoundManager shared_sound_manager = SoundManager::sound_init_type {
 	{sward_damage, {10, 8}},
 	{sward_hit, {10, 7}},
 	{explosion_sound, {100, 4}},
+	{spearton_second_attack_sound, {100, 1}},
 	{miner_hit, {1, 5}},
 	{statue_damage_sound, {40, 6}}
 };
