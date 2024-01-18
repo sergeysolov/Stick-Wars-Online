@@ -28,7 +28,7 @@ public:
 	[[nodiscard]] virtual bool check_mouse_pressed(sf::Vector2i mouse_position) const;
 	virtual void press_left();
 	bool is_pressed();
-	void highlight(bool is_highlight, sf::Color color = sf::Color::Magenta);
+	void highlight(bool is_highlight, sf::Color color = sf::Color::Blue);
 };
 
 

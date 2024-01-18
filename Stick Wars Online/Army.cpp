@@ -246,7 +246,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 
 	if (miner->can_do_damage() and check_can_mine(find_nearest_goldmine()->get()).first)
 	{
-		const float gold_count = (miner == controlled_unit.get() ? ControlledUnit::damage_boost_factor : 1) * miner->get_damage();
+		const float gold_count = (miner == controlled_unit.get() ? ControlledUnit::damage_boost_factor : 1) * miner->get_damage(nullptr);
 		miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(gold_count)));
 		shared_sound_manager.play_sound(miner_hit);
 	}
@@ -384,14 +384,14 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 			{
 				float damage_multiplier = 0;
 				const auto [dx, dy] = distance_to_nearest_enemy;
-				if (dx >= 0 and unit->get_direction() == 1)
+				if (dx >= 0 and unit->get_direction() > 0)
 				{
 					if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == 0)
 						damage_multiplier = 1;
 					else if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == 2)
 						damage_multiplier = 2;
 				}
-				else if (dx < 0 and unit->get_direction() == -1)
+				else if (dx < 0 and unit->get_direction() < 0)
 				{
 					if (unit->get_direction() + enemies_by_distance.top().second->get()->get_direction() == 0)
 						damage_multiplier = 1;
@@ -400,7 +400,7 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 				}
 
 				damage_multiplier *= base_damage_multiplayer;
-				const auto [actual_damage, damage_type] = enemies_by_distance.top().second->get()->cause_damage(unit->get_damage() * damage_multiplier, unit->get_direction(), unit->get_stun_time());
+				const auto [actual_damage, damage_type] = enemies_by_distance.top().second->get()->cause_damage(unit->get_damage(*enemies_by_distance.top().second) * damage_multiplier, unit->get_direction(), unit->get_stun_time());
 				if (damage_type == Unit::is_damage)
 					unit->play_damage_sound();
 				else if (damage_type == Unit::is_kill)
@@ -414,7 +414,7 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 			enemies_by_distance.pop();
 		}
   		if(can_attack_statue == 1 and enemies_damaged_count < unit->get_splash_count())
-			caused_damage_by_controlled_unit += enemy_statue->cause_damage(unit->get_damage() * base_damage_multiplayer);
+			caused_damage_by_controlled_unit += enemy_statue->cause_damage(unit->get_damage(nullptr) * base_damage_multiplayer);
 	}
 
 	const std::pair res = { caused_damage_by_controlled_unit, kill_count_by_controlled_unit };
@@ -627,6 +627,8 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 	const int spawn_threshold = queue.army_.get_max_size() / 8 * 7;
 	if (queue.get_army_count() < spawn_threshold and random(0.0007f))
 	{
+		if (queue.get_free_places() >= Spearton::places_requires)
+			queue.put_unit(std::shared_ptr<Unit>(UnitFactory::create_unit(Spearton::id, -1)), 1000);
 		constexpr int count = 3;
 		for (int i = 0; i < count and queue.get_free_places() >= Swordsman::places_requires; ++i)
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);

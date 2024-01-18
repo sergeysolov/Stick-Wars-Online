@@ -47,8 +47,6 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 	for (const auto goldmine_position : GoldMine::goldmine_positions)
 		gold_mines_.emplace_back(new GoldMine(goldmine_position));
 
-	
-
 	if(client_handler == nullptr)
 	{
 		music_manager.play_new_background_music();

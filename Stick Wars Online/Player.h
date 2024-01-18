@@ -11,12 +11,12 @@ class ControlledUnit
 	bool is_me_ = true;
 
 	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
-	inline const static sf::Vector2f star_offset = { -15, -15 };
+	inline const static sf::Vector2f star_offset = { -15, -35 };
 
 	inline const static sf::Vector2f name_scale = { 0.8f, 0.8f };
 	inline const static sf::Vector2f name_offset = { -30.f, -50.f};
 
-	static constexpr float heal_factor = 0.2f;
+	static constexpr float heal_factor = 0.1f;
 
 public:
 	static constexpr float speed_boost_factor = 1.5f;

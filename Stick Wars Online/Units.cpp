@@ -1,6 +1,7 @@
 #include "Units.h"
 
 #include <functional>
+#include <random>
 
 #include "Player.h"
 
@@ -33,7 +34,12 @@ void Unit::show_animation(const int delta_time)
 
 void Unit::set_animation_frame(const bool is_play_hit_sound)
 {
-	if (animation_type_ == attack_animation)
+	if(animation_type_ == walk_animation)
+	{
+		if ((abs(speed_.x) > 0.05f or abs(speed_.y) > 0.05f) and current_frame_ <= 1)
+			current_frame_ = 2;
+	}
+	else if (animation_type_ == attack_animation)
 	{
 		if(current_frame_ == get_damage_frame())
 			do_damage_flag_ = true;
@@ -310,16 +316,21 @@ bool Unit::can_be_damaged() const
 
 void Unit::draw(DrawQueue& queue) const
 {
+	const int layer = static_cast<int>((y_ - y_map_min) / 10.f);
 	if (is_alive())
 	{
-		queue.emplace(alive_units, &sprite_);
+		const auto priority = static_cast<DrawPriority>(alive_units + layer);
+		queue.emplace(priority, &sprite_);
 		if (abs(health_ - get_max_health()) > 1e-5)
 			health_bar_.draw(queue);
 		if (stun_time_left_ > 0)
 			queue.emplace(attributes_layer_2, &stun_stars_sprite_);
 	}
 	else
-		queue.emplace(dead_units,&sprite_);
+	{
+		const auto priority = static_cast<DrawPriority>(dead_units + layer);
+		queue.emplace(priority, &sprite_);
+	}
 }
 
 sf::FloatRect Unit::get_unit_rect() const
@@ -409,7 +420,7 @@ sf::Vector2f Miner::get_max_speed() const
 	return max_speed;
 }
 
-float Miner::get_damage() const
+float Miner::get_damage(const std::shared_ptr<Unit>& unit_to_damage) const
 {
 	return damage;
 }
@@ -499,7 +510,7 @@ sf::Vector2f Swordsman::get_max_speed() const
 	return max_speed;
 }
 
-float Swordsman::get_damage() const
+float Swordsman::get_damage(const std::shared_ptr<Unit>& unit_to_damage) const
 {
 	return damage;
 }
@@ -611,9 +622,11 @@ sf::Vector2f Magikill::get_max_speed() const
 	return max_speed;
 }
 
-float Magikill::get_damage() const
+float Magikill::get_damage(const std::shared_ptr<Unit>& unit_to_damage) const
 {
-	return damage;
+	if (unit_to_damage == nullptr)
+		return max_damage;
+	return std::min(max_damage,  damage_factor * unit_to_damage->get_max_health());
 }
 
 int Magikill::get_damage_frame() const
@@ -677,6 +690,22 @@ bool Spearton::animation_complete()
 	return Unit::animation_complete();
 }
 
+void Spearton::play_damage_sound() const
+{
+	constexpr static int total_damage_sounds = 3;
+	static std::uniform_int_distribution distribution(0, total_damage_sounds - 1);
+	static std::mt19937 generator(std::random_device{}());
+
+	const auto sound_id = static_cast<sound_buffer_id>(spearton_damage_0 + distribution(generator));
+
+	shared_sound_manager.play_sound(sound_id);
+}
+
+void Spearton::play_kill_sound() const
+{
+	shared_sound_manager.play_sound(spearton_kill);
+}
+
 void Spearton::draw(DrawQueue& queue) const
 {
 	Unit::draw(queue);
@@ -699,6 +728,7 @@ Spearton::Spearton(sf::Vector2f spawn_point, texture_ID texture_id) : Unit(textu
 void Spearton::process(const sf::Time time)
 {
 	Unit::process(time);
+
 	time_left_to_second_attack_ = std::max(time_left_to_second_attack_ - time.asMilliseconds(), 0);
 	time_left_to_second_attack_bar_.update();
 	second_attack_start_delay_time_ = std::max(second_attack_start_delay_time_ - time.asMilliseconds(), 0);
@@ -763,7 +793,7 @@ sf::Vector2f Spearton::get_max_speed() const
 	return max_speed;
 }
 
-float Spearton::get_damage() const
+float Spearton::get_damage(const std::shared_ptr<Unit>&unit_to_damage) const
 {
 	if(current_damage_type_ == common)
 		return damage;
@@ -820,6 +850,7 @@ void Spearton::write_to_packet(sf::Packet& packet) const
 void Spearton::update_from_packet(sf::Packet& packet)
 {
 	packet >> time_left_to_second_attack_;
+	time_left_to_second_attack_bar_.update();
 	Unit::update_from_packet(packet);
 }
 

@@ -4,15 +4,15 @@
 
 enum DrawPriority
 {
-	background,
-	map_object,
-	dead_units,
-	alive_units,
-	attributes_layer_0,
-	attributes_layer_1,
-	attributes_layer_2,
-	interface_layer_0,
-	interface_layer_1,
+	background = 0,
+	map_object = 10000,
+	dead_units = 20000,
+	alive_units = 30000,
+	attributes_layer_0 = 40000,
+	attributes_layer_1 = 50000,
+	attributes_layer_2 = 60000,
+	interface_layer_0 = 70000,
+	interface_layer_1 = 80000,
 };
 
 struct DrawQueueItem

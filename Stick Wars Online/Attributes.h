@@ -16,10 +16,10 @@ public:
 	inline const static sf::Vector2f unit_bar_size = { 70, 3 };
 	inline const static sf::Vector2f statue_health_bar_size = { 100, 15 };
 
-	inline const static sf::Vector2f unit_health_bar_offset = { -32, 50 };
+	inline const static sf::Vector2f unit_health_bar_offset = { -32, 20 };
 	inline const static sf::Vector2f statue_health_bar_offset = { -32, 60 };
 
-	inline const static sf::Vector2f unit_second_attribute_bar_offset = { -32, 35 };
+	inline const static sf::Vector2f unit_second_attribute_bar_offset = { -32, 5 };
 
 	inline const static sf::Color health_bar_color = sf::Color{ 255, 0, 100 };
 	inline const static sf::Color miner_gold_bar_color = sf::Color{ 210, 160, 30 };

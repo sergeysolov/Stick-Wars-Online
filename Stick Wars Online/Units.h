@@ -39,7 +39,7 @@ protected:
 	constexpr static float acceleration = 0.0015f; // 0.002
 
 	sf::Sprite stun_stars_sprite_;
-	inline static const sf::Vector2f stun_sprite_offset = { -30.f,10.f };
+	inline static const sf::Vector2f stun_sprite_offset = { -30.f,0.f };
 	inline static const sf::Vector2f stun_sprite_scale = { 0.1f, 0.1f };
 	int stun_time_left_ = 0;
 
@@ -74,7 +74,7 @@ public:
 	virtual int get_places_requires() const = 0;
 	virtual float get_max_health() const = 0;
 	virtual sf::Vector2f get_max_speed() const = 0;
-	virtual float get_damage() const = 0;
+	virtual float get_damage(const std::shared_ptr<Unit>& unit_to_damage) const = 0;
 	virtual int get_splash_count() const;
 	virtual int get_stun_time() const;
 	virtual float get_attack_distance() const = 0;
@@ -85,7 +85,7 @@ public:
 	virtual int get_second_attack_damage_frame() const;
 
 	sf::Vector2f get_speed() const;
-	int get_direction() const;
+	virtual int get_direction() const;
 
 	void show_animation(int delta_time);
 	void set_screen_place(float camera_position) override;
@@ -150,7 +150,7 @@ public:
 	int get_places_requires() const override;
 	float get_max_health() const override;
 	sf::Vector2f get_max_speed() const override;
-	float get_damage() const override;
+	float get_damage(const std::shared_ptr<Unit>& unit_to_damage) const override;
 	float get_attack_distance() const override;
 	int get_wait_time() const override;
 	int get_cost() const override;
@@ -192,7 +192,7 @@ public:
 	int get_places_requires() const override;
 	float get_max_health() const override;
 	sf::Vector2f get_max_speed() const override;
-	float get_damage() const override;
+	float get_damage(const std::shared_ptr<Unit>& unit_to_damage) const override;
 	int get_damage_frame() const override;
 	int get_splash_count() const override;
 	float get_attack_distance() const override;
@@ -213,7 +213,8 @@ public:
 	constexpr static int places_requires = 8;
 	constexpr static float max_health = 100;
 	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
-	constexpr static float damage = 25.f; //20
+	constexpr static float max_damage = 100.f;
+	constexpr static float damage_factor = 0.1f; //20
 	constexpr static int damage_frame = 14;
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 1000;
@@ -240,7 +241,7 @@ public:
 	int get_places_requires() const override;
 	float get_max_health() const override;
 	sf::Vector2f get_max_speed() const override;
-	float get_damage() const override;
+	float get_damage(const std::shared_ptr<Unit>& unit_to_damage) const override;
 	int get_damage_frame() const override;
 	int get_splash_count() const override;
 	int get_stun_time() const override;
@@ -265,10 +266,13 @@ class Spearton final : public Unit
 	void push(int direction) override;
 	bool animation_complete() override;
 public:
+	void play_damage_sound() const override;
+	void play_kill_sound() const override;
+
 	constexpr static int id = 3;
 	constexpr static int places_requires = 3;
-	constexpr static float max_health = 2000;
-	inline const static sf::Vector2f max_speed = { 0.25f, 0.175f }; // { 0.2f, 0.15f }
+	constexpr static float max_health = 1500;
+	inline const static sf::Vector2f max_speed = { 0.25f, 0.17f }; // { 0.2f, 0.15f }
 	constexpr static float damage = 100.f;
 	constexpr static int damage_frame = 14;
 	constexpr static float attack_distance = 200.0f;
@@ -303,7 +307,7 @@ public:
 	int get_places_requires() const override;
 	float get_max_health() const override;
 	sf::Vector2f get_max_speed() const override;
-	float get_damage() const override;																	
+	float get_damage(const std::shared_ptr<Unit>& unit_to_damage) const override;																	
 	int get_damage_frame() const override;
 	int get_splash_count() const override;
 	int get_stun_time() const override;

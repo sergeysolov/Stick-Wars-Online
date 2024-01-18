@@ -16,6 +16,11 @@ enum sound_buffer_id
 	sward_damage,
 	sward_kill,
 
+	spearton_damage_0,
+	spearton_damage_1,
+	spearton_damage_2,
+	spearton_kill,
+
 	spearton_second_attack_sound,
 
 	statue_damage_sound,
@@ -102,12 +107,16 @@ public:
 	void play_sound(sound_buffer_id sound_id) override;
 };
 
-inline SharedSoundManager shared_sound_manager = SoundManager::sound_init_type {
+inline SharedSoundManager shared_sound_manager = SoundManager::sound_init_type{
 	{sward_kill, {10, 3}},
 	{sward_damage, {10, 8}},
 	{sward_hit, {10, 7}},
 	{explosion_sound, {100, 4}},
 	{spearton_second_attack_sound, {100, 1}},
+	{spearton_damage_0, {100, 4}},
+	{spearton_damage_1, {100, 4}},
+	{spearton_damage_2, {100, 4}},
+	{spearton_kill, {100, 4}},
 	{miner_hit, {1, 5}},
 	{statue_damage_sound, {40, 6}}
 };
@@ -118,6 +127,6 @@ inline PrivateSoundManager private_sound_manager = SoundManager::sound_init_type
 
 inline MusicManager music_manager = MusicManager::music_init_type{
 	{victory_music, 50.f},
-    {background_music_0, 50.f},
-	{background_music_1, 50.f},
+    {background_music_0, 15.f},
+	{background_music_1, 15.f},
 };

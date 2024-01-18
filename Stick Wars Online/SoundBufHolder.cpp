@@ -17,11 +17,15 @@ SoundBuffersHolder::SoundBuffersHolder()
 
 	append(statue_damage_sound, "Sounds/unit_sounds/statue_damage.mp3");
 
-	append(sward_hit, "Sounds/unit_sounds/sward_hit.wav");
-	append(sward_damage, "Sounds/unit_sounds/sward_damage.wav");
-	append(sward_kill, "Sounds/unit_sounds/sward_kill.wav");
+	append(sward_hit, "Sounds/unit_sounds/swordsman/sward_hit.wav");
+	append(sward_damage, "Sounds/unit_sounds/swordsman/sward_damage.wav");
+	append(sward_kill, "Sounds/unit_sounds/swordsman/sward_kill.wav");
 
-	append(spearton_second_attack_sound, "Sounds/unit_sounds/spearton_second_attack_sound.mp3");
+	append(spearton_second_attack_sound, "Sounds/unit_sounds/spearton/spearton_second_attack_sound.mp3");
+	append(spearton_damage_0, "Sounds/unit_sounds/spearton/spearton_damage_sound_0.mp3");
+	append(spearton_damage_1, "Sounds/unit_sounds/spearton/spearton_damage_sound_1.mp3");
+	append(spearton_damage_2, "Sounds/unit_sounds/spearton/spearton_damage_sound_2.mp3");
+	append(spearton_kill, "Sounds/unit_sounds/spearton/spearton_kill_sound.mp3");
 
 	append(explosion_sound, "Sounds/unit_sounds/explosion_sound.mp3");
 
