@@ -107,7 +107,8 @@ Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const
 			continue;
 		}
 
-		unit->process(delta_time * (unit == controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
+		const bool is_controlled_unit = unit == controlled_unit;
+		unit->process(delta_time * (is_controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
 
 		//Give stand place with less number to unit if place become free
 		if (not defend_places_.empty() and unit->get_stand_place().first > defend_places_.begin()->first)
@@ -117,7 +118,6 @@ Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const
 			defend_places_.insert(stand_place);
 		}
 
-		const bool is_controlled_unit = unit == controlled_unit;
 		// Process unit's behaviour
 		if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
 			result.gold_count += process_miner(miner, is_controlled_unit, gold_mines, delta_time);
@@ -148,6 +148,16 @@ Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const
 		}
 	}
 	return result;
+}
+
+void Army::process_client_locally(const sf::Time delta_time, const std::shared_ptr<Unit>& controlled_unit)
+{
+	for (auto it = units_.begin(); it != units_.end(); ++it)
+	{
+		auto& unit = *it;
+		unit->show_animation(delta_time.asMilliseconds());
+		unit->process(delta_time * (unit == controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
+	}
 }
 
 bool Army::is_ally() const
@@ -440,7 +450,7 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 			unit->commit_attack();
 
 			const float health_ratio = unit->get_health() / unit->get_max_health();
-			if (unit->get_stun_time_left() > 0 or (army_target_ == defend and health_ratio < 0.9f) or (army_target_ == attack and health_ratio < 0.1f))
+			if ((army_target_ == defend and health_ratio < 0.9f) or (army_target_ == attack and health_ratio < 0.1f))
 				unit->stand_defend();
 
 			return res;

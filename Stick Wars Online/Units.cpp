@@ -173,7 +173,7 @@ void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
 void Unit::write_to_packet(sf::Packet& packet) const
 {
 	MapObject::write_to_packet(packet);
-	packet << health_ << speed_.x << stun_time_left_ << animation_type_ << prev_direction_;// << was_move_.first;
+	packet << health_ << speed_.x << speed_.y << stun_time_left_ << animation_type_ << prev_direction_;// << was_move_.first;
 }
 
 void Unit::update_from_packet(sf::Packet& packet)
@@ -181,7 +181,7 @@ void Unit::update_from_packet(sf::Packet& packet)
 	MapObject::update_from_packet(packet);
 
 	int animation_type;
-	packet >> health_ >> speed_.x >> stun_time_left_ >> animation_type >> prev_direction_;// >> was_move_.first;
+	packet >> health_ >> speed_.x >> speed_.y >> stun_time_left_ >> animation_type >> prev_direction_;// >> was_move_.first;
 	animation_type_ = static_cast<AnimationType>(animation_type);
 
 	cause_damage(0, 0, 0);

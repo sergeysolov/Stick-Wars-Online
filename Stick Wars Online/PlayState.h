@@ -52,7 +52,9 @@ public:
 
 protected:
 	void write_to_packet() const;
-	void update_from_packet();
+	bool update_from_packet();
 
+	void update_server(sf::Time delta_time);
+	void update_client_locally(sf::Time delta_time) const;
 };
 

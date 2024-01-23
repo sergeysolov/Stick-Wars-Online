@@ -66,6 +66,7 @@ public:
 	void set_screen_place(float camera_position) const;
 
 	void update(sf::Time delta_time, Army& enemy_army, const std::shared_ptr<Statue>& enemy_statue, std::vector<std::shared_ptr<GoldMine>>& gold_mines);
+	void update_client_locally(sf::Time delta_time) const;
 	void draw(DrawQueue& draw_queue) const;
 	void handle_input(const Input& input, int mouse_offset, sf::Time delta_time);
 

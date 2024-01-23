@@ -282,7 +282,7 @@ public:
 	constexpr static int id = 3;
 	constexpr static int places_requires = 3;
 	constexpr static float max_health = 1500;
-	constexpr static float armor_factor = 10;
+	constexpr static float armor_factor = 6;
 	inline const static sf::Vector2f max_speed = { 0.25f, 0.17f }; // { 0.2f, 0.15f }
 	constexpr static float damage = 100.f;
 	constexpr static int damage_frame = 14;

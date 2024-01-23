@@ -56,11 +56,13 @@ public:
 	void set_screen_place(float camera_position) const;
 
 	ArmyReturnType process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
+	void process_client_locally(sf::Time delta_time, const std::shared_ptr<Unit>& controlled_unit);
 
 	[[nodiscard]] bool is_ally() const;
 
 	void write_to_packet(sf::Packet& packet) const;
 	void update_from_packet(sf::Packet& packet);
+	
 
 protected:
 	int process_miner(Miner* miner, bool is_controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const;

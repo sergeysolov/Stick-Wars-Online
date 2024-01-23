@@ -116,25 +116,17 @@ void PlayState::update(const sf::Time delta_time)
 {
 	if (client_handler == nullptr)
 	{
-		std::vector<Army*> ally_armies;
-		for (auto& player : players_)
-		{
-			ally_armies.push_back(&player.get_Army());
-			player.update(delta_time, *enemy_army_, enemy_statue_, gold_mines_);
-		}
-
-		private_effect_manager.set_active(false);
-		private_sound_manager.set_active(false);
-
-		enemy_army_->process(ally_armies, my_statue_, nullptr, gold_mines_, delta_time);
-		process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
-		enemy_spawn_queue_->process(delta_time);
+		update_server(delta_time);
 
 		if (server_handler != nullptr)
 			write_to_packet();
 	}
 	else
-		update_from_packet();
+	{
+		if (not update_from_packet())
+			update_client_locally(delta_time);
+	}
+		
 
 	shared_effects_manager.process(delta_time.asMilliseconds());
 	private_effect_manager.process(delta_time.asMilliseconds());
@@ -264,7 +256,7 @@ void PlayState::write_to_packet() const
 	server_handler->put_update_to_clients(update_packet);
 }
 
-void PlayState::update_from_packet()
+bool PlayState::update_from_packet()
 {
 	if (const auto packet = client_handler->get_update_from_server(); packet != nullptr)
 	{
@@ -288,6 +280,35 @@ void PlayState::update_from_packet()
 		shared_effects_manager.update_from_packet(*packet);
 
 		shared_sound_manager.update_from_packet(*packet);
+
+		return true;
 	}
+	return false;
+}
+
+void PlayState::update_server(const sf::Time delta_time)
+{
+	std::vector<Army*> ally_armies;
+	for (auto& player : players_)
+	{
+		ally_armies.push_back(&player.get_Army());
+		player.update(delta_time, *enemy_army_, enemy_statue_, gold_mines_);
+	}
+
+	private_effect_manager.set_active(false);
+	private_sound_manager.set_active(false);
+
+	enemy_army_->process(ally_armies, my_statue_, nullptr, gold_mines_, delta_time);
+
+	process_enemy_spawn_queue(*enemy_spawn_queue_, *enemy_statue_);
+	enemy_spawn_queue_->process(delta_time);
+}
+
+void PlayState::update_client_locally(const sf::Time delta_time) const
+{
+	for (auto& player : players_)
+		player.update_client_locally(delta_time);
+
+	enemy_army_->process_client_locally(delta_time, nullptr);
 }
 

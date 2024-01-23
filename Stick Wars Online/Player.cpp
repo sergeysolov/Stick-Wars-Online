@@ -295,3 +295,8 @@ void Player::update(const sf::Time delta_time, Army& enemy_army, const std::shar
 
 	user_interface_->update({money_, total_damage_, total_kills_}, controlled_unit_->get_stun_time_left(), spawn_queue_->get_army_count(), spawn_queue_->get_front_unit_id(), delta_time);
 }
+
+void Player::update_client_locally(const sf::Time delta_time) const
+{
+	army_->process_client_locally(delta_time, controlled_unit_->get_unit());
+}
