@@ -39,7 +39,7 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 		if ((abs(speed_.x) > 0.05f or abs(speed_.y) > 0.05f) and current_frame_ <= 1)
 			current_frame_ = 2;
 	}
-	else if (animation_type_ == attack_animation)
+	else if (animation_type_ == attack_animation or animation_type_ == defend_attack_animation)
 	{
 		if(current_frame_ == get_damage_frame())
 			do_damage_flag_ = true;
@@ -59,15 +59,22 @@ void Unit::set_animation_frame(const bool is_play_hit_sound)
 }
 
 
-std::pair<float, Unit::DamageType> Unit::cause_damage(const float damage, const int direction, const int stun_time)
+std::pair<float, Unit::DamageType> Unit::cause_damage(float damage, const int direction, const int stun_time)
 {
 	if (not can_be_damaged())
 		return { 0.f, no_damage };
 
+	float push_strength = 0.25f;
+	if ((animation_type_ == defend_animation or animation_type_ == defend_attack_animation) and damage > 0 and prev_direction_ != direction)
+	{
+		damage /= get_armor_factor();
+		push_strength /= get_armor_factor();
+	}
+
 	const float prev_health = health_;
 	health_ = std::clamp(health_ - damage, 0.f, get_max_health());
 	stun_time_left_ += stun_time;
-	push(direction);
+	push(direction, push_strength);
 	health_bar_.update();
 
 	const float actual_damage = prev_health - health_;
@@ -86,6 +93,11 @@ std::pair<float, Unit::DamageType> Unit::cause_damage(const float damage, const 
 bool Unit::is_alive() const
 {
 	return health_ > 0;
+}
+
+float Unit::get_armor_factor() const
+{
+	return 1;
 }
 
 int Unit::get_splash_count() const
@@ -108,10 +120,17 @@ sf::Vector2f Unit::get_speed() const
 	return speed_;
 }
 
-void Unit::set_y_scale()
+float Unit::get_health() const
 {
-	const float scale_factor = ( scale_y_param_a * sprite_.getPosition().y + scale_y_param_b);
-	sprite_.setScale({ scale_factor * prev_direction_ * sprite_params_.scale.x, scale_factor * sprite_params_.scale.y });
+	return health_;
+}
+
+float Unit::set_y_scale()
+{
+	const float scale_factor = MapObject::set_y_scale();
+	health_bar_.set_scale({ scale_factor, scale_factor });
+	sprite_.scale({ static_cast<float>(prev_direction_), 1.f });
+	return scale_factor;
 }
 
 bool Unit::animation_complete()
@@ -122,7 +141,7 @@ bool Unit::animation_complete()
 	{
 		if (animation_type_ == die_animation)
 			return true;
-		if (animation_type_ == attack_animation or animation_type_ == second_attack_animation)
+		if (animation_type_ == attack_animation or animation_type_ == defend_attack_animation or animation_type_ == second_attack_animation)
 		{
 			animation_type_ = no_animation;
 			return false;
@@ -169,9 +188,21 @@ void Unit::update_from_packet(sf::Packet& packet)
 	set_animation_frame(false);
 }
 
+float Miner::set_y_scale()
+{
+	const float scale_factor = Unit::set_y_scale();
+	gold_count_bar_.set_scale({ scale_factor, scale_factor });
+	return scale_factor;
+}
+
 int Unit::get_direction() const
 {
 	return prev_direction_;
+}
+
+int Unit::get_stun_time_left() const
+{
+	return stun_time_left_;
 }
 
 void Unit::set_screen_place(const float camera_position)
@@ -249,7 +280,7 @@ void Unit::process(const sf::Time time)
 
 void Unit::move(const sf::Vector2i direction, const sf::Time time)
 {
-	if((animation_type_ == attack_animation and current_frame_ < get_damage_frame()) or (animation_type_ == second_attack_animation and current_frame_ < get_second_attack_damage_frame()) or stun_time_left_ > 0) // Can not move while attack or urder stun
+	if((animation_type_ == attack_animation and current_frame_ < get_damage_frame()) or (animation_type_ == second_attack_animation and current_frame_ <= get_second_attack_damage_frame()) or stun_time_left_ > 0) // Can not move while attack or under stun
 		return;
 
 	was_move_ = { direction.x != 0, direction.y != 0 };
@@ -273,9 +304,9 @@ void Unit::kill()
 	dead_ = true;
 }
 
-void Unit::push(const int direction)
+void Unit::push(const int direction, const float strength)
 {
-	speed_.x = std::clamp(speed_.x + direction * 0.3f, -0.8f, 0.8f);
+	speed_.x = std::clamp(speed_.x + static_cast<float>(direction) * strength, -0.8f, 0.8f);
 }
 
 void Unit::play_hit_sound() const
@@ -346,17 +377,24 @@ void Unit::commit_attack()
 {
 	if(stun_time_left_ == 0)
 	{
-		if (animation_type_ != attack_animation)
-		{
-			current_frame_ = 0;
-		}
-		animation_type_ = attack_animation;
+		if(animation_type_ == defend_attack_animation or animation_type_ == attack_animation)
+			return;
 
+		current_frame_ = 0;
 		cumulative_time_++;
+
+		if (animation_type_ == defend_animation)
+			animation_type_ = defend_attack_animation;
+		else
+			animation_type_ = attack_animation;
 	}
 }
 
 void Unit::commit_second_attack()
+{
+}
+
+void Unit::stand_defend()
 {
 }
 
@@ -546,6 +584,13 @@ void Swordsman::write_to_packet(sf::Packet& packet) const
 	Unit::write_to_packet(packet);
 }
 
+float Magikill::set_y_scale()
+{
+	const float scale_factor = Unit::set_y_scale();
+	time_left_to_next_attack_bar_.set_scale({ scale_factor, scale_factor });
+	return scale_factor;
+}
+
 void Magikill::play_hit_sound() const
 {
 	if (current_frame_ == hit_frame)
@@ -672,21 +717,32 @@ void Magikill::update_from_packet(sf::Packet& packet)
 	Unit::update_from_packet(packet);
 }
 
+float Spearton::set_y_scale()
+{
+	const float scale_factor = Unit::set_y_scale();
+	time_left_to_second_attack_bar_.set_scale({ scale_factor, scale_factor });
+	return scale_factor;
+}
+
 void Spearton::play_second_attack_hit_sound() const
 {
 	shared_sound_manager.play_sound(spearton_second_attack_sound);
 }
 
-void Spearton::push(const int direction)
+void Spearton::push(const int direction, const float strength)
 {
-	if(animation_type_ != second_attack_animation)
-		Unit::push(direction);
+	if(second_attack_start_delay_time_ == 0 and animation_type_ != second_attack_animation)
+		Unit::push(direction, strength);
 }
 
 bool Spearton::animation_complete()
 {
-	if (animation_type_ == second_attack_animation and second_attack_start_delay_time_ > 0)
+	//if (second_attack_start_delay_time_ > 0)
+	//	return true;
+	if (animation_type_ == defend_animation and current_frame_ == sprite_params_.animations[defend_animation].total_frames / 2)
+	{
 		return true;
+	}
 	return Unit::animation_complete();
 }
 
@@ -731,13 +787,42 @@ void Spearton::process(const sf::Time time)
 
 	time_left_to_second_attack_ = std::max(time_left_to_second_attack_ - time.asMilliseconds(), 0);
 	time_left_to_second_attack_bar_.update();
-	second_attack_start_delay_time_ = std::max(second_attack_start_delay_time_ - time.asMilliseconds(), 0);
+
+	if(second_attack_start_delay_time_ > 0)
+	{
+		if((second_attack_start_delay_time_ -= time.asMilliseconds()) <= 0)
+		{
+			second_attack_start_delay_time_ = 0;
+			animation_type_ = second_attack_animation;
+		}
+	}
+}
+
+void Spearton::move(const sf::Vector2i direction, const sf::Time time)
+{
+	if(second_attack_start_delay_time_ > 0)
+		return;
+	Unit::move(direction, time);
+}
+
+void Spearton::stand_defend()
+{
+	if(abs(speed_.x) > 0.05f or abs(speed_.y) > 0.05f or animation_type_ == defend_attack_animation)
+		return;
+
+	if(animation_type_ != defend_animation)
+		current_frame_ = 0;
+	cumulative_time_++;
+	animation_type_ = defend_animation;
 }
 
 void Spearton::commit_attack()
 {
-	Unit::commit_attack();
-	current_damage_type_ = common;
+	if(second_attack_start_delay_time_ == 0 and animation_type_ != second_attack_animation)
+	{
+		Unit::commit_attack();
+		current_damage_type_ = common;
+	}
 }
 
 bool Spearton::can_do_damage()
@@ -757,19 +842,19 @@ bool Spearton::can_do_damage()
 
 void Spearton::commit_second_attack()
 {
-	if(time_left_to_second_attack_ == 0 and stun_time_left_ == 0)
+	if(time_left_to_second_attack_ == 0 and stun_time_left_ == 0 and second_attack_start_delay_time_ == 0 and animation_type_ != second_attack_animation)
 	{
+		if(animation_type_ != defend_animation)
+		{
+			animation_type_ = defend_animation;
+			current_frame_ = 0;
+			//(current_frame_ /= 3) *= 2;
+		}
+		speed_ = { 0, 0 };
+		cumulative_time_++;
 		shared_sound_manager.play_sound(spearton_second_attack_sound);
 		current_damage_type_ = sparta;
-		if (animation_type_ != second_attack_animation)
-		{
-			current_frame_ = 0;
-		}
-		set_animation_frame();
-		animation_type_ = second_attack_animation;
 		second_attack_start_delay_time_ = second_attack_start_delay_time;
-
-		cumulative_time_++;
 	}
 }
 
@@ -788,6 +873,11 @@ float Spearton::get_max_health() const
 	return max_health;
 }
 
+float Spearton::get_armor_factor() const
+{
+	return armor_factor;
+}
+
 sf::Vector2f Spearton::get_max_speed() const
 {
 	return max_speed;
@@ -796,12 +886,21 @@ sf::Vector2f Spearton::get_max_speed() const
 float Spearton::get_damage(const std::shared_ptr<Unit>&unit_to_damage) const
 {
 	if(current_damage_type_ == common)
+	{
+		if(animation_type_ == defend_attack_animation)
+		{
+			constexpr float defend_attack_damage_factor = 0.5;
+			return damage * defend_attack_damage_factor;
+		}
 		return damage;
+	}
 	return second_attack_damage;
 }
 
 int Spearton::get_damage_frame() const
 {
+	if (animation_type_ == defend_attack_animation)
+		return damage_frame / 3 * 2;
 	return damage_frame;
 }
 

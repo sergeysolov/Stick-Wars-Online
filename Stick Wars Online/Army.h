@@ -63,8 +63,8 @@ public:
 	void update_from_packet(sf::Packet& packet);
 
 protected:
-	int process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const;
-	std::pair<float, int> process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time);
+	int process_miner(Miner* miner, bool is_controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const;
+	std::pair<float, int> process_warrior(const std::shared_ptr<Unit>& unit, bool is_controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, sf::Time delta_time);
 
 	int max_size_ = size_per_one_player;
 	int texture_shift_; // is equal to player id

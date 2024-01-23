@@ -14,10 +14,6 @@ void Army::play_in_attack_music(const bool play)
 		in_attack_sound = std::make_unique<sf::Sound>();
 		in_attack_sound->setBuffer(sound_buffers_holder.get_sound_buffer(in_attack_music));
 	}
-	/*if (play)
-		in_attack_sound->play();
-	else
-		in_attack_sound->stop();*/
 }
 
 Army::Army(const float army_defend_line, const int id, const int size_factor) : texture_shift_(id)
@@ -121,13 +117,14 @@ Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const
 			defend_places_.insert(stand_place);
 		}
 
+		const bool is_controlled_unit = unit == controlled_unit;
 		// Process unit's behaviour
 		if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
-			result.gold_count += process_miner(miner, controlled_unit, gold_mines, delta_time);
+			result.gold_count += process_miner(miner, is_controlled_unit, gold_mines, delta_time);
 		else
 		{
-			auto [damage, kills] = process_warrior(unit, controlled_unit, enemy_armies, enemy_statue, delta_time);
-			if (unit == controlled_unit)
+			auto [damage, kills] = process_warrior(unit, is_controlled_unit, enemy_armies, enemy_statue, delta_time);
+			if (is_controlled_unit)
 			{
 				result.damage += damage;
 				result.kills += kills;
@@ -210,7 +207,7 @@ void Army::update_from_packet(sf::Packet& packet)
 	update_units_from_packet(dead_units_, packet);
 }
 
-int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const
+int Army::process_miner(Miner* miner, bool is_controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const
 {
 	if (gold_mines.empty())
 		return 0;
@@ -246,7 +243,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 
 	if (miner->can_do_damage() and check_can_mine(find_nearest_goldmine()->get()).first)
 	{
-		const float gold_count = (miner == controlled_unit.get() ? ControlledUnit::damage_boost_factor : 1) * miner->get_damage(nullptr);
+		const float gold_count = (is_controlled_unit ? ControlledUnit::damage_boost_factor : 1) * miner->get_damage(nullptr);
 		miner->fill_bag(find_nearest_goldmine()->get()->mine(static_cast<int>(gold_count)));
 		shared_sound_manager.play_sound(miner_hit);
 	}
@@ -263,7 +260,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	else if (miner->get_coords().x >= enemy_escape_line - 10)
 		miner->flush_bag();
 
-	if (miner != controlled_unit.get())
+	if (not is_controlled_unit)
 	{
 		if (miner->is_bag_filled() or army_target_ == escape)
 		{
@@ -318,7 +315,7 @@ int Army::process_miner(Miner* miner, const std::shared_ptr<Unit>& controlled_un
 	return gold_count_mined;
 }
 
-std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, const std::shared_ptr<Unit>& controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const sf::Time delta_time)
+std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, const bool is_controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const sf::Time delta_time)
 {
 	auto calculate_dx_dy_between_units = [&](const std::shared_ptr<Unit>& unit_target) -> sf::Vector2f
 		{
@@ -372,7 +369,7 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 	{
 		int enemies_damaged_count = 0;
 
-		const auto base_damage_multiplayer = unit == controlled_unit ? ControlledUnit::damage_boost_factor : 1;
+		const auto base_damage_multiplayer = is_controlled_unit ? ControlledUnit::damage_boost_factor : 1;
 
 		while (enemies_damaged_count < unit->get_splash_count() and not enemies_by_distance.empty())
 		{
@@ -419,7 +416,7 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 
 	const std::pair res = { caused_damage_by_controlled_unit, kill_count_by_controlled_unit };
 
-	if (unit == controlled_unit)
+	if (is_controlled_unit)
 		return res;
 
 	std::optional<std::pair<int, sf::Vector2f>> params_to_attack;
@@ -441,6 +438,11 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 			if (params_to_attack->first < 0)
 				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
 			unit->commit_attack();
+
+			const float health_ratio = unit->get_health() / unit->get_max_health();
+			if (unit->get_stun_time_left() > 0 or (army_target_ == defend and health_ratio < 0.9f) or (army_target_ == attack and health_ratio < 0.1f))
+				unit->stand_defend();
+
 			return res;
 		}
 	}

@@ -55,11 +55,11 @@ void MapObject::update_from_packet(sf::Packet& packet)
 	set_y_scale();
 }
 
-void MapObject::set_y_scale()
+float MapObject::set_y_scale()
 {
-	
 	const float scale_factor = scale_y_param_a * sprite_.getPosition().y + scale_y_param_b;
 	sprite_.setScale({ scale_factor * sprite_params_.scale.x, scale_factor * sprite_params_.scale.y });
+	return scale_factor;
 }
 
 BarbedWire::BarbedWire(const sf::Vector2f position) : MapObject(position, barbed_wire, sprite_params)

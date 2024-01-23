@@ -10,11 +10,11 @@ class ControlledUnit
 	sf::Text name_text_;
 	bool is_me_ = true;
 
-	inline const static sf::Vector2f star_scale = { 0.09f, 0.09f };
-	inline const static sf::Vector2f star_offset = { -15, -35 };
+	inline const static sf::Vector2f star_scale = { 0.08f, 0.08f };
+	inline const static sf::Vector2f star_offset = { 0, -20 };
 
-	inline const static sf::Vector2f name_scale = { 0.8f, 0.8f };
-	inline const static sf::Vector2f name_offset = { -30.f, -50.f};
+	inline const static sf::Vector2f name_scale = { 0.7f, 0.7f };
+	inline const static sf::Vector2f name_offset = { 0, -60.f};
 
 	static constexpr float heal_factor = 0.1f;
 
@@ -25,10 +25,12 @@ public:
 	std::optional<sf::Vector2f> last_position = {};
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
 	[[nodiscard]] bool get_is_me() const;
+	int get_stun_time_left() const;
 
 	void release();
 	void draw(DrawQueue& queue);
 	void heal() const;
+	void set_y_scale();
 
 	ControlledUnit(const std::shared_ptr<Unit>& unit, int id, const std::string& name);
 
@@ -41,7 +43,7 @@ class Player
 {
 	int player_id_;
 
-	int money_ = 2500; //500
+	int money_ = 25000; //500
 	float total_damage_ = 0;
 	int total_kills_ = 0;
 

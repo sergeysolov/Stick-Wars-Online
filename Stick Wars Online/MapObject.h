@@ -10,8 +10,8 @@
 
 constexpr float map_frame_width = 2100;
 
-constexpr float x_map_min = -150;
-constexpr float x_map_max = map_frame_width * 3 + 150;
+constexpr float x_map_min = -200;
+constexpr float x_map_max = map_frame_width * 3 + 200;
 constexpr float y_map_min = 530;
 constexpr float y_map_max = 700;
 
@@ -32,6 +32,7 @@ public:
 	virtual void write_to_packet(sf::Packet& packet) const;
 	virtual void update_from_packet(sf::Packet& packet);
 
+	
 protected:
 	float x_;
 	float y_;
@@ -41,7 +42,7 @@ protected:
 	int cumulative_time_ = 0;
 
 	constexpr static float scale_y_param_a = 13.0f / 4000, scale_y_param_b = -15.0f / 16;
-	virtual void set_y_scale();
+	virtual float set_y_scale();
 };
 
 

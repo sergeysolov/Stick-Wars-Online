@@ -168,7 +168,8 @@ UserInterface::UserInterface()
 	total_damage_text_.setPosition({ 20, 250 });
 	total_kills_text_.setFont(text_font);
 	total_kills_text_.setPosition({ 20, 300 });
-
+	stun_time_left_text_.setFont(text_font);
+	stun_time_left_text_.setPosition({ 20, 350 });
 
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Miner::cost, Miner::wait_time, sf::Vector2f{ 130, 20 }, sf::Vector2f{ 0.15f, 0.15f },
 		miner_buy_button));
@@ -188,7 +189,7 @@ UserInterface::UserInterface()
 	escape_button_.reset(new Button({ 800.f, 20.f }, { 0.15f, 0.15f }, escape_button));
 }
 
-void UserInterface::update(Army::ArmyReturnType values, const int army_count, const std::optional<int> unit_queue_id, const sf::Time delta_time)
+void UserInterface::update(const Army::ArmyReturnType values, const int stun_time, const int army_count, const std::optional<int> unit_queue_id, const sf::Time delta_time)
 {
 	// update army count text
 	const std::string str = std::to_string(army_count) + "/" + std::to_string(Army::size_per_one_player);
@@ -220,6 +221,13 @@ void UserInterface::update(Army::ArmyReturnType values, const int army_count, co
 	money_count_text_.setString(std::to_string(values.gold_count));
 	total_damage_text_.setString("damage: " + std::to_string(static_cast<int>(values.damage)));
 	total_kills_text_.setString("kills: " + std::to_string(values.kills));
+
+	if (stun_time > 0)
+	{
+		stun_time_left_text_.setString("stun left: " + std::to_string(stun_time / 1000) + "." + std::to_string(stun_time % 1000) + "s");
+	}
+	else
+		stun_time_left_text_.setString("");
 }
 
 void UserInterface::draw(DrawQueue& queue) const
@@ -228,6 +236,7 @@ void UserInterface::draw(DrawQueue& queue) const
 	queue.emplace(interface_layer_0, &money_count_text_);
 	queue.emplace(interface_layer_0, &total_damage_text_);
 	queue.emplace(interface_layer_0, &total_kills_text_);
+	queue.emplace(interface_layer_0, &stun_time_left_text_);
 
 	for (const auto& unit_button : unit_buy_buttons_)
 		unit_button->draw(queue);

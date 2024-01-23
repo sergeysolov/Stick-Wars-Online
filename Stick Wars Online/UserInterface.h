@@ -74,6 +74,7 @@ class UserInterface
 
 	sf::Text total_damage_text_;
 	sf::Text total_kills_text_;
+	sf::Text stun_time_left_text_;
 
 	std::vector<std::unique_ptr<UnitBuyButton>> unit_buy_buttons_;
 
@@ -84,7 +85,7 @@ class UserInterface
 public:
 	UserInterface();
 
-	void update(Army::ArmyReturnType values, int army_count, std::optional<int> unit_queue_id, sf::Time delta_time);
+	void update(Army::ArmyReturnType values, int stun_time, int army_count, std::optional<int> unit_queue_id, sf::Time delta_time);
 	void draw(DrawQueue& queue) const;
 
 	std::vector<std::unique_ptr<UnitBuyButton>>& get_unit_buy_buttons();
