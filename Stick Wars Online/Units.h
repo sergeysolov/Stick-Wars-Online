@@ -64,7 +64,7 @@ public:
 	virtual void play_damage_sound() const;
 	virtual void play_kill_sound() const;
 
-	constexpr static float trigger_attack_radius = 500.f;
+	constexpr static float trigger_attack_radius = 600.f;
 	std::shared_ptr<Unit> target_unit;
 	bool try_escape = false;
 
@@ -227,7 +227,7 @@ public:
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 1000;
 	constexpr static int stun_time = 3000;
-	constexpr static float attack_distance = 500.0f;
+	constexpr static float attack_distance = 450.0f; //500
 	constexpr static int wait_time = 15000; // 15000
 	constexpr static int cost = 1600; // 1500
 	constexpr static int attack_cooldown_time = 7000; // 7000
@@ -282,7 +282,7 @@ public:
 	constexpr static int id = 3;
 	constexpr static int places_requires = 3;
 	constexpr static float max_health = 1500;
-	constexpr static float armor_factor = 6;
+	constexpr static float armor_factor = 5;
 	inline const static sf::Vector2f max_speed = { 0.25f, 0.17f }; // { 0.2f, 0.15f }
 	constexpr static float damage = 100.f;
 	constexpr static int damage_frame = 14;

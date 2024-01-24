@@ -286,14 +286,15 @@ void Player::update(const sf::Time delta_time, Army& enemy_army, const std::shar
 	private_sound_manager.set_active(controlled_unit_->get_is_me());
 
 	controlled_unit_->set_y_scale();
+
+	user_interface_->update({ money_, total_damage_, total_kills_ }, controlled_unit_->get_stun_time_left(), spawn_queue_->get_army_count(), spawn_queue_->get_front_unit_id(), delta_time);
+
 	//army processing
 	spawn_queue_->process(delta_time);
 	const auto [gold_count, damage, kills] = army_->process(std::vector{&enemy_army}, enemy_statue, controlled_unit_->get_unit(), gold_mines, delta_time);
 	money_ += gold_count;
 	total_damage_ += damage;
 	total_kills_ += kills;
-
-	user_interface_->update({money_, total_damage_, total_kills_}, controlled_unit_->get_stun_time_left(), spawn_queue_->get_army_count(), spawn_queue_->get_front_unit_id(), delta_time);
 }
 
 void Player::update_client_locally(const sf::Time delta_time) const

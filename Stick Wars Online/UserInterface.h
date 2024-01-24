@@ -28,7 +28,7 @@ public:
 	[[nodiscard]] virtual bool check_mouse_pressed(sf::Vector2i mouse_position) const;
 	virtual void press_left();
 	bool is_pressed();
-	void highlight(bool is_highlight, sf::Color color = sf::Color::Blue);
+	void highlight(bool is_highlight, sf::Color color = sf::Color::Black);
 };
 
 
@@ -52,7 +52,7 @@ public:
 
 	void press_left() override;
 	void press_right();
-	void process_button(int elapsed_time);
+	void process(int elapsed_time);
 	int get_unit_cost() const;
 
 	void write_to_packet(sf::Packet& packet) const;

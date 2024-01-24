@@ -446,7 +446,7 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 		if (abs(params_to_attack->second.x) + 450 * (*nearest_enemy)->get()->get_speed().x * (params_to_attack->second.x > 0 ? 1 : -1) <= unit->get_attack_distance() and abs(params_to_attack->second.y) <= unit->get_attack_distance())
 		{
 			if (params_to_attack->first < 0)
-				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(1)));
+				unit->move({ -unit->get_direction(), 0 }, sf::Time(sf::milliseconds(5)));
 			unit->commit_attack();
 
 			const float health_ratio = unit->get_health() / unit->get_max_health();

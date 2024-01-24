@@ -102,20 +102,20 @@ void UnitBuyButton::draw(DrawQueue& queue) const
 	queue.emplace(interface_layer_0, &time_bar_);
 	queue.emplace(interface_layer_1, &gold_icon_);
 
-	if (remaining_time_ > 0)
+	if (remaining_time_ > 30)
 		queue.emplace(interface_layer_1, &count_text_);
 }
 
 void UnitBuyButton::press_left()
 {
 	remaining_time_ += wait_time_;
-	this->process_button(1);
+	this->process(1);
 }
 
 void UnitBuyButton::press_right()
 {
 	remaining_time_ = std::max(remaining_time_ - wait_time_, 0);
-	this->process_button(1);
+	this->process(1);
 }
 
 int UnitBuyButton::get_unit_cost() const
@@ -131,20 +131,18 @@ void UnitBuyButton::write_to_packet(sf::Packet& packet) const
 void UnitBuyButton::update_from_packet(sf::Packet& packet)
 {
 	packet >> remaining_time_;
-	process_button(0);
+	process(0);
 }
 
-void UnitBuyButton::process_button(const int elapsed_time)
+void UnitBuyButton::process(const int elapsed_time)
 {
-	remaining_time_ = remaining_time_ - elapsed_time;
-	if (remaining_time_ < 10)
-		remaining_time_ = 0;
+	remaining_time_ = std::max(remaining_time_ - elapsed_time, 0);
 
-	const std::string temp_str = "x" + std::to_string(static_cast<int>(ceil(static_cast<float>(remaining_time_) / wait_time_)));
-	count_text_.setString(temp_str.c_str());
+	const std::string temp_str = "x" + std::to_string(static_cast<int>(ceil(static_cast<float>(remaining_time_) / static_cast<float>(wait_time_))));
+	count_text_.setString(temp_str);
 
 	const int remaining_time_for_current_unit = remaining_time_ % wait_time_;
-	time_bar_.setSize({ bar_size_.x * remaining_time_for_current_unit / wait_time_, bar_size_.y });
+	time_bar_.setSize({ bar_size_.x * static_cast<float>(remaining_time_for_current_unit) / static_cast<float>(wait_time_), bar_size_.y });
 }
 
 
@@ -216,7 +214,7 @@ void UserInterface::update(const Army::ArmyReturnType values, const int stun_tim
 
 	//process units queue and units spawn
 	if (unit_queue_id)
-		unit_buy_buttons_[*unit_queue_id]->process_button(delta_time.asMilliseconds());
+		unit_buy_buttons_[*unit_queue_id]->process(delta_time.asMilliseconds());
 
 	money_count_text_.setString(std::to_string(values.gold_count));
 	total_damage_text_.setString("damage: " + std::to_string(static_cast<int>(values.damage)));
