@@ -92,14 +92,12 @@ Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const
 		// process unit if it was killed
 		if (unit->was_killed())
 		{
-			auto stand_place = unit->extract_stand_place();
-			if (stand_place.first >= 0)
-				defend_places_.insert(stand_place);
+			if (auto stand_place = unit->stand_place)
+				defend_places_.insert(*stand_place);
 			alive_units_count_ -= unit->get_places_requires();
 
 			if(const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
 				miner->attached_goldmine.reset();
-
 
 			dead_units_.emplace_back(*it);
 			dead_units_remains_times_.push_back(dead_unit_time_to_delete);
@@ -110,12 +108,12 @@ Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const
 		const bool is_controlled_unit = unit == controlled_unit;
 		unit->process(delta_time * (is_controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
 
-		//Give stand place with less number to unit if place become free
-		if (not defend_places_.empty() and unit->get_stand_place().first > defend_places_.begin()->first)
+		//Give stand place with smaller number to unit if place become free
+		if (not defend_places_.empty() and unit->stand_place and unit->stand_place->first > defend_places_.begin()->first)
 		{
-			auto stand_place = unit->extract_stand_place();
-			unit->set_stand_place(defend_places_);
-			defend_places_.insert(stand_place);
+			const auto stand_place = unit->set_stand_place(*defend_places_.begin());
+			defend_places_.erase(defend_places_.begin());
+			defend_places_.insert(*stand_place);
 		}
 
 		// Process unit's behaviour
@@ -150,11 +148,10 @@ Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const
 	return result;
 }
 
-void Army::process_client_locally(const sf::Time delta_time, const std::shared_ptr<Unit>& controlled_unit)
+void Army::process_client_locally(const sf::Time delta_time, const std::shared_ptr<Unit>& controlled_unit) const
 {
-	for (auto it = units_.begin(); it != units_.end(); ++it)
+	for (auto& unit : units_)
 	{
-		auto& unit = *it;
 		unit->show_animation(delta_time.asMilliseconds());
 		unit->process(delta_time * (unit == controlled_unit ? ControlledUnit::speed_boost_factor : 1.f));
 	}
@@ -225,7 +222,10 @@ int Army::process_miner(Miner* miner, bool is_controlled_unit, std::vector<std::
 	auto check_can_mine = [&](const GoldMine* goldmine) -> std::pair<bool, sf::Vector2f>
 		{
 			const float dx = goldmine->get_coords().x - miner->get_coords().x;
-			const float dy = 10 * (goldmine->get_coords().y - miner->get_coords().y - 120); // * 15,   -145
+			const float dy = 7 * (goldmine->get_coords().y + goldmine->get_sprite().getGlobalBounds().height - (miner->get_coords().y + 1.2f * miner->get_sprite().getGlobalBounds().height)); // * 15,   -145
+
+
+			//std::cout << goldmine->get_coords().y << ' ' << goldmine->get_sprite().getGlobalBounds().height << ' ' << miner->get_coords().y << ' ' << miner->get_sprite().getGlobalBounds().height << '\n';
 
 			bool can_mine = dx * static_cast<float>(miner->get_direction()) > 0 and abs((dy - 145)) <= miner->get_attack_distance() and abs(dx) <= miner->get_attack_distance();
 			return { can_mine, {dx, dy} };
@@ -474,11 +474,14 @@ std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, c
 		if(go_to_stand_place)
 		{
 			unit->target_unit.reset();
-			if (unit->get_stand_place().second.x > 1E+10)
-				unit->set_stand_place(defend_places_);
+			if (not unit->stand_place)
+			{
+				unit->set_stand_place(*defend_places_.begin());
+				defend_places_.erase(defend_places_.begin());
+			}
 
-			const float distance_x = unit->get_stand_place().second.x - unit->get_coords().x;
-			const float distance_y = unit->get_stand_place().second.y - unit->get_coords().y;
+			const float distance_x = unit->stand_place->second.x - unit->get_coords().x;
+			const float distance_y = unit->stand_place->second.y - unit->get_coords().y;
 			const int x_direction = abs(distance_x) > 10 ? (distance_x > 0 ? 1 : -1) : 0;
 			const int y_direction = abs(distance_y) > 10 ? (distance_y > 0 ? 1 : -1) : 0;
 			if (x_direction != 0 or y_direction != 0)
@@ -617,7 +620,6 @@ bool random(const float probability)
 void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue)
 {
 	static constexpr int invoke_enemy_time = 8000;
-
 	if (queue.units_queue_.empty() and queue.get_free_places() >= Swordsman::places_requires)
 	{
 		queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), invoke_enemy_time);

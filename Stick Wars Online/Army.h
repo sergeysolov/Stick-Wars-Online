@@ -56,7 +56,7 @@ public:
 	void set_screen_place(float camera_position) const;
 
 	ArmyReturnType process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
-	void process_client_locally(sf::Time delta_time, const std::shared_ptr<Unit>& controlled_unit);
+	void process_client_locally(sf::Time delta_time, const std::shared_ptr<Unit>& controlled_unit) const;
 
 	[[nodiscard]] bool is_ally() const;
 

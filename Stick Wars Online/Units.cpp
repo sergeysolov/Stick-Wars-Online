@@ -152,28 +152,10 @@ bool Unit::animation_complete()
 	return true;
 }
 
-std::pair<int, sf::Vector2f> Unit::get_stand_place() const
-{
-	return stand_place_;
-}
-
-std::pair<int, sf::Vector2f> Unit::extract_stand_place()
-{
-	auto temp = stand_place_;
-	stand_place_ = { 0,  { 1E+15f, 1E+15f } };
-	return temp;
-}
-
-void Unit::set_stand_place(std::map<int, sf::Vector2f>& places)
-{
-	stand_place_ = *places.begin();
-	places.erase(places.begin());
-}
-
 void Unit::write_to_packet(sf::Packet& packet) const
 {
 	MapObject::write_to_packet(packet);
-	packet << health_ << speed_.x << speed_.y << stun_time_left_ << animation_type_ << prev_direction_;// << was_move_.first;
+	packet << health_ << speed_.x << speed_.y << stun_time_left_ << animation_type_ << prev_direction_ << try_escape;// << was_move_.first;
 }
 
 void Unit::update_from_packet(sf::Packet& packet)
@@ -181,7 +163,7 @@ void Unit::update_from_packet(sf::Packet& packet)
 	MapObject::update_from_packet(packet);
 
 	int animation_type;
-	packet >> health_ >> speed_.x >> speed_.y >> stun_time_left_ >> animation_type >> prev_direction_;// >> was_move_.first;
+	packet >> health_ >> speed_.x >> speed_.y >> stun_time_left_ >> animation_type >> prev_direction_ >> try_escape;// >> was_move_.first;
 	animation_type_ = static_cast<AnimationType>(animation_type);
 
 	cause_damage(0, 0, 0);
@@ -210,6 +192,13 @@ void Unit::set_screen_place(const float camera_position)
 	MapObject::set_screen_place(camera_position);
 	health_bar_.set_position({ x_ - camera_position, y_ });
 	stun_stars_sprite_.setPosition({ x_ - camera_position + stun_sprite_offset.x, y_ + stun_sprite_offset.y});
+}
+
+std::optional<std::pair<int, sf::Vector2f>> Unit::set_stand_place(std::pair<int, sf::Vector2f> new_stand_place)
+{
+	const auto old_stand_place = stand_place;
+	stand_place = new_stand_place;
+	return old_stand_place;
 }
 
 void Unit::process(const sf::Time time)

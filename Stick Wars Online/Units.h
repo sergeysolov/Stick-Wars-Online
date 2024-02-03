@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <memory>
+#include <optional>
 
 #include <SFML/Graphics.hpp>
 
@@ -50,8 +51,6 @@ protected:
 	bool dead_ = false;
 	bool do_damage_flag_ = false;
 
-	std::pair<int, sf::Vector2f> stand_place_ = { 0,  { 1E+15f, 1E+15f } };
-
 	float set_y_scale() override;
 	virtual bool animation_complete();
 	void set_animation_frame(bool is_play_hit_sound=true);
@@ -66,6 +65,9 @@ public:
 
 	constexpr static float trigger_attack_radius = 600.f;
 	std::shared_ptr<Unit> target_unit;
+
+	std::optional<std::pair<int, sf::Vector2f>> stand_place = { };
+
 	bool try_escape = false;
 
 	Unit(texture_ID id, sf::Vector2f spawn_point, float health, const SpriteParams& animation_params);
@@ -92,6 +94,7 @@ public:
 
 	void show_animation(int delta_time);
 	void set_screen_place(float camera_position) override;
+	std::optional<std::pair<int, sf::Vector2f>> set_stand_place(std::pair<int, sf::Vector2f> new_stand_place);
 
 	virtual void process(sf::Time time);
 	virtual void move(sf::Vector2i direction, sf::Time time);
@@ -109,9 +112,6 @@ public:
 	void draw(DrawQueue& queue) const override;
 
 	sf::FloatRect get_unit_rect() const;
-	std::pair<int, sf::Vector2f> get_stand_place() const;
-	std::pair<int, sf::Vector2f> extract_stand_place();
-	void set_stand_place(std::map<int, sf::Vector2f>& places);
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;
@@ -184,7 +184,7 @@ public:
 	constexpr static int hit_frame = 2;
 	constexpr static int splash_count = 3;
 	constexpr static float attack_distance = 150.0f;
-	constexpr static int wait_time = 3500;
+	constexpr static int wait_time = 3500; //3500
 	constexpr static int cost = 150;
 
 	inline const static SpriteParams sprite_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-1, 1},

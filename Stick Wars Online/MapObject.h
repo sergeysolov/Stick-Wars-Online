@@ -57,23 +57,24 @@ public:
 class GoldMine : public MapObject
 {
 public:
+	static constexpr float offset = 70.f;
 	inline const static std::array<sf::Vector2f, 16> goldmine_positions =
-	{ sf::Vector2f{320, 785},
-	{350, 670},
-	{700, 790},
-	{800, 670},
-	{1100, 670},
-	{1400, 690},
-	{1150, 760},
-	{1380, 780},
-	{1950, 700},
-	{2200, 760},
-	{2400, 750},
-	{2600, 690},
-	{2650, 780},
-	{map_frame_width * 3 - 1050, 700},
-	{map_frame_width * 3 - 550, 800},
-	{map_frame_width * 3 - 350, 680}, };
+	{ sf::Vector2f{320, 785 + offset},
+	{350, 670 + offset},
+	{700, 790 + offset},
+	{800, 670 + offset},
+	{1100, 670 + offset},
+	{1400, 690 + offset},
+	{1150, 760 + offset},
+	{1380, 780 + offset},
+	{1950, 700 + offset},
+	{2200, 760 + offset},
+	{2400, 750 + offset},
+	{2600, 690 + offset},
+	{2650, 780 + offset},
+	{map_frame_width * 3 - 1050, 700 + offset},
+	{map_frame_width * 3 - 550, 800 + offset},
+	{map_frame_width * 3 - 350, 680 + offset}, };
 
 	const inline static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 538, 960, { 0.2f, 0.2f }, { {1, 10 }});
 

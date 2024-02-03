@@ -43,7 +43,7 @@ class Player
 {
 	int player_id_;
 
-	int money_ = 30000; //500
+	int money_ = 2500; //500
 	float total_damage_ = 0;
 	int total_kills_ = 0;
 

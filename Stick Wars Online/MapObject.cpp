@@ -1,5 +1,7 @@
 #include "MapObject.h"
 
+#include <iostream>
+
 #include "SoundBufHolder.h"
 
 MapObject::MapObject(const sf::Vector2f spawn_point, texture_ID id, const SpriteParams& animation_params)
@@ -76,7 +78,7 @@ BarbedWire::BarbedWire(const sf::Vector2f position) : MapObject(position, barbed
 
 GoldMine::GoldMine(const sf::Vector2f position) : MapObject(position, goldmine, sprite_params)
 {
-
+	sprite_.setOrigin( static_cast<float>(sprite_.getTextureRect().width) / 2, static_cast<float>(sprite_.getTextureRect().height) / 2);
 }
 
 int GoldMine::mine(int gold_count)
