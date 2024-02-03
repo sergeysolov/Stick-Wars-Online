@@ -25,3 +25,6 @@ To engage in battles together, establish a local network using one of the follow
 
 3. Radmin WPN: Explore the option of using Radmin WPN, a program designed to establish a local network across the internet. This allows you to connect with friends remotely and engage in epic stick figure warfare.
 
+![image](https://github.com/sergeysolov/Stick-Wars-Online/assets/92689529/6af7ea1e-81ec-493f-84ee-e89fa06093c2)
+
+![Screenshot (121)](https://github.com/sergeysolov/Stick-Wars-Online/assets/92689529/3fd569c3-a89a-4b4c-8079-3592180e34a6)
