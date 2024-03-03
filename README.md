@@ -12,7 +12,7 @@ Gameplay:
 The game is written by using SFML library.
 
 Getting Started:
-1. Clone the repository: git clone https://github.com/sergeysolov/Stick-Wars-Online.git
+1. Download the game from: https://disk.yandex.ru/d/nwKlQsW79ixNtA
 2. Launch the game and start your stick figure conquest!
 
 Multiplayer gaming:
