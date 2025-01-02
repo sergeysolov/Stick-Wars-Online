@@ -131,6 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Army.cpp" />
+    <ClCompile Include="Attributes.cpp" />
     <ClCompile Include="ConnectionHandler.cpp" />
     <ClCompile Include="EffectsManager.cpp" />
     <ClCompile Include="Game.cpp">

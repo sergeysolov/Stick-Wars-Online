@@ -22,6 +22,10 @@ void Input::process_events(sf::RenderWindow& window)
 				left_arrow = is_pressed;
 			if (event.key.code == sf::Keyboard::Right)
 				right_arrow = is_pressed;
+			if (event.key.code == sf::Keyboard::Up)
+				up_arrow = is_pressed;
+			if (event.key.code == sf::Keyboard::Down)
+				down_arrow = is_pressed;
 			if (event.key.code == sf::Keyboard::Space)
 				space = is_pressed;
 			if (event.key.code == sf::Keyboard::LShift)
@@ -68,10 +72,46 @@ void Input::process_events(sf::RenderWindow& window)
 
 void Input::write_to_packet(sf::Packet& packet) const
 {
-	packet << a << d << w << s << k << e << f << left_arrow << right_arrow << space << shift << escape << mouse_left << mouse_right << mouse_position.x << mouse_position.y;
+	packet 
+		<< a 
+		<< d 
+		<< w 
+		<< s 
+		<< k 
+		<< e 
+		<< f 
+		<< left_arrow 
+		<< right_arrow 
+		<< up_arrow
+		<< down_arrow
+		<< space 
+		<< shift 
+		<< escape 
+		<< mouse_left 
+		<< mouse_right 
+		<< mouse_position.x 
+		<< mouse_position.y;
 }
 
 void Input::read_from_packet(sf::Packet& packet)
 {
-	packet >> a >> d >> w >> s >> k >> e >> f >> left_arrow >> right_arrow >> space >> shift >> escape >> mouse_left >> mouse_right >> mouse_position.x >> mouse_position.y;
+	packet 
+		>> a 
+		>> d 
+		>> w 
+		>> s 
+		>> k 
+		>> e 
+		>> f 
+		>> left_arrow 
+		>> right_arrow 
+		>> up_arrow
+		>> down_arrow
+		>> space 
+		>> shift 
+		>> escape 
+		>> mouse_left 
+		>> mouse_right 
+		>> mouse_position.x 
+		>> mouse_position.y;
 }

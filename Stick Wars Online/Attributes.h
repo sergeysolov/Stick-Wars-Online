@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "DrawQueue.h"
+#include "TextureHolder.h"
 
 template <typename T>
 class Bar
@@ -86,3 +87,35 @@ void Bar<T>::draw(DrawQueue& queue) const
 	queue.emplace(attributes_layer_0, &total_bar_);
 	queue.emplace(attributes_layer_1, &bar_);
 }
+
+
+class Aim
+{
+protected:
+	sf::Sprite sprite_;
+	sf::Vector2f position_;
+	sf::Vector2f scale_factor_;
+	sf::Vector2f shift_;
+	const sf::Vector2f static_shift_;
+	float angle_ = 0.f;
+
+	void update_sprite_position();
+public:
+	static constexpr float min_bow_angle = -1.5f;
+	static constexpr float max_bow_angle = 0.6f;
+
+	inline static const auto archer_scale = sf::Vector2f{ 0.08f, 0.08f };
+	inline static const auto archer_shift = sf::Vector2f{ 1400, 1400};
+	inline static const auto archer_static_shift = sf::Vector2f{ -300, 400 };
+
+	Aim(sf::Vector2f position, sf::Vector2f scale_factor, sf::Vector2f static_shift, sf::Vector2f shift);
+
+	sf::Vector2f get_direction() const;
+	float get_angle() const;
+
+	void set_direction(const int direction);
+	void move(const sf::Vector2f offset, const float angle);
+	void set_position(sf::Vector2f position);
+	void set_scale(sf::Vector2f scale_factor);
+	void draw(DrawQueue& queue) const;
+};

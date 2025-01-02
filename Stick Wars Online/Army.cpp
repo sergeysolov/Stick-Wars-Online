@@ -80,7 +80,12 @@ void Army::set_screen_place(const float camera_position) const
 		dead_unit->set_screen_place(camera_position);
 }
 
-Army::ArmyReturnType Army::process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, const sf::Time delta_time)
+Army::ArmyReturnType Army::process(
+	const std::vector<Army*>& enemy_armies,
+	const std::shared_ptr<Statue>& enemy_statue,
+	const std::shared_ptr<Unit>& controlled_unit,
+	std::vector<std::shared_ptr<GoldMine>>& gold_mines,
+	const sf::Time delta_time)
 {
 	ArmyReturnType result;
 
@@ -325,7 +330,12 @@ int Army::process_miner(Miner* miner, bool is_controlled_unit, std::vector<std::
 	return gold_count_mined;
 }
 
-std::pair<float, int> Army::process_warrior(const std::shared_ptr<Unit>& unit, const bool is_controlled_unit, const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const sf::Time delta_time)
+std::pair<float, int> Army::process_warrior(
+	const std::shared_ptr<Unit>& unit,
+	const bool is_controlled_unit,
+	const std::vector<Army*>& enemy_armies,
+	const std::shared_ptr<Statue>& enemy_statue,
+	const sf::Time delta_time)
 {
 	auto calculate_dx_dy_between_units = [&](const std::shared_ptr<Unit>& unit_target) -> sf::Vector2f
 		{

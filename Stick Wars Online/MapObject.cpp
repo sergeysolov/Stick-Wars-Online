@@ -1,11 +1,16 @@
 #include "MapObject.h"
-
+#include <numbers>
 #include <iostream>
 
 #include "SoundBufHolder.h"
 
-MapObject::MapObject(const sf::Vector2f spawn_point, texture_ID id, const SpriteParams& animation_params)
-	: x_(spawn_point.x), y_(spawn_point.y), sprite_params_(animation_params)
+MapObject::MapObject(
+	const sf::Vector2f spawn_point,
+	texture_ID id,
+	const SpriteParams& animation_params)
+	: x_(spawn_point.x)
+	, y_(spawn_point.y)
+	, sprite_params_(animation_params)
 {
 	sprite_.setTexture(texture_holder.get_texture(id));
 	sprite_.setTextureRect(sf::IntRect(animation_params.init_position.x, animation_params.init_position.y, animation_params.frame_width, animation_params.frame_height));
@@ -142,7 +147,7 @@ void Statue::draw(DrawQueue& queue) const
 void Statue::set_screen_place(const float camera_position)
 {
 	MapObject::set_screen_place(camera_position);
-	health_bar_.set_position({x_-camera_position, y_});
+	health_bar_.set_position({x_ - camera_position, y_});
 }
 
 bool Statue::is_destroyed() const
@@ -166,3 +171,37 @@ void Statue::update_from_packet(sf::Packet& packet)
 	cause_damage(0);
 }
 
+Arrow::Arrow(
+	const texture_ID id,
+	const sf::Vector2f spawn_point,
+	const sf::Vector2f velocity,
+	const float damage)
+	: MapObject(spawn_point, id, sprite_params)
+	, damage_(damage)
+	, velocity_(velocity)
+{
+	sprite_.setOrigin(
+		static_cast<float>(sprite_.getTextureRect().width) / 2,
+		static_cast<float>(sprite_.getTextureRect().height) / 2);
+	if (velocity_.x < 0) {
+		sprite_.scale({ -1, 1 });
+    }
+}
+
+void Arrow::process(const sf::Time time)
+{
+	if (not is_collided_) {
+		x_ += velocity_.x * time.asSeconds();
+		y_ += velocity_.y * time.asSeconds();
+		
+		velocity_.y += gravity * time.asSeconds();
+
+		const float speed = std::sqrt(velocity_.x * velocity_.x + velocity_.y * velocity_.y);
+		float orientation = std::asin(velocity_.y / speed);
+		if (velocity_.x < 0) {
+			orientation = -orientation - std::numbers::pi_v<float>;
+		}
+		sprite_.setRotation(orientation * 180 / std::numbers::pi_v<float>);
+	}
+
+}

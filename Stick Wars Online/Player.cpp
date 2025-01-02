@@ -3,6 +3,7 @@
 #include "ConnectionHandler.h"
 
 ControlledUnit::ControlledUnit(const std::shared_ptr<Unit>& unit, const int id, const std::string& name)
+	: aim_({0, 0}, Aim::archer_scale, Aim::archer_static_shift, Aim::archer_shift)
 {
 	unit_ = unit;
 	star_sprite_.setTexture(texture_holder.get_texture(star));
@@ -53,8 +54,13 @@ void ControlledUnit::draw(DrawQueue& queue)
 		name_text_.move(name_offset);
 
 		queue.emplace(attributes_layer_1, &name_text_);
-		if(is_me_)
+		if (is_me_) {
 			queue.emplace(attributes_layer_1, &star_sprite_);
+			if (dynamic_cast<Archer*>(unit_.get()) != nullptr) {
+				aim_.set_position(unit_->get_sprite().getPosition());
+				aim_.draw(queue);
+			}
+		}
 	}
 }
 
@@ -72,6 +78,20 @@ void ControlledUnit::set_y_scale()
 		star_sprite_.setScale(star_scale_factors);
 		const sf::Vector2f name_text_scale_factors = { name_scale.x * abs(unit_->get_sprite().getScale().x), name_scale.y * unit_->get_sprite().getScale().y };
 		name_text_.setScale(name_text_scale_factors);
+		const sf::Vector2f aim_scale_factor = { Aim::archer_scale.x * abs(unit_->get_sprite().getScale().x), Aim::archer_scale.y * unit_->get_sprite().getScale().y };
+		aim_.set_scale(aim_scale_factor);
+		aim_.set_direction(unit_->get_direction());
+	}
+}
+
+void ControlledUnit::move_aim(const int direction, const sf::Time delta_time)
+{
+	if (unit_ != nullptr) {
+		if (const auto archer = dynamic_cast<Archer*>(unit_.get()); archer != nullptr) {
+			const float delta_angle = -direction * delta_time.asSeconds() * Archer::bow_rotation_speed;
+			aim_.move({ 0, 0 }, delta_angle);
+			archer->set_bow_angle(aim_.get_angle());
+		}
 	}
 }
 
@@ -133,8 +153,8 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 		if (controlled_unit_->get_unit()->is_alive())
 		{
 			const sf::Vector2i direction = { static_cast<int>(input.d) - static_cast<int>(input.a),
-		static_cast<int>(input.s) - static_cast<int>(input.w) };
-
+											 static_cast<int>(input.s) - static_cast<int>(input.w) };
+			const int aim_direction = static_cast<int>(input.up_arrow) - static_cast<int>(input.down_arrow);
 			if (input.e)
 				controlled_unit_->get_unit()->stand_defend();
 			if (input.space)
@@ -148,6 +168,9 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 			}
 			else if (input.k)
 				controlled_unit_->get_unit()->cause_damage(1E+10, 0, 0);
+			else if (aim_direction != 0) {
+				controlled_unit_->move_aim(aim_direction, delta_time);
+			}
 		}
 		else
 			controlled_unit_->release();
@@ -155,7 +178,7 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 
 	if (input.mouse_left)
 	{
-		for (int i = 0; const auto & unit_buy_button : user_interface_->get_unit_buy_buttons())
+		for (int i = 0; const auto& unit_buy_button : user_interface_->get_unit_buy_buttons())
 		{
 			if (unit_buy_button->check_mouse_pressed(input.mouse_position))
 			{

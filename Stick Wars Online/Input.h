@@ -15,6 +15,8 @@ public:
 	bool f = false;
 	bool left_arrow = false;
 	bool right_arrow = false;
+	bool up_arrow = false;
+	bool down_arrow = false;
 	bool space = false;
 	bool shift = false;
 	bool escape = false;

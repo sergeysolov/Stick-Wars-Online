@@ -26,8 +26,17 @@ struct SpriteParams
 
 	std::vector<AnimationParams> animations;
 
-	SpriteParams(const sf::Vector2i init_position, const int frame_height, const int frame_width, const sf::Vector2f scale, const std::vector<AnimationParams>& animations)
-		: init_position(init_position), frame_height(frame_height), frame_width(frame_width), scale(scale), animations(animations)
+	SpriteParams(
+		const sf::Vector2i init_position,
+		const int frame_height,
+		const int frame_width,
+		const sf::Vector2f scale,
+		const std::vector<AnimationParams>& animations)
+		: init_position(init_position)
+		, frame_height(frame_height)
+		, frame_width(frame_width)
+		, scale(scale)
+		, animations(animations)
 	{}
 };
 

@@ -44,12 +44,21 @@ void TextureHolder::load_textures()
 	append(my_spearton_orange, "Images/units/spearton/spearton_orange.png");
 	append(enemy_spearton, "Images/units/spearton/spearton_enemy.png");
 
+	append(my_archer, "Images/units/archer/archer.png");
+	append(my_archer_blue, "Images/units/archer/archer_blue.png");
+	append(my_archer_orange, "Images/units/archer/archer_orange.png");
+	append(enemy_archer, "Images/units/archer/archer_enemy.png");
+
+	append(arrow, "Images/objects/arrow.png");
+	append(aim, "Images/objects/aim.png");
+
 	append(gold, "Images/attributes/gold.png");
 	append(miner_buy_button, "Images/attributes/miner_buy_button.png");
 	append(stick_man, "Images/attributes/stick_man.png");
 	append(swordsman_buy_button, "Images/attributes/swardsman_buy_button.png");
 	append(magikill_buy_button, "Images/attributes/magikill_buy_button.png");
 	append(spearton_buy_button, "Images/attributes/spearton_buy_button.png");
+	append(archer_buy_button, "Images/attributes/archer_buy_button.png");
 	append(in_attack_button, "Images/attributes/in_attack_button.png");
 	append(defend_button, "Images/attributes/defend_button.png");
 	append(escape_button, "Images/attributes/escape_button.png");

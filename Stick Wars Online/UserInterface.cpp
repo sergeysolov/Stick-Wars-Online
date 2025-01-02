@@ -181,6 +181,9 @@ UserInterface::UserInterface()
 	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Spearton::cost, Spearton::wait_time, sf::Vector2f{ 430, 20 }, sf::Vector2f{ 0.15f, 0.15f },
 		spearton_buy_button));
 
+	unit_buy_buttons_.push_back(std::make_unique<UnitBuyButton>(Archer::cost, Archer::wait_time, sf::Vector2f{ 530, 20 }, sf::Vector2f{ 0.15f, 0.15f },
+		archer_buy_button));
+
 	defend_button_.reset(new Button({ 900.0f, 20.0f }, { 0.15f, 0.15f }, defend_button));
 	defend_button_->highlight(true);
 	in_attack_button_.reset(new Button({ 1000.0f, 20.0f }, { 0.15f, 0.15f }, in_attack_button));
@@ -212,7 +215,7 @@ void UserInterface::update(const Army::ArmyReturnType values, const int stun_tim
 		escape_button_->highlight(true);
 	}
 
-	//process units queue and units spawn
+	// process units queue and units spawn
 	if (unit_queue_id)
 		unit_buy_buttons_[*unit_queue_id]->process(delta_time.asMilliseconds());
 

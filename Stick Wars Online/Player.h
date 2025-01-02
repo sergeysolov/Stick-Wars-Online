@@ -8,6 +8,7 @@ class ControlledUnit
 	std::shared_ptr<Unit> unit_;
 	sf::Sprite star_sprite_;
 	sf::Text name_text_;
+	Aim aim_;
 	bool is_me_ = true;
 
 	inline const static sf::Vector2f star_scale = { 0.08f, 0.08f };
@@ -31,6 +32,8 @@ public:
 	void draw(DrawQueue& queue);
 	void heal() const;
 	void set_y_scale();
+
+	void move_aim(const int direction, const sf::Time delta_time);
 
 	ControlledUnit(const std::shared_ptr<Unit>& unit, int id, const std::string& name);
 

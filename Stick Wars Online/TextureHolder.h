@@ -16,6 +16,7 @@ enum texture_ID
 	swordsman_buy_button,
 	magikill_buy_button,
 	spearton_buy_button,
+	archer_buy_button,
 	stick_man,
 	in_attack_button,
 	defend_button,
@@ -50,6 +51,14 @@ enum texture_ID
 	my_spearton,
 	my_spearton_blue,
 	my_spearton_orange,
+
+	enemy_archer,
+	my_archer,
+	my_archer_blue,
+	my_archer_orange,
+
+	arrow,
+	aim,
 
 	explosion_effect,
 };

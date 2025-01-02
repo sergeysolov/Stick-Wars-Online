@@ -339,6 +339,62 @@ private:
 	int second_attack_start_delay_time_ = 0;
 };
 
+class Archer : public Unit {
+	std::vector<Arrow> emitted_arrows_;
+	int arrows_number_ = arrows_capacity;
+	float bow_angle_ = 0;
+	// void play_hit_sound() const override;
+	constexpr static float initial_arrow_speed = 850.f;
+
+public:
+	constexpr static float bow_rotation_speed = 3.f;
+	constexpr static int id = 4;
+	constexpr static int places_requires = 4;
+	constexpr static float max_health = 150;
+	inline const static sf::Vector2f max_speed = { 0.5f, 0.35f };
+	constexpr static float damage = 60.f;
+	constexpr static int damage_frame = 14;
+	constexpr static int hit_frame = 14;
+	constexpr static int splash_count = 0;
+	constexpr static float attack_distance = 0.0f;
+	constexpr static int wait_time = 1000;
+	constexpr static int cost = 10;
+	constexpr static int attack_cooldown_time = 2000;
+	constexpr static int arrows_capacity = 20;
+	inline const static SpriteParams sprite_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-1, 1},
+		{{40, 20},
+		{30, 21},
+		{45, 21}} };
+	// inline const static SpriteParams sprite_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
+
+	Archer(sf::Vector2f spawn_point, texture_ID texture_id);
+
+	const std::vector<Arrow>& get_emitted_arrows();
+
+	void set_bow_angle(const float angle);
+
+	void draw(DrawQueue& queue) const override;
+	void set_screen_place(float camera_position) override;
+
+	void commit_attack() override;
+	bool can_do_damage() override;
+	void process(sf::Time time) override;
+
+	int get_id() const override;
+	int get_places_requires() const override;
+	float get_max_health() const override;
+	sf::Vector2f get_max_speed() const override;
+	float get_damage(const std::shared_ptr<Unit>& unit_to_damage) const override;
+	int get_damage_frame() const override;
+	int get_splash_count() const override;
+	float get_attack_distance() const override;
+	int get_wait_time() const override;
+	int get_cost() const override;
+
+	//void write_to_packet(sf::Packet& packet) const override;
+	//void update_from_packet(sf::Packet& packet) override;
+};
+
 
 class UnitFactory
 {

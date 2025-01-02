@@ -590,9 +590,9 @@ void Magikill::play_hit_sound() const
 	
 }
 
-Magikill::Magikill(const sf::Vector2f spawn_point, const texture_ID texture_id) :
-	Unit(texture_id, spawn_point, max_health, sprite_params),
-time_left_to_next_attack_bar_(attack_cooldown_time, time_left_to_next_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
+Magikill::Magikill(const sf::Vector2f spawn_point, const texture_ID texture_id)
+	: Unit(texture_id, spawn_point, max_health, sprite_params)
+    , time_left_to_next_attack_bar_(attack_cooldown_time, time_left_to_next_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
 {
 
 }
@@ -764,8 +764,9 @@ void Spearton::set_screen_place(float camera_position)
 	time_left_to_second_attack_bar_.set_position({ x_ - camera_position, y_ });
 }
 
-Spearton::Spearton(sf::Vector2f spawn_point, texture_ID texture_id) : Unit(texture_id, spawn_point, max_health, sprite_params),
-                                                                      time_left_to_second_attack_bar_(second_attack_cooldown_time, time_left_to_second_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
+Spearton::Spearton(sf::Vector2f spawn_point, texture_ID texture_id)
+	: Unit(texture_id, spawn_point, max_health, sprite_params)
+	, time_left_to_second_attack_bar_(second_attack_cooldown_time, time_left_to_second_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
 {
 
 }
@@ -942,6 +943,37 @@ void Spearton::update_from_packet(sf::Packet& packet)
 	Unit::update_from_packet(packet);
 }
 
+Archer::Archer(sf::Vector2f spawn_point, texture_ID texture_id)
+	: Unit(texture_id, spawn_point, max_health, sprite_params)
+{
+}
+
+const std::vector<Arrow>& Archer::get_emitted_arrows()
+{
+	return emitted_arrows_;
+}
+
+void Archer::set_bow_angle(const float angle)
+{
+	bow_angle_ = angle;
+}
+
+void Archer::draw(DrawQueue& queue) const
+{
+	Unit::draw(queue);
+	for (const auto& arrow : emitted_arrows_) {
+		arrow.draw(queue);
+	}
+}
+
+void Archer::set_screen_place(float camera_position)
+{
+	Unit::set_screen_place(camera_position);
+	for (auto& arrow : emitted_arrows_) {
+		arrow.set_screen_place(camera_position);
+	}
+}
+
 template <typename T>
 void UnitFactory::register_unit(const int unit_id, texture_ID base_texture_id)
 {
@@ -964,8 +996,89 @@ void UnitFactory::init()
 		register_unit<Swordsman>(Swordsman::id, my_swordsman);
 		register_unit<Spearton>(Spearton::id, my_spearton);
 		register_unit<Magikill>(Magikill::id, my_magikill);
+		register_unit<Archer>(Archer::id, my_archer);
 	}
 }
 
+void Archer::commit_attack()
+{
+	static constexpr float arrow_offset = 70.f;
 
+	if (arrows_number_ > 0)
+	{
+		Unit::commit_attack();
 
+		if (animation_type_ == attack_animation and current_frame_ == damage_frame) {
+			const float scale_factor_arrow_offset = scale_y_param_a * sprite_.getPosition().y + scale_y_param_b;
+			const auto aim_direction = sf::Vector2f{ std::cos(bow_angle_), std::sin(bow_angle_) };
+			emitted_arrows_.emplace_back(
+				arrow,
+				sf::Vector2f{ x_, y_ + arrow_offset * scale_factor_arrow_offset },
+				sf::Vector2f{ prev_direction_ * initial_arrow_speed * aim_direction.x, initial_arrow_speed * aim_direction.y }, damage);
+			arrows_number_--;
+		}
+	}
+}
+
+bool Archer::can_do_damage()
+{
+	return false;
+}
+
+void Archer::process(sf::Time time)
+{
+	Unit::process(time);
+	for (auto& arrow : emitted_arrows_) {
+		arrow.process(time);
+	}
+}
+
+int Archer::get_id() const
+{
+	return id;
+}
+
+int Archer::get_places_requires() const
+{
+	return places_requires;
+}
+
+float Archer::get_max_health() const
+{
+	return max_health;
+}
+
+sf::Vector2f Archer::get_max_speed() const
+{
+	return max_speed;
+}
+
+float Archer::get_damage(const std::shared_ptr<Unit>& unit_to_damage) const
+{
+	return damage;
+}
+
+int Archer::get_damage_frame() const
+{
+	return damage_frame;
+}
+
+int Archer::get_splash_count() const
+{
+	return splash_count;
+}
+
+float Archer::get_attack_distance() const
+{
+	return attack_distance;
+}
+
+int Archer::get_wait_time() const
+{
+	return wait_time;
+}
+
+int Archer::get_cost() const
+{
+	return cost;
+}
