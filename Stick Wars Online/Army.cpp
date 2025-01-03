@@ -122,8 +122,9 @@ Army::ArmyReturnType Army::process(
 		}
 
 		// Process unit's behaviour
-		if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr)
+		if (const auto miner = dynamic_cast<Miner*>(unit.get()); miner != nullptr) {
 			result.gold_count += process_miner(miner, is_controlled_unit, gold_mines, delta_time);
+		}
 		else
 		{
 			auto [damage, kills] = process_warrior(unit, is_controlled_unit, enemy_armies, enemy_statue, delta_time);
@@ -337,6 +338,10 @@ std::pair<float, int> Army::process_warrior(
 	const std::shared_ptr<Statue>& enemy_statue,
 	const sf::Time delta_time)
 {
+	if (auto archer = dynamic_cast<Archer*>(unit.get()); archer != nullptr) {
+		process_arrows(archer->get_emitted_arrows(), is_controlled_unit, enemy_armies, enemy_statue, delta_time);
+	}
+
 	auto calculate_dx_dy_between_units = [&](const std::shared_ptr<Unit>& unit_target) -> sf::Vector2f
 		{
 			const float dx = unit_target->get_coords().x - unit->get_coords().x;
@@ -345,7 +350,7 @@ std::pair<float, int> Army::process_warrior(
 		};
 
 	using unit_iterator = decltype(enemy_armies[0]->get_units().end());
-	std::priority_queue < std::pair<float, unit_iterator>, std::vector < std::pair<float, unit_iterator>>, std::greater<>> enemies_by_distance;
+	std::priority_queue<std::pair<float, unit_iterator>, std::vector<std::pair<float, unit_iterator>>, std::greater<>> enemies_by_distance;
 
 	for (const auto enemy_army : enemy_armies)
 	{
@@ -555,6 +560,44 @@ std::pair<float, int> Army::process_warrior(
 			unit->target_unit.reset();
 	}
 	return res;
+}
+
+std::pair<float, int> Army::process_arrows(
+	::std::vector<Arrow>& arrows,
+	bool is_controled_unit,
+	const std::vector<Army*>& enemy_armies,
+	const std::shared_ptr<Statue>& enemy_statue,
+	sf::Time delta_time)
+{
+	float damage = 0.f;
+	int kills = 0;
+
+	for (auto& arrow : arrows) {
+		if (arrow.is_collided()) {
+			continue;
+		}
+
+		constexpr auto check_unit_in_line_with_arrow = [](Unit& unit, Arrow& arrow) {
+				constexpr auto room = 60.f;
+				const auto up_bound = arrow.get_initial_y() - 130 * unit.get_sprite().getScale().y;
+				const auto down_bound = arrow.get_initial_y() - 40 * unit.get_sprite().getScale().y;
+				// std::cout << "arrow_y: " << arrow.get_coords().y << " unit_y: " << unit.get_coords().y << " up_bound: " << up_bound << " down_bound:" << down_bound << '\n';
+				return unit.get_coords().y > up_bound and unit.get_coords().y < down_bound;
+			};
+
+		for (const auto& army : enemy_armies) {
+			for (auto& enemy_unit : army->get_units()) {
+				if (enemy_unit->get_unit_rect().intersects(arrow.get_sprite().getGlobalBounds()) and
+					check_unit_in_line_with_arrow(*enemy_unit, arrow) and
+					arrow.add_damaged_unit(enemy_unit.get()) and 
+					arrow.get_damaged_units_number_() <= Archer::arrow_damage_max_number) {
+					const float damage = arrow.get_damage() * (is_controled_unit ? ControlledUnit::damage_boost_factor : 1.f);
+					return enemy_unit->cause_damage(damage, 0, 0);
+				}
+			}
+		}
+	}
+	return { 0, 0 };
 }
 
 SpawnUnitQueue::SpawnUnitQueue(Army& army) : army_(army)

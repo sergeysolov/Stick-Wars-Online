@@ -2,12 +2,13 @@
 #include <SFML/Graphics.hpp>
 #include "DrawQueue.h"
 #include "TextureHolder.h"
+#include <optional>
 
 template <typename T>
 class Bar
 {
 protected:
-	const T max_value_;
+	T max_value_;
 	const T& value_;
 	const float max_size_;
 	const sf::Vector2f shift_;
@@ -32,6 +33,7 @@ public:
 	void set_position(sf::Vector2f position);
 	void set_scale(sf::Vector2f scale_factor);
 	void draw(DrawQueue& queue) const;
+	void set_max_value(T new_max_value);
 };
 
 
@@ -87,6 +89,30 @@ void Bar<T>::draw(DrawQueue& queue) const
 	queue.emplace(attributes_layer_0, &total_bar_);
 	queue.emplace(attributes_layer_1, &bar_);
 }
+
+template<typename T>
+inline void Bar<T>::set_max_value(T new_max_value)
+{
+	max_value_ = new_max_value;
+}
+
+class Counter {
+protected:
+	const int& value_;
+	const std::optional<int> max_value_;
+	const sf::Vector2f shift_;
+	sf::Text text_;
+
+public:
+	const static inline sf::Vector2f archer_shift = { -70.f, 0.f };
+
+	Counter(const int& value, const std::optional<int> max_value, const sf::Vector2f shift);
+	void update();
+	void move(const sf::Vector2f offset);
+	void set_position(const sf::Vector2f position);
+	void set_scale(const sf::Vector2f scale_factor);
+	void draw(DrawQueue& queue) const;
+};
 
 
 class Aim

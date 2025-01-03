@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <unordered_set>
 #include "TextureHolder.h"
 #include "Attributes.h"
 #include <SFML/Graphics.hpp>
@@ -16,6 +17,7 @@ constexpr float y_map_min = 530;
 constexpr float y_map_max = 700;
 
 constexpr float gravity = 300.0f;
+
 
 class MapObject
 {
@@ -124,15 +126,28 @@ public:
 	Arrow(const texture_ID id,
 		  const sf::Vector2f spawn_point,
 	      const sf::Vector2f velocity_,
-		  const float damage);
+		  const float damage,
+		  const float ground_level);
+
+	bool is_collided() const;
+	float get_damage() const;
+	float get_initial_y() const;
+	bool add_damaged_unit(void* unit);
+	int get_damaged_units_number_() const;
+
 
 	void process(const sf::Time time);
+	void draw(DrawQueue& queue) const override;
 	// void write_to_packet(sf::Packet& packet) const override;
 	// void update_from_packet(sf::Packet& packet) override;
 
+
 private:
+	const float initial_y_;
 	bool is_collided_ = false;
+	const float ground_level_;
 	const float damage_;
 	sf::Vector2f velocity_ = { 0.f, 0.f };
 
+	std::unordered_set<void*> damaged_units_;
 };

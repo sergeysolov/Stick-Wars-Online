@@ -332,6 +332,7 @@ public:
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;
+
 private:
 	damage_type current_damage_type_ = common;
 	int time_left_to_second_attack_ = second_attack_cooldown_time;
@@ -342,26 +343,35 @@ private:
 class Archer : public Unit {
 	std::vector<Arrow> emitted_arrows_;
 	int arrows_number_ = arrows_capacity;
+	Counter arrows_counter_;
+	int time_left_to_next_attack_ = 0;
+	Bar<int> time_left_to_next_attack_bar_;
 	float bow_angle_ = 0;
 	// void play_hit_sound() const override;
 	constexpr static float initial_arrow_speed = 850.f;
 
+	float set_y_scale() override;
+
 public:
-	constexpr static float bow_rotation_speed = 3.f;
+	constexpr static float bow_rotation_speed = 1.5f;
 	constexpr static int id = 4;
 	constexpr static int places_requires = 4;
 	constexpr static float max_health = 150;
 	inline const static sf::Vector2f max_speed = { 0.5f, 0.35f };
 	constexpr static float damage = 60.f;
-	constexpr static int damage_frame = 14;
+	constexpr static int damage_frame = 12;
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 0;
-	constexpr static float attack_distance = 0.0f;
+	constexpr static float attack_distance = 500.f;
 	constexpr static int wait_time = 1000;
 	constexpr static int cost = 10;
 	constexpr static int attack_cooldown_time = 2000;
+	constexpr static int arrow_damage_max_number = 4;
 	constexpr static int arrows_capacity = 20;
-	inline const static SpriteParams sprite_params = { {-50 / 2, 100 / 2}, 1080 / 4, 1920 / 4, {-1, 1},
+	static constexpr float arrow_offset = 70.f;
+	constexpr static int fast_reload_time = 1500;
+	constexpr static int slow_reload_time = 15000;
+	inline const static SpriteParams sprite_params = { {-40, 100 / 2}, 1080 / 4, 1920 / 4, {-1, 1},
 		{{40, 20},
 		{30, 21},
 		{45, 21}} };
@@ -369,7 +379,7 @@ public:
 
 	Archer(sf::Vector2f spawn_point, texture_ID texture_id);
 
-	const std::vector<Arrow>& get_emitted_arrows();
+	std::vector<Arrow>& get_emitted_arrows();
 
 	void set_bow_angle(const float angle);
 
@@ -377,6 +387,7 @@ public:
 	void set_screen_place(float camera_position) override;
 
 	void commit_attack() override;
+	void stand_defend() override;
 	bool can_do_damage() override;
 	void process(sf::Time time) override;
 

@@ -175,17 +175,17 @@ Arrow::Arrow(
 	const texture_ID id,
 	const sf::Vector2f spawn_point,
 	const sf::Vector2f velocity,
-	const float damage)
+	const float damage,
+	const float ground_level)
 	: MapObject(spawn_point, id, sprite_params)
+	, initial_y_(y_)
 	, damage_(damage)
 	, velocity_(velocity)
+	, ground_level_(ground_level)
 {
 	sprite_.setOrigin(
 		static_cast<float>(sprite_.getTextureRect().width) / 2,
 		static_cast<float>(sprite_.getTextureRect().height) / 2);
-	if (velocity_.x < 0) {
-		sprite_.scale({ -1, 1 });
-    }
 }
 
 void Arrow::process(const sf::Time time)
@@ -202,6 +202,45 @@ void Arrow::process(const sf::Time time)
 			orientation = -orientation - std::numbers::pi_v<float>;
 		}
 		sprite_.setRotation(orientation * 180 / std::numbers::pi_v<float>);
+
+		if (y_ + sprite_.getGlobalBounds().getSize().y > ground_level_) {
+			is_collided_ = true;
+		}
 	}
 
+}
+
+void Arrow::draw(DrawQueue& queue) const
+{
+	queue.emplace(arrows, &sprite_);
+}
+
+bool Arrow::is_collided() const
+{
+	return is_collided_;
+}
+
+
+float Arrow::get_damage() const
+{
+	return damage_;
+}
+
+float Arrow::get_initial_y() const
+{
+	return initial_y_;
+}
+
+bool Arrow::add_damaged_unit(void* unit)
+{
+	if (damaged_units_.contains(unit)) {
+		return false;
+	}
+	damaged_units_.insert(unit);
+	return true;
+}
+
+int Arrow::get_damaged_units_number_() const
+{
+	return static_cast<int>(damaged_units_.size());
 }

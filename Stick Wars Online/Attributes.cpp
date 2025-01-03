@@ -61,3 +61,40 @@ void Aim::draw(DrawQueue& queue) const
 {
 	queue.emplace(attributes_layer_0, &sprite_);
 }
+
+Counter::Counter(const int& value, const std::optional<int> max_value, const sf::Vector2f shift)
+	: value_(value)
+	, max_value_(max_value)
+	, shift_(shift)
+{
+	text_.setFont(text_font);
+}
+
+void Counter::update()
+{
+	std::string text = std::to_string(value_);
+	if (max_value_.has_value()) {
+		text += "/" + std::to_string(max_value_.value());
+	}
+	text_.setString(text);
+}
+
+void Counter::move(const sf::Vector2f offset)
+{
+	text_.move(offset);
+}
+
+void Counter::set_position(const sf::Vector2f position)
+{
+	text_.setPosition({ position.x + shift_.x * text_.getScale().x, position.y + shift_.y * text_.getScale().y });
+}
+
+void Counter::set_scale(const sf::Vector2f scale_factor)
+{
+	text_.setScale(scale_factor);
+}
+
+void Counter::draw(DrawQueue& queue) const
+{
+	queue.emplace(attributes_layer_1, &text_);
+}

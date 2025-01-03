@@ -168,7 +168,7 @@ void Player::handle_input(const Input& input, const int mouse_offset, const sf::
 			}
 			else if (input.k)
 				controlled_unit_->get_unit()->cause_damage(1E+10, 0, 0);
-			else if (aim_direction != 0) {
+			if (aim_direction != 0) {
 				controlled_unit_->move_aim(aim_direction, delta_time);
 			}
 		}

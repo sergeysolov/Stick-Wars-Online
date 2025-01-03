@@ -7,6 +7,7 @@ enum DrawPriority
 	background = 0,
 	map_object = 10000,
 	dead_units = 20000,
+	arrows = 25000,
 	alive_units = 30000,
 	attributes_layer_0 = 40000,
 	attributes_layer_1 = 50000,
