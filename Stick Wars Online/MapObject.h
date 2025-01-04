@@ -16,7 +16,7 @@ constexpr float x_map_max = map_frame_width * 3 + 200;
 constexpr float y_map_min = 530;
 constexpr float y_map_max = 700;
 
-constexpr float gravity = 300.0f;
+constexpr float gravity = 400.0f;
 
 
 class MapObject
@@ -123,6 +123,12 @@ public:
 class Arrow : public MapObject {
 	inline const static SpriteParams sprite_params = { { 0, 0 }, 215, 1772, { 0.05f, 0.05f }, {} };
 public:
+	static constexpr float statue_damage_penalty_factor = 1.f / 3.f;
+
+	Arrow& operator=(Arrow&) = default;
+
+	Arrow();
+
 	Arrow(const texture_ID id,
 		  const sf::Vector2f spawn_point,
 	      const sf::Vector2f velocity_,
@@ -138,9 +144,9 @@ public:
 
 	void process(const sf::Time time);
 	void draw(DrawQueue& queue) const override;
-	// void write_to_packet(sf::Packet& packet) const override;
-	// void update_from_packet(sf::Packet& packet) override;
 
+	void write_to_packet(sf::Packet& packet) const override;
+	void update_from_packet(sf::Packet& packet) override;
 
 private:
 	const float initial_y_;

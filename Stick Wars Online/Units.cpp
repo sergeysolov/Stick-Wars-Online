@@ -947,14 +947,18 @@ float Archer::set_y_scale()
 {
 	const auto scale_factor = Unit::set_y_scale();
 	time_left_to_next_attack_bar_.set_scale({ scale_factor, scale_factor });
-	arrows_counter_.set_scale({ scale_factor, scale_factor });
 	return scale_factor;
 
 }
 
+float Archer::calculate_angle_for_target(const float distance)
+{
+	const float angle = std::asin(distance * gravity / std::pow(Archer::initial_arrow_speed, 2.f)) / 2.f;
+	return angle;
+}
+
 Archer::Archer(sf::Vector2f spawn_point, texture_ID texture_id)
 	: Unit(texture_id, spawn_point, max_health, sprite_params)
-	, arrows_counter_(arrows_number_, {}, Counter::archer_shift)
 	, time_left_to_next_attack_bar_(fast_reload_time, time_left_to_next_attack_, spawn_point, Bar<int>::unit_bar_size, Bar<int>::unit_second_attribute_bar_offset, Bar<int>::magikill_cooldown_time_bar_color)
 {
 }
@@ -962,6 +966,11 @@ Archer::Archer(sf::Vector2f spawn_point, texture_ID texture_id)
 std::vector<Arrow>& Archer::get_emitted_arrows()
 {
 	return emitted_arrows_;
+}
+
+int Archer::get_arrows_number() const
+{
+	return arrows_number_;
 }
 
 void Archer::set_bow_angle(const float angle)
@@ -972,14 +981,10 @@ void Archer::set_bow_angle(const float angle)
 void Archer::draw(DrawQueue& queue) const
 {
 	Unit::draw(queue);
-	for (const auto& arrow : emitted_arrows_) {
-		arrow.draw(queue);
-	}
 	if (is_alive()) {
 		if (time_left_to_next_attack_ > 0) {
 			time_left_to_next_attack_bar_.draw(queue);
 		}
-		arrows_counter_.draw(queue);
 	}
 }
 
@@ -987,10 +992,6 @@ void Archer::set_screen_place(float camera_position)
 {
 	Unit::set_screen_place(camera_position);
 	time_left_to_next_attack_bar_.set_position({ x_ - camera_position, y_ });
-	arrows_counter_.set_position({ x_ - camera_position, y_ });
-	for (auto& arrow : emitted_arrows_) {
-		arrow.set_screen_place(camera_position);
-	}
 }
 
 template <typename T>
@@ -1065,15 +1066,11 @@ bool Archer::can_do_damage()
 void Archer::process(sf::Time time)
 {
 	Unit::process(time);
-	for (auto& arrow : emitted_arrows_) {
-		arrow.process(time);
-	}
 	time_left_to_next_attack_ = std::max(0, time_left_to_next_attack_ - static_cast<int>(time.asMilliseconds()));
 	time_left_to_next_attack_bar_.update();
 	if (time_left_to_next_attack_ == 0 and arrows_number_ == 0) {
 		arrows_number_ = arrows_capacity;
 	}
-	arrows_counter_.update();
 }
 
 int Archer::get_id() const
@@ -1124,4 +1121,24 @@ int Archer::get_wait_time() const
 int Archer::get_cost() const
 {
 	return cost;
+}
+
+void Archer::write_to_packet(sf::Packet& packet) const
+{
+	packet << id << time_left_to_next_attack_ << arrows_number_ << bow_angle_;
+	Unit::write_to_packet(packet);
+}
+
+void Archer::update_from_packet(sf::Packet& packet)
+{
+	packet >> time_left_to_next_attack_ >> arrows_number_ >> bow_angle_;
+	time_left_to_next_attack_bar_.update();
+	Unit::update_from_packet(packet);
+	if (arrows_number_ == 0) {
+		time_left_to_next_attack_bar_.set_max_value(slow_reload_time);
+	}
+	else {
+		time_left_to_next_attack_bar_.set_max_value(fast_reload_time);
+	}
+
 }

@@ -343,16 +343,16 @@ private:
 class Archer : public Unit {
 	std::vector<Arrow> emitted_arrows_;
 	int arrows_number_ = arrows_capacity;
-	Counter arrows_counter_;
 	int time_left_to_next_attack_ = 0;
 	Bar<int> time_left_to_next_attack_bar_;
 	float bow_angle_ = 0;
 	// void play_hit_sound() const override;
-	constexpr static float initial_arrow_speed = 850.f;
 
 	float set_y_scale() override;
 
 public:
+	static float calculate_angle_for_target(const float distance);
+
 	constexpr static float bow_rotation_speed = 1.5f;
 	constexpr static int id = 4;
 	constexpr static int places_requires = 4;
@@ -362,12 +362,13 @@ public:
 	constexpr static int damage_frame = 12;
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 0;
-	constexpr static float attack_distance = 500.f;
-	constexpr static int wait_time = 1000;
-	constexpr static int cost = 10;
+	constexpr static float attack_distance = 2000.f;
+	constexpr static int wait_time = 10000;
+	constexpr static int cost = 1200;
 	constexpr static int attack_cooldown_time = 2000;
 	constexpr static int arrow_damage_max_number = 4;
 	constexpr static int arrows_capacity = 20;
+	constexpr static float initial_arrow_speed = 1150.f;
 	static constexpr float arrow_offset = 70.f;
 	constexpr static int fast_reload_time = 1500;
 	constexpr static int slow_reload_time = 15000;
@@ -380,6 +381,7 @@ public:
 	Archer(sf::Vector2f spawn_point, texture_ID texture_id);
 
 	std::vector<Arrow>& get_emitted_arrows();
+	int get_arrows_number() const;
 
 	void set_bow_angle(const float angle);
 
@@ -402,8 +404,8 @@ public:
 	int get_wait_time() const override;
 	int get_cost() const override;
 
-	//void write_to_packet(sf::Packet& packet) const override;
-	//void update_from_packet(sf::Packet& packet) override;
+	void write_to_packet(sf::Packet& packet) const override;
+	void update_from_packet(sf::Packet& packet) override;
 };
 
 

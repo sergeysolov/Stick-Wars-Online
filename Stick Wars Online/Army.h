@@ -15,6 +15,7 @@ class Army
 	constexpr static int max_soldiers_in_row = 5;
 	constexpr static float row_width = 80;
 	constexpr static int dead_unit_time_to_delete = 30000;
+	constexpr static int collided_arrow_time_to_delete = 20000;
 	
 public:
 	enum ArmyTarget
@@ -37,7 +38,7 @@ public:
 	inline static float prev_hit_points_of_enemy_statue;
 	constexpr static std::array<float, 3> defend_lines = { 900, 1500, 2300 };
 	constexpr static float enemy_defend_line = map_frame_width * 3 - 600;
-	constexpr static int size_per_one_player = 40;
+	constexpr static int size_per_one_player = 50;
 
 	static void play_in_attack_music(bool play=true);
 
@@ -53,7 +54,7 @@ public:
 	[[nodiscard]] int get_max_size() const;
 
 	void draw(DrawQueue& queue) const;
-	void set_screen_place(float camera_position) const;
+	void set_screen_place(float camera_position);
 
 	ArmyReturnType process(const std::vector<Army*>& enemy_armies, const std::shared_ptr<Statue>& enemy_statue, const std::shared_ptr<Unit>& controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time);
 	void process_client_locally(sf::Time delta_time, const std::shared_ptr<Unit>& controlled_unit) const;
@@ -79,7 +80,7 @@ protected:
 		sf::Time delta_time);
 
 	std::pair<float, int> process_arrows(
-		::std::vector<Arrow>& arrows,
+		std::vector<Arrow>& arrows,
 		bool is_controled_unit,
 		const std::vector<Army*>& enemy_armies,
 		const std::shared_ptr<Statue>& enemy_statue,
@@ -95,8 +96,13 @@ protected:
 
 	std::vector<std::shared_ptr<Unit>> dead_units_;
 	std::vector<int> dead_units_remains_times_;
+
+	std::vector<Arrow> arrows_;
+
+	std::unordered_map<Arrow*, std::pair<std::vector<Arrow>::iterator, int>> collied_arrows_remains_times_;
 };
 
+bool check_unit_in_line_with_arrow(Unit& unit, Arrow& arrow);
 
 class SpawnUnitQueue
 {

@@ -33,6 +33,11 @@ float Aim::get_angle() const
 	return angle_;
 }
 
+void Aim::set_angle(const float angle)
+{
+	angle_ = angle;
+}
+
 void Aim::set_direction(const int direction)
 {
 	shift_.x = abs(shift_.x) * direction;
@@ -62,12 +67,12 @@ void Aim::draw(DrawQueue& queue) const
 	queue.emplace(attributes_layer_0, &sprite_);
 }
 
-Counter::Counter(const int& value, const std::optional<int> max_value, const sf::Vector2f shift)
-	: value_(value)
-	, max_value_(max_value)
+Counter::Counter(const std::optional<int> max_value, const sf::Vector2f shift)
+	: max_value_(max_value)
 	, shift_(shift)
 {
 	text_.setFont(text_font);
+	text_.setCharacterSize(20);
 }
 
 void Counter::update()
@@ -77,6 +82,12 @@ void Counter::update()
 		text += "/" + std::to_string(max_value_.value());
 	}
 	text_.setString(text);
+}
+
+void Counter::set_value(const int value)
+{
+	value_ = value;
+	update();
 }
 
 void Counter::move(const sf::Vector2f offset)

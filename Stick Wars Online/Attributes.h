@@ -98,16 +98,17 @@ inline void Bar<T>::set_max_value(T new_max_value)
 
 class Counter {
 protected:
-	const int& value_;
+	int value_;
 	const std::optional<int> max_value_;
 	const sf::Vector2f shift_;
 	sf::Text text_;
 
-public:
-	const static inline sf::Vector2f archer_shift = { -70.f, 0.f };
-
-	Counter(const int& value, const std::optional<int> max_value, const sf::Vector2f shift);
 	void update();
+public:
+	const static inline sf::Vector2f archer_shift = { -55.f, 0.f };
+
+	Counter(const std::optional<int> max_value, const sf::Vector2f shift);
+	void set_value(const int value);
 	void move(const sf::Vector2f offset);
 	void set_position(const sf::Vector2f position);
 	void set_scale(const sf::Vector2f scale_factor);
@@ -138,6 +139,7 @@ public:
 
 	sf::Vector2f get_direction() const;
 	float get_angle() const;
+	void set_angle(const float angle);
 
 	void set_direction(const int direction);
 	void move(const sf::Vector2f offset, const float angle);

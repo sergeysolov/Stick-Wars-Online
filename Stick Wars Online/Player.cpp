@@ -4,6 +4,7 @@
 
 ControlledUnit::ControlledUnit(const std::shared_ptr<Unit>& unit, const int id, const std::string& name)
 	: aim_({0, 0}, Aim::archer_scale, Aim::archer_static_shift, Aim::archer_shift)
+	, counter_({}, Counter::archer_shift)
 {
 	unit_ = unit;
 	star_sprite_.setTexture(texture_holder.get_texture(star));
@@ -38,6 +39,16 @@ int ControlledUnit::get_stun_time_left() const
 	return 0;
 }
 
+float ControlledUnit::get_aim_angle() const
+{
+	return aim_.get_angle();
+}
+
+void ControlledUnit::set_aim_angle(const float angle)
+{
+	aim_.set_angle(angle);
+}
+
 void ControlledUnit::release()
 {
 	unit_ = nullptr;
@@ -56,9 +67,12 @@ void ControlledUnit::draw(DrawQueue& queue)
 		queue.emplace(attributes_layer_1, &name_text_);
 		if (is_me_) {
 			queue.emplace(attributes_layer_1, &star_sprite_);
-			if (dynamic_cast<Archer*>(unit_.get()) != nullptr) {
+			if (const auto archer = dynamic_cast<Archer*>(unit_.get()); archer != nullptr) {
 				aim_.set_position(unit_->get_sprite().getPosition());
 				aim_.draw(queue);
+				counter_.set_position(unit_->get_sprite().getPosition());
+				counter_.set_value(archer->get_arrows_number());
+				counter_.draw(queue);
 			}
 		}
 	}
@@ -81,6 +95,7 @@ void ControlledUnit::set_y_scale()
 		const sf::Vector2f aim_scale_factor = { Aim::archer_scale.x * abs(unit_->get_sprite().getScale().x), Aim::archer_scale.y * unit_->get_sprite().getScale().y };
 		aim_.set_scale(aim_scale_factor);
 		aim_.set_direction(unit_->get_direction());
+		counter_.set_scale({ abs(unit_->get_sprite().getScale().x), unit_->get_sprite().getScale().y });
 	}
 }
 
@@ -252,7 +267,7 @@ size_t Player::get_id() const
 
 void Player::write_to_packet(sf::Packet& packet) const
 {
-	packet << player_id_ << money_ << total_damage_ << total_kills_ << controlled_unit_->get_stun_time_left() << spawn_queue_->get_army_count();
+	packet << player_id_ << money_ << total_damage_ << total_kills_ << controlled_unit_->get_stun_time_left() << controlled_unit_->get_aim_angle() << spawn_queue_->get_army_count();
 	army_->write_to_packet(packet);
 	if (controlled_unit_->get_unit() != nullptr)
 	{
@@ -269,12 +284,14 @@ void Player::update_from_packet(sf::Packet& packet)
 {
 	int army_count;
 	int controlled_unit_stun_time_left;
-	packet >> player_id_ >> money_ >> total_damage_ >> total_kills_ >> controlled_unit_stun_time_left >> army_count;
+	float aim_angle;
+	packet >> player_id_ >> money_ >> total_damage_ >> total_kills_ >> controlled_unit_stun_time_left >> aim_angle >> army_count;
 
 	private_effect_manager.set_active(controlled_unit_->get_is_me());
 	private_sound_manager.set_active(controlled_unit_->get_is_me());
 
 	controlled_unit_->set_y_scale();
+	controlled_unit_->set_aim_angle(aim_angle);
 
 	army_->update_from_packet(packet);
 	int controlled_unit_idx;

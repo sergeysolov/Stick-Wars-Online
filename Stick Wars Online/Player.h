@@ -8,6 +8,7 @@ class ControlledUnit
 	std::shared_ptr<Unit> unit_;
 	sf::Sprite star_sprite_;
 	sf::Text name_text_;
+	Counter counter_;
 	Aim aim_;
 	bool is_me_ = true;
 
@@ -27,6 +28,8 @@ public:
 	[[nodiscard]] std::shared_ptr<Unit> get_unit() const;
 	[[nodiscard]] bool get_is_me() const;
 	int get_stun_time_left() const;
+	float get_aim_angle() const;
+	void set_aim_angle(const float angle);
 
 	void release();
 	void draw(DrawQueue& queue);

@@ -171,6 +171,18 @@ void Statue::update_from_packet(sf::Packet& packet)
 	cause_damage(0);
 }
 
+Arrow::Arrow()
+	: MapObject({0, 0}, texture_ID::arrow, sprite_params)
+	, initial_y_(0.f)
+	, damage_(0.f)
+	, velocity_({ 0.f, 0.f})
+	, ground_level_(100000.f)
+{
+	sprite_.setOrigin(
+		static_cast<float>(sprite_.getTextureRect().width) / 2,
+		static_cast<float>(sprite_.getTextureRect().height) / 2);
+}
+
 Arrow::Arrow(
 	const texture_ID id,
 	const sf::Vector2f spawn_point,
@@ -193,7 +205,7 @@ void Arrow::process(const sf::Time time)
 	if (not is_collided_) {
 		x_ += velocity_.x * time.asSeconds();
 		y_ += velocity_.y * time.asSeconds();
-		
+
 		velocity_.y += gravity * time.asSeconds();
 
 		const float speed = std::sqrt(velocity_.x * velocity_.x + velocity_.y * velocity_.y);
@@ -207,12 +219,25 @@ void Arrow::process(const sf::Time time)
 			is_collided_ = true;
 		}
 	}
-
 }
 
 void Arrow::draw(DrawQueue& queue) const
 {
 	queue.emplace(arrows, &sprite_);
+}
+
+void Arrow::write_to_packet(sf::Packet& packet) const
+{
+	packet << x_ << y_ << velocity_.x << velocity_.y << sprite_.getScale().x << sprite_.getScale().y;
+}
+
+void Arrow::update_from_packet(sf::Packet& packet)
+{
+	sf::Vector2f srite_scale;
+	packet >> x_ >> y_ >> velocity_.x >> velocity_.y >> srite_scale.x >> srite_scale.y;
+	sprite_.setPosition({ x_, y_ });
+	sprite_.setScale(srite_scale);
+	process(sf::milliseconds(0));
 }
 
 bool Arrow::is_collided() const
