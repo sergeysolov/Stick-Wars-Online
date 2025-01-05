@@ -69,10 +69,6 @@ void Army::draw(DrawQueue& queue) const
 
 	for (const auto& unit : units_)
 		unit->draw(queue);
-
-	for (const auto& arrow : arrows_) {
-		arrow.draw(queue);
-	}
 }
 
 void Army::set_screen_place(const float camera_position)
@@ -82,10 +78,6 @@ void Army::set_screen_place(const float camera_position)
 
 	for (const auto& dead_unit : dead_units_)
 		dead_unit->set_screen_place(camera_position);
-
-	for (auto& arrow : arrows_) {
-		arrow.set_screen_place(camera_position);
-	}
 }
 
 Army::ArmyReturnType Army::process(
@@ -149,6 +141,11 @@ Army::ArmyReturnType Army::process(
 	for (int i = 0; i < dead_units_.size(); i++)
 	{
 		dead_units_[i]->show_animation(delta_time.asMilliseconds());
+		if (const auto archer = dynamic_cast<Archer*>(dead_units_[i].get()); archer != nullptr) {
+			const auto [damage, kills] = process_arrows(archer->get_emitted_arrows(), dead_units_[i] == controlled_unit, enemy_armies, enemy_statue, delta_time);
+			result.damage += damage;
+			result.kills += kills;
+		}
 		dead_units_remains_times_[i] -= delta_time.asMilliseconds();
 		if(dead_units_remains_times_[i] <= 0)
 		{
@@ -185,11 +182,6 @@ void Army::write_to_packet(sf::Packet& packet) const
 	packet << dead_units_.size();
 	for (const auto& dead_unit : dead_units_)
 		dead_unit->write_to_packet(packet);
-
-	packet << arrows_.size();
-	for (const auto& arrow : arrows_) {
-		arrow.write_to_packet(packet);
-	}
 }
 
 void Army::update_from_packet(sf::Packet& packet)
@@ -231,28 +223,6 @@ void Army::update_from_packet(sf::Packet& packet)
 	update_units_from_packet(units_, packet);
 	const auto prev_dead_units_count = dead_units_.size();
 	update_units_from_packet(dead_units_, packet);
-
-	auto update_arrows_from_packet = [&](std::vector<Arrow>& arrows, sf::Packet& packet_to_get_update) {
-			size_t arrows_count;
-			packet_to_get_update >> arrows_count;
-
-			for (int i = 0; i < std::min(arrows_count, arrows.size()); i++) {
-				arrows[i].update_from_packet(packet_to_get_update);
-			}
-
-			if (arrows_count < arrows.size())
-				arrows.resize(arrows_count);
-			else
-			{
-				while (arrows.size() < arrows_count)
-				{
-					arrows.emplace_back(texture_ID::arrow, sf::Vector2f{0.f, 0.f}, sf::Vector2f{0.f, 0.f}, 0.f, 100000.f);
-					arrows.back().update_from_packet(packet_to_get_update);
-				}
-			}
-		};
-
-	update_arrows_from_packet(arrows_, packet);
 }
 
 int Army::process_miner(Miner* miner, bool is_controlled_unit, std::vector<std::shared_ptr<GoldMine>>& gold_mines, sf::Time delta_time) const
@@ -471,10 +441,7 @@ std::pair<float, int> Army::process_warrior(
 	}
 
 	if (auto archer = dynamic_cast<Archer*>(unit.get()); archer != nullptr) {
-		auto& newly_emitted_arrow = archer->get_emitted_arrows();
-		std::ranges::move(newly_emitted_arrow, std::back_inserter(arrows_));
-		newly_emitted_arrow.clear();
-		const auto [damage, kills] = process_arrows(arrows_, is_controlled_unit, enemy_armies, enemy_statue, delta_time);
+		const auto [damage, kills] = process_arrows(archer->get_emitted_arrows(), is_controlled_unit, enemy_armies, enemy_statue, delta_time);
 		caused_damage += damage;
 		kill_count += kills;
 	}
@@ -610,7 +577,7 @@ std::pair<float, int> Army::process_warrior(
 }
 
 std::pair<float, int> Army::process_arrows(
-	::std::vector<Arrow>& arrows,
+	::std::vector<std::shared_ptr<Arrow>>& arrows,
 	bool is_controled_unit,
 	const std::vector<Army*>& enemy_armies,
 	const std::shared_ptr<Statue>& enemy_statue,
@@ -621,25 +588,28 @@ std::pair<float, int> Army::process_arrows(
 
 	for (auto& arrow : arrows) {
 		
-		arrow.process(delta_time);
-		if (arrow.is_collided()) {
+		if (arrow->is_collided()) {
 			continue;
 		}
+		arrow->process(delta_time);
 
-		const float damage = arrow.get_damage() * (is_controled_unit ? ControlledUnit::damage_boost_factor : 1.f);
+		const float damage = arrow->get_damage() * (is_controled_unit ? ControlledUnit::damage_boost_factor : 1.f);
 
 		for (const auto& army : enemy_armies) {
 			for (auto& enemy_unit : army->get_units()) {
-				if (enemy_unit->get_unit_rect().intersects(arrow.get_sprite().getGlobalBounds()) and
-					check_unit_in_line_with_arrow(*enemy_unit, arrow) and
-					arrow.add_damaged_unit(enemy_unit.get()) and
-					arrow.get_damaged_units_number_() <= Archer::arrow_damage_max_number) {
+				auto unit_rect = sf::FloatRect(enemy_unit->get_coords(), enemy_unit->get_unit_rect().getSize());
+				auto arrow_rect = sf::FloatRect(arrow->get_coords(), arrow->get_sprite().getGlobalBounds().getSize());
+				
+				if (unit_rect.intersects(arrow_rect) and
+					check_unit_in_line_with_arrow(*enemy_unit, *arrow) and
+					arrow->add_damaged_unit(enemy_unit.get()) and
+					arrow->get_damaged_units_number_() <= Archer::arrow_damage_max_number) {
 					return enemy_unit->cause_damage(damage, 0, 0);
 				}
 			}
-			if (enemy_statue->get_sprite().getGlobalBounds().intersects(arrow.get_sprite().getGlobalBounds()) and
-				arrow.add_damaged_unit(enemy_statue.get()) and
-				arrow.get_damaged_units_number_() <= Archer::arrow_damage_max_number) {
+			if (enemy_statue->get_sprite().getGlobalBounds().intersects(arrow->get_sprite().getGlobalBounds()) and
+				arrow->add_damaged_unit(enemy_statue.get()) and
+				arrow->get_damaged_units_number_() <= Archer::arrow_damage_max_number) {
 				enemy_statue->cause_damage(Arrow::statue_damage_penalty_factor * damage);
 			}
 		}
@@ -751,7 +721,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 		queue.army_.add_unit(std::make_shared<Archer>(enemy_spawn_point, enemy_archer));
 	}
 	const int spawn_threshold = queue.army_.get_max_size() / 8 * 7;
-	if (queue.get_army_count() < spawn_threshold and random(0.0007f))
+	if (queue.get_army_count() < spawn_threshold and random(0.0004f))
 	{
 		if (queue.get_free_places() >= Spearton::places_requires)
 			queue.put_unit(std::shared_ptr<Unit>(UnitFactory::create_unit(Spearton::id, -1)), 1000);

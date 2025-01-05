@@ -21,6 +21,8 @@ enum sound_buffer_id
 	spearton_damage_2,
 	spearton_kill,
 
+	archer_hit,
+
 	spearton_second_attack_sound,
 
 	statue_damage_sound,
@@ -116,6 +118,7 @@ inline SharedSoundManager shared_sound_manager = SoundManager::sound_init_type{
 	{spearton_damage_0, {100, 4}},
 	{spearton_damage_1, {100, 4}},
 	{spearton_damage_2, {100, 4}},
+	{archer_hit, {100, 4}},
 	{spearton_kill, {100, 4}},
 	{miner_hit, {1, 5}},
 	{statue_damage_sound, {40, 6}}

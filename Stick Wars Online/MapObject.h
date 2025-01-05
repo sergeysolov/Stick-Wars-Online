@@ -16,7 +16,7 @@ constexpr float x_map_max = map_frame_width * 3 + 200;
 constexpr float y_map_min = 530;
 constexpr float y_map_max = 700;
 
-constexpr float gravity = 400.0f;
+constexpr float gravity = 550.0f;
 
 
 class MapObject
@@ -122,6 +122,7 @@ public:
 
 class Arrow : public MapObject {
 	inline const static SpriteParams sprite_params = { { 0, 0 }, 215, 1772, { 0.05f, 0.05f }, {} };
+	static constexpr float time_speed_coeff = 1.5;
 public:
 	static constexpr float statue_damage_penalty_factor = 1.f / 3.f;
 

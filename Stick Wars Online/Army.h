@@ -80,7 +80,7 @@ protected:
 		sf::Time delta_time);
 
 	std::pair<float, int> process_arrows(
-		std::vector<Arrow>& arrows,
+		std::vector<std::shared_ptr<Arrow>>& arrows,
 		bool is_controled_unit,
 		const std::vector<Army*>& enemy_armies,
 		const std::shared_ptr<Statue>& enemy_statue,
@@ -96,10 +96,6 @@ protected:
 
 	std::vector<std::shared_ptr<Unit>> dead_units_;
 	std::vector<int> dead_units_remains_times_;
-
-	std::vector<Arrow> arrows_;
-
-	std::unordered_map<Arrow*, std::pair<std::vector<Arrow>::iterator, int>> collied_arrows_remains_times_;
 };
 
 bool check_unit_in_line_with_arrow(Unit& unit, Arrow& arrow);

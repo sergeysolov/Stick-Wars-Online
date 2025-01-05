@@ -951,6 +951,10 @@ float Archer::set_y_scale()
 
 }
 
+void Archer::play_hit_sound() const
+{
+}
+
 float Archer::calculate_angle_for_target(const float distance)
 {
 	const float angle = std::asin(distance * gravity / std::pow(Archer::initial_arrow_speed, 2.f)) / 2.f;
@@ -963,7 +967,7 @@ Archer::Archer(sf::Vector2f spawn_point, texture_ID texture_id)
 {
 }
 
-std::vector<Arrow>& Archer::get_emitted_arrows()
+std::vector<::std::shared_ptr<Arrow>>& Archer::get_emitted_arrows()
 {
 	return emitted_arrows_;
 }
@@ -986,12 +990,18 @@ void Archer::draw(DrawQueue& queue) const
 			time_left_to_next_attack_bar_.draw(queue);
 		}
 	}
+	for (const auto& arrow : emitted_arrows_) {
+		arrow->draw(queue);
+	}
 }
 
 void Archer::set_screen_place(float camera_position)
 {
 	Unit::set_screen_place(camera_position);
 	time_left_to_next_attack_bar_.set_position({ x_ - camera_position, y_ });
+	for (auto& arrow : emitted_arrows_) {
+		arrow->set_screen_place(camera_position);
+	}
 }
 
 template <typename T>
@@ -1030,12 +1040,12 @@ void Archer::commit_attack()
 			constexpr float ground_width_adjust_coeff = 0.8f;
 			const float ground_level = y_ + sprite_.getGlobalBounds().getSize().y * ground_width_adjust_coeff;
 			const auto aim_direction = sf::Vector2f{ std::cos(bow_angle_), std::sin(bow_angle_) };
-			emitted_arrows_.emplace_back(
+			emitted_arrows_.push_back(std::make_shared<Arrow>(
 				arrow,
 				sf::Vector2f{ x_, y_ + arrow_offset * scale_factor_arrow_offset },
 				sf::Vector2f{ prev_direction_ * initial_arrow_speed * aim_direction.x, initial_arrow_speed * aim_direction.y },
 				damage,
-				ground_level);
+				ground_level));
 			arrows_number_--;
 			if (arrows_number_ == 0) {
 				time_left_to_next_attack_ = slow_reload_time;
@@ -1045,6 +1055,7 @@ void Archer::commit_attack()
 				time_left_to_next_attack_ = fast_reload_time;
 				time_left_to_next_attack_bar_.set_max_value(fast_reload_time);
 			}
+			shared_sound_manager.play_sound(archer_hit);
 		}
 	}
 }
@@ -1063,10 +1074,10 @@ bool Archer::can_do_damage()
 	return false;
 }
 
-void Archer::process(sf::Time time)
+void Archer::process(sf::Time delta_time)
 {
-	Unit::process(time);
-	time_left_to_next_attack_ = std::max(0, time_left_to_next_attack_ - static_cast<int>(time.asMilliseconds()));
+	Unit::process(delta_time);
+	time_left_to_next_attack_ = std::max(0, time_left_to_next_attack_ - static_cast<int>(delta_time.asMilliseconds()));
 	time_left_to_next_attack_bar_.update();
 	if (time_left_to_next_attack_ == 0 and arrows_number_ == 0) {
 		arrows_number_ = arrows_capacity;
@@ -1127,6 +1138,10 @@ void Archer::write_to_packet(sf::Packet& packet) const
 {
 	packet << id << time_left_to_next_attack_ << arrows_number_ << bow_angle_;
 	Unit::write_to_packet(packet);
+	packet << emitted_arrows_.size();
+	for (const auto& arrow : emitted_arrows_) {
+		arrow->write_to_packet(packet);
+	}
 }
 
 void Archer::update_from_packet(sf::Packet& packet)
@@ -1141,4 +1156,25 @@ void Archer::update_from_packet(sf::Packet& packet)
 		time_left_to_next_attack_bar_.set_max_value(fast_reload_time);
 	}
 
+	auto update_arrows_from_packet = [&](std::vector<std::shared_ptr<Arrow>>& arrows, sf::Packet& packet_to_get_update) {
+		size_t arrows_count;
+		packet_to_get_update >> arrows_count;
+
+		for (int i = 0; i < std::min(arrows_count, arrows.size()); i++) {
+			arrows[i]->update_from_packet(packet_to_get_update);
+		}
+
+		if (arrows_count < arrows.size())
+			arrows.resize(arrows_count);
+		else
+		{
+			while (arrows.size() < arrows_count)
+			{
+				arrows.push_back(std::make_shared<Arrow>(texture_ID::arrow, sf::Vector2f{ 0.f, 0.f }, sf::Vector2f{ 0.f, 0.f }, 0.f, 100000.f));
+				arrows.back()->update_from_packet(packet_to_get_update);
+			}
+		}
+		};
+
+	update_arrows_from_packet(emitted_arrows_, packet);
 }

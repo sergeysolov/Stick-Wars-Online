@@ -1,14 +1,15 @@
 #include "Game.h"
 
 Game::Game(const unsigned width, const unsigned height, const char* title)
-	: main_window_(sf::VideoMode(width, height), title, sf::Style::Default), state_manager_(main_window_)
+	: main_window_(sf::VideoMode(width, height), title, sf::Style::Fullscreen), state_manager_(main_window_)
 {
 	UnitFactory::init();
 }
 
 int Game::run()
 {
-	main_window_.setVerticalSyncEnabled(true);
+	// main_window_.setVerticalSyncEnabled(true);
+	main_window_.setFramerateLimit(130);
 	state_manager_.switch_state(main_menu);
 	while (main_window_.isOpen())
 	{

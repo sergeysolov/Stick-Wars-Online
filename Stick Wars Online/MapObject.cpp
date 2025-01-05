@@ -200,8 +200,9 @@ Arrow::Arrow(
 		static_cast<float>(sprite_.getTextureRect().height) / 2);
 }
 
-void Arrow::process(const sf::Time time)
+void Arrow::process(sf::Time time)
 {
+	time *= time_speed_coeff;
 	if (not is_collided_) {
 		x_ += velocity_.x * time.asSeconds();
 		y_ += velocity_.y * time.asSeconds();
