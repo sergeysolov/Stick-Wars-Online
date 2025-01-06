@@ -103,7 +103,7 @@ class Statue : public MapObject
 public:
 	inline const static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 817, 261, { 1.f, 1.f }, {});
 	constexpr static float my_max_health = 50000.0f;
-	constexpr static float enemy_max_health = 100000.0f; //12000
+	constexpr static float enemy_max_health = 60000.0f; //12000
 
 	inline const static sf::Vector2f my_statue_position = { 500, 450 };
 	inline const static sf::Vector2f enemy_statue_position = { map_frame_width * 3 - 800, 450 };
@@ -122,9 +122,10 @@ public:
 
 class Arrow : public MapObject {
 	inline const static SpriteParams sprite_params = { { 0, 0 }, 215, 1772, { 0.05f, 0.05f }, {} };
-	static constexpr float time_speed_coeff = 1.5;
+	static constexpr float time_speed_coeff = 1.35;
 public:
 	static constexpr float statue_damage_penalty_factor = 1.f / 3.f;
+	constexpr static int collided_arrow_time_to_delete = 20000;
 
 	Arrow& operator=(Arrow&) = default;
 
@@ -141,6 +142,7 @@ public:
 	float get_initial_y() const;
 	bool add_damaged_unit(void* unit);
 	int get_damaged_units_number_() const;
+	sf::Vector2f get_velocity() const;
 
 
 	void process(const sf::Time time);

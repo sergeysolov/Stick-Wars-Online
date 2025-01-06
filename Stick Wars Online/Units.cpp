@@ -953,6 +953,9 @@ float Archer::set_y_scale()
 
 void Archer::play_hit_sound() const
 {
+	if (current_frame_ == hit_frame) {
+		shared_sound_manager.play_sound(archer_hit);
+	}
 }
 
 float Archer::calculate_angle_for_target(const float distance)
@@ -1055,14 +1058,13 @@ void Archer::commit_attack()
 				time_left_to_next_attack_ = fast_reload_time;
 				time_left_to_next_attack_bar_.set_max_value(fast_reload_time);
 			}
-			shared_sound_manager.play_sound(archer_hit);
 		}
 	}
 }
 
 void Archer::stand_defend()
 {
-	if (arrows_number_ < arrows_capacity) {
+	if (arrows_number_ < arrows_capacity and time_left_to_next_attack_ == 0) {
 		arrows_number_ = 0;
 		time_left_to_next_attack_ = slow_reload_time;
 		time_left_to_next_attack_bar_.set_max_value(slow_reload_time);
@@ -1081,6 +1083,25 @@ void Archer::process(sf::Time delta_time)
 	time_left_to_next_attack_bar_.update();
 	if (time_left_to_next_attack_ == 0 and arrows_number_ == 0) {
 		arrows_number_ = arrows_capacity;
+	}
+
+	for (auto& [arrow, remains_time] : collied_arrows_remains_times_) {
+		remains_time -= delta_time.asMilliseconds();
+	}
+
+	for (auto& arrow : emitted_arrows_) {
+		if (!arrow->is_collided()) {
+			continue;
+		}
+		const auto it = collied_arrows_remains_times_.find(arrow.get());
+		if (it == collied_arrows_remains_times_.end()) {
+			collied_arrows_remains_times_[arrow.get()] = Arrow::collided_arrow_time_to_delete;
+		}
+		else if (it->second <= 0) {
+			std::swap(arrow, emitted_arrows_.back());
+			emitted_arrows_.pop_back();
+			return;
+		}
 	}
 }
 

@@ -595,6 +595,7 @@ std::pair<float, int> Army::process_arrows(
 
 		const float damage = arrow->get_damage() * (is_controled_unit ? ControlledUnit::damage_boost_factor : 1.f);
 
+		const int arrow_damage_max_number = is_controled_unit ? Archer::controlled_unit_arrow_damage_max_number : Archer::arrow_damage_max_number;
 		for (const auto& army : enemy_armies) {
 			for (auto& enemy_unit : army->get_units()) {
 				auto unit_rect = sf::FloatRect(enemy_unit->get_coords(), enemy_unit->get_unit_rect().getSize());
@@ -603,19 +604,24 @@ std::pair<float, int> Army::process_arrows(
 				if (unit_rect.intersects(arrow_rect) and
 					check_unit_in_line_with_arrow(*enemy_unit, *arrow) and
 					arrow->add_damaged_unit(enemy_unit.get()) and
-					arrow->get_damaged_units_number_() <= Archer::arrow_damage_max_number) {
-					return enemy_unit->cause_damage(damage, 0, 0);
+					arrow->get_damaged_units_number_() <= arrow_damage_max_number) {
+					float unit_damage = damage;
+					if (static_cast<int>(arrow->get_velocity().x / abs(arrow->get_velocity().x)) == enemy_unit->get_direction()) {
+						unit_damage *= 2;
+					}
+					auto damage_result = enemy_unit->cause_damage(unit_damage, 0, 0);
+					return { damage_result.first, damage_result.second == Unit::DamageType::is_kill };
 				}
 			}
 			if (enemy_statue->get_sprite().getGlobalBounds().intersects(arrow->get_sprite().getGlobalBounds()) and
 				arrow->add_damaged_unit(enemy_statue.get()) and
-				arrow->get_damaged_units_number_() <= Archer::arrow_damage_max_number) {
-				enemy_statue->cause_damage(Arrow::statue_damage_penalty_factor * damage);
+				arrow->get_damaged_units_number_() <= arrow_damage_max_number) {
+				return { enemy_statue->cause_damage(Arrow::statue_damage_penalty_factor * damage), 0 };
 			}
 		}
 	}
 
-	return { 0, 0 };
+	return { 0.f, 0 };
 }
 
 SpawnUnitQueue::SpawnUnitQueue(Army& army) : army_(army)

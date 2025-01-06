@@ -219,7 +219,7 @@ class Magikill final : public Unit
 public:
 	constexpr static int id = 2;
 	constexpr static int places_requires = 8;
-	constexpr static float max_health = 100;
+	constexpr static float max_health = 200;
 	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
 	constexpr static float max_damage = 60.f;
 	constexpr static float damage_factor = 0.1f; //20
@@ -341,8 +341,8 @@ private:
 };
 
 class Archer : public Unit {
-	std::vector<::std::shared_ptr<Arrow>> emitted_arrows_;
-	std::unordered_set<Arrow*, int> collied_arrows_remains_times_;
+	std::vector<std::shared_ptr<Arrow>> emitted_arrows_;
+	std::unordered_map<Arrow*, int> collied_arrows_remains_times_;
 	int arrows_number_ = arrows_capacity;
 	int time_left_to_next_attack_ = 0;
 	Bar<int> time_left_to_next_attack_bar_;
@@ -360,24 +360,25 @@ public:
 	constexpr static int places_requires = 4;
 	constexpr static float max_health = 150;
 	inline const static sf::Vector2f max_speed = { 0.35f, 0.2f };
-	constexpr static float damage = 60.f;
+	constexpr static float damage = 50.f;
 	constexpr static int damage_frame = 12;
-	constexpr static int hit_frame = 12;
+	constexpr static int hit_frame = 5;
 	constexpr static int splash_count = 0;
 	constexpr static float attack_distance = 2000.f;
 	constexpr static int wait_time = 10000;
-	constexpr static int cost = 1200;
+	constexpr static int cost = 1000;
 	constexpr static int attack_cooldown_time = 2000;
-	constexpr static int arrow_damage_max_number = 4;
-	constexpr static int arrows_capacity = 20;
+	constexpr static int arrow_damage_max_number = 1;
+	constexpr static int controlled_unit_arrow_damage_max_number = 5;
+	constexpr static int arrows_capacity = 15;
 	constexpr static float initial_arrow_speed = 1200.f;
 	static constexpr float arrow_offset = 70.f;
 	constexpr static int fast_reload_time = 1500;
 	constexpr static int slow_reload_time = 15000;
-	inline const static SpriteParams sprite_params = { {-40, 100 / 2}, 1080 / 4, 1920 / 4, {-1, 1},
-		{{40, 20},
-		{30, 21},
-		{45, 21}} };
+	inline const static SpriteParams sprite_params = { {-40, 30}, 1080 / 4, 1920 / 4, {-1, 1},
+		{{50, 21},
+		 {35, 21},
+	 	 {50, 21}} };
 	// inline const static SpriteParams sprite_params = { {-50, 150}, 1080 / 2, 1920 / 2, {-0.6f, 0.6f}, 21, 40 };
 
 	Archer(sf::Vector2f spawn_point, texture_ID texture_id);

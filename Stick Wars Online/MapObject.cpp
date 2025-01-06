@@ -270,3 +270,8 @@ int Arrow::get_damaged_units_number_() const
 {
 	return static_cast<int>(damaged_units_.size());
 }
+
+sf::Vector2f Arrow::get_velocity() const
+{
+	return velocity_;
+}
