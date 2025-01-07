@@ -32,11 +32,11 @@ public:
 	};
 
 	constexpr static float escape_line = 150;
-	constexpr static float enemy_escape_line = map_frame_width * 3 - 150;
+	constexpr static float enemy_escape_line = map_full_width - 150;
 
 	inline static float prev_hit_points_of_enemy_statue;
 	constexpr static std::array<float, 3> defend_lines = { 900, 1500, 2300 };
-	constexpr static float enemy_defend_line = map_frame_width * 3 - 600;
+	constexpr static float enemy_defend_line = map_full_width - 600;
 	constexpr static int size_per_one_player = 50;
 
 	static void play_in_attack_music(bool play=true);
@@ -123,6 +123,6 @@ public:
 
 bool random(float probability);
 
-static const sf::Vector2f enemy_spawn_point = { map_frame_width * 3 + 100, 650 };
+static const sf::Vector2f enemy_spawn_point = { map_full_width + 100, 650 };
 
 void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue);

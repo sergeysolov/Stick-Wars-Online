@@ -30,8 +30,13 @@ void PlayState::move_camera(const float step)
 
 PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager), my_barbed_wire_({ Army::escape_line - 140, 780.f }), enemy_barbed_wire_({Army::enemy_escape_line + 140, 780.f})
 {
-	background_sprite_.setTexture(texture_holder.get_texture(large_forest_background));
-	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1050 });
+	//if (random(0.5)) {
+	//	background_sprite_.setTexture(texture_holder.get_texture(forest_background));
+	//}
+	//else {
+	//}
+	background_sprite_.setTexture(texture_holder.get_texture(winter_background));
+	background_sprite_.setTextureRect({ static_cast<int>(start_camera_position), 0 ,static_cast<int>(map_frame_width), 1080 });
 
 	camera_position_text_.setFont(text_font);
 	camera_position_text_.setPosition(1800, 10);
@@ -71,7 +76,7 @@ PlayState::PlayState(StateManager& state_manager) : state_manager_(state_manager
 		}
 		else
 			players_.emplace_back(0);
-		enemy_army_ = std::make_unique<Army>(Army::enemy_defend_line, -1, players_.size());
+		enemy_army_ = std::make_unique<Army>(Army::enemy_defend_line, -1, 2 * players_.size());
 
 		enemy_spawn_queue_ = std::make_unique<SpawnUnitQueue>(*enemy_army_);
 

@@ -958,6 +958,32 @@ void Archer::play_hit_sound() const
 	}
 }
 
+void Archer::emit_arrow()
+{
+	const float scale_factor_arrow_offset = scale_y_param_a * sprite_.getPosition().y + scale_y_param_b;
+	constexpr float ground_width_adjust_coeff = 0.8f;
+	const float ground_level = y_ + sprite_.getGlobalBounds().getSize().y * ground_width_adjust_coeff;
+	const auto aim_direction = sf::Vector2f{ std::cos(bow_angle_), std::sin(bow_angle_) };
+	emitted_arrows_.push_back(std::make_shared<Arrow>(
+		arrow,
+		sf::Vector2f{ x_, y_ + arrow_offset * scale_factor_arrow_offset },
+		sf::Vector2f{ prev_direction_ * initial_arrow_speed * aim_direction.x, initial_arrow_speed * aim_direction.y },
+		damage,
+		ground_level));
+}
+
+void Archer::handle_reload()
+{
+	if (arrows_number_ == 0) {
+		time_left_to_next_attack_ = slow_reload_time;
+		time_left_to_next_attack_bar_.set_max_value(slow_reload_time);
+	}
+	else {
+		time_left_to_next_attack_ = fast_reload_time;
+		time_left_to_next_attack_bar_.set_max_value(fast_reload_time);
+	}
+}
+
 float Archer::calculate_angle_for_target(const float distance)
 {
 	const float angle = std::asin(distance * gravity / std::pow(Archer::initial_arrow_speed, 2.f)) / 2.f;
@@ -1039,27 +1065,31 @@ void Archer::commit_attack()
 	{
 		Unit::commit_attack();
 		if (animation_type_ == attack_animation and current_frame_ == damage_frame) {
-			const float scale_factor_arrow_offset = scale_y_param_a * sprite_.getPosition().y + scale_y_param_b;
-			constexpr float ground_width_adjust_coeff = 0.8f;
-			const float ground_level = y_ + sprite_.getGlobalBounds().getSize().y * ground_width_adjust_coeff;
-			const auto aim_direction = sf::Vector2f{ std::cos(bow_angle_), std::sin(bow_angle_) };
-			emitted_arrows_.push_back(std::make_shared<Arrow>(
-				arrow,
-				sf::Vector2f{ x_, y_ + arrow_offset * scale_factor_arrow_offset },
-				sf::Vector2f{ prev_direction_ * initial_arrow_speed * aim_direction.x, initial_arrow_speed * aim_direction.y },
-				damage,
-				ground_level));
+			emit_arrow();
 			arrows_number_--;
-			if (arrows_number_ == 0) {
-				time_left_to_next_attack_ = slow_reload_time;
-				time_left_to_next_attack_bar_.set_max_value(slow_reload_time);
-			}
-			else {
-				time_left_to_next_attack_ = fast_reload_time;
-				time_left_to_next_attack_bar_.set_max_value(fast_reload_time);
-			}
+			handle_reload();
 		}
 	}
+}
+
+void Archer::commit_second_attack()
+{
+    if (time_left_to_next_attack_ > 0 or arrows_number_ < second_attack_arrows_requires) {
+		return;
+	}
+
+	Unit::commit_attack();
+	const float bow_angle_before_attack = bow_angle_;
+	if (animation_type_ == attack_animation and current_frame_ == damage_frame) {
+		for (int i = 0; i < arrows_in_second_attack; i++) {
+			emit_arrow();
+			bow_angle_ += 0.05;
+		}
+		arrows_number_ -= second_attack_arrows_requires;
+		handle_reload();
+	}
+	bow_angle_ = bow_angle_before_attack;
+
 }
 
 void Archer::stand_defend()

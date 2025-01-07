@@ -9,10 +9,11 @@
 #include "DrawQueue.h"
 #include "EffectsManager.h"
 
-constexpr float map_frame_width = 2100;
+constexpr float map_frame_width = 2100; // 2100
+constexpr float map_full_width = 5 * map_frame_width; // 12600
 
 constexpr float x_map_min = -200;
-constexpr float x_map_max = map_frame_width * 3 + 200;
+constexpr float x_map_max = map_full_width + 200;
 constexpr float y_map_min = 530;
 constexpr float y_map_max = 700;
 
@@ -76,9 +77,9 @@ public:
 	{2400, 750 + offset},
 	{2600, 690 + offset},
 	{2650, 780 + offset},
-	{map_frame_width * 3 - 1050, 700 + offset},
-	{map_frame_width * 3 - 550, 800 + offset},
-	{map_frame_width * 3 - 350, 680 + offset}, };
+	{map_full_width - 1050, 700 + offset},
+	{map_full_width - 550, 800 + offset},
+	{map_full_width - 350, 680 + offset}, };
 
 	const inline static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 538, 960, { 0.2f, 0.2f }, { {1, 10 }});
 
@@ -86,7 +87,7 @@ public:
 
 	int mine(int gold_count);
 	bool empty() const;
-	static constexpr int max_gold_capacity = 4000; //4000
+	static constexpr int max_gold_capacity = 9000; //4000
 
 	void write_to_packet(sf::Packet& packet) const override;
 	void update_from_packet(sf::Packet& packet) override;
@@ -103,10 +104,10 @@ class Statue : public MapObject
 public:
 	inline const static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 817, 261, { 1.f, 1.f }, {});
 	constexpr static float my_max_health = 50000.0f;
-	constexpr static float enemy_max_health = 60000.0f; //12000
+	constexpr static float enemy_max_health = 80000.0f; //12000
 
 	inline const static sf::Vector2f my_statue_position = { 500, 450 };
-	inline const static sf::Vector2f enemy_statue_position = { map_frame_width * 3 - 800, 450 };
+	inline const static sf::Vector2f enemy_statue_position = { map_full_width - 800, 450 };
 
 	Statue(sf::Vector2f position, texture_ID id, float max_health);
 

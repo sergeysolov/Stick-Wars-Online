@@ -738,7 +738,7 @@ void process_enemy_spawn_queue(SpawnUnitQueue& queue, const Statue& enemy_statue
 			queue.put_unit(std::make_shared<Swordsman>(enemy_spawn_point, enemy_swordsman), 500);
 	}
 
-	static constexpr float reinforcement_count = 25;
+	static constexpr float reinforcement_count = 75;
 
 	if(enemy_statue.get_health() < Army::prev_hit_points_of_enemy_statue - Statue::enemy_max_health / reinforcement_count)
 	{

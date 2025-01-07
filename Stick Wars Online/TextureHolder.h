@@ -9,7 +9,7 @@ enum texture_ID
 	intro,
 
 	forest_background,
-	large_forest_background,
+	winter_background,
 
 	gold,
 	miner_buy_button,

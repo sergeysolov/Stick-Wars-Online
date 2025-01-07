@@ -219,15 +219,15 @@ class Magikill final : public Unit
 public:
 	constexpr static int id = 2;
 	constexpr static int places_requires = 8;
-	constexpr static float max_health = 200;
-	inline const static sf::Vector2f max_speed = { 0.2f, 0.15f }; // { 0.2f, 0.15f }
-	constexpr static float max_damage = 60.f;
+	constexpr static float max_health = 900;
+	inline const static sf::Vector2f max_speed = { 0.25f, 0.17f }; // { 0.2f, 0.15f }
+	constexpr static float max_damage = 100.f;
 	constexpr static float damage_factor = 0.1f; //20
 	constexpr static int damage_frame = 14;
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 1000;
 	constexpr static int stun_time = 3000;
-	constexpr static float attack_distance = 450.0f; //500
+	constexpr static float attack_distance = 550.0f; //450
 	constexpr static int wait_time = 15000; // 15000
 	constexpr static int cost = 1600; // 1500
 	constexpr static int attack_cooldown_time = 7000; // 7000
@@ -352,10 +352,15 @@ class Archer : public Unit {
 	float set_y_scale() override;
 	virtual void play_hit_sound() const;
 
+	void emit_arrow();
+	void handle_reload();
+
 public:
 	static float calculate_angle_for_target(const float distance);
 
+	constexpr static int second_attack_arrows_requires = 5;
 	constexpr static float bow_rotation_speed = 1.5f;
+	constexpr static int arrows_in_second_attack = 5;
 	constexpr static int id = 4;
 	constexpr static int places_requires = 4;
 	constexpr static float max_health = 150;
@@ -364,17 +369,17 @@ public:
 	constexpr static int damage_frame = 12;
 	constexpr static int hit_frame = 5;
 	constexpr static int splash_count = 0;
-	constexpr static float attack_distance = 2000.f;
+	constexpr static float attack_distance = 1500.f;
 	constexpr static int wait_time = 10000;
-	constexpr static int cost = 1000;
+	constexpr static int cost = 600;
 	constexpr static int attack_cooldown_time = 2000;
 	constexpr static int arrow_damage_max_number = 1;
 	constexpr static int controlled_unit_arrow_damage_max_number = 5;
-	constexpr static int arrows_capacity = 15;
+	constexpr static int arrows_capacity = 20;
 	constexpr static float initial_arrow_speed = 1200.f;
 	static constexpr float arrow_offset = 70.f;
 	constexpr static int fast_reload_time = 1500;
-	constexpr static int slow_reload_time = 15000;
+	constexpr static int slow_reload_time = 10000;
 	inline const static SpriteParams sprite_params = { {-40, 30}, 1080 / 4, 1920 / 4, {-1, 1},
 		{{50, 21},
 		 {35, 21},
@@ -392,6 +397,7 @@ public:
 	void set_screen_place(float camera_position) override;
 
 	void commit_attack() override;
+	void commit_second_attack() override;
 	void stand_defend() override;
 	bool can_do_damage() override;
 	void process(sf::Time delta_time) override;
