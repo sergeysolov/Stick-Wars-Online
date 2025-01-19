@@ -221,8 +221,8 @@ public:
 	constexpr static int places_requires = 8;
 	constexpr static float max_health = 900;
 	inline const static sf::Vector2f max_speed = { 0.25f, 0.17f }; // { 0.2f, 0.15f }
-	constexpr static float max_damage = 100.f;
-	constexpr static float damage_factor = 0.1f; //20
+	constexpr static float max_damage = 200.f;
+	constexpr static float damage_factor = 0.25f; //20
 	constexpr static int damage_frame = 14;
 	constexpr static int hit_frame = 14;
 	constexpr static int splash_count = 1000;

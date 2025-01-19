@@ -36,26 +36,31 @@ enum texture_ID
 	my_miner,
 	my_miner_blue,
 	my_miner_orange,
+	my_miner_purple,
 	
 	enemy_swordsman,
 	my_swordsman,
 	my_swordsman_blue,
 	my_swordsman_orange,
+	my_swordsman_purple,
 
 	enemy_magikill,
 	my_magikill,
 	my_magikill_blue,
 	my_magikill_orange,
+	my_magikill_purple,
 
 	enemy_spearton,
 	my_spearton,
 	my_spearton_blue,
 	my_spearton_orange,
+	my_spearton_purple,
 
 	enemy_archer,
 	my_archer,
 	my_archer_blue,
 	my_archer_orange,
+	my_archer_purple,
 
 	arrow,
 	aim,

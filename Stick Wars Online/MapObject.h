@@ -104,7 +104,7 @@ class Statue : public MapObject
 public:
 	inline const static SpriteParams sprite_params = SpriteParams({ 0, 0 }, 817, 261, { 1.f, 1.f }, {});
 	constexpr static float my_max_health = 50000.0f;
-	constexpr static float enemy_max_health = 80000.0f; //12000
+	constexpr static float enemy_max_health = 50000.0f; //12000
 
 	inline const static sf::Vector2f my_statue_position = { 500, 450 };
 	inline const static sf::Vector2f enemy_statue_position = { map_full_width - 800, 450 };

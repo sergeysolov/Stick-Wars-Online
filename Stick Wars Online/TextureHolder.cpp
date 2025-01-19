@@ -27,26 +27,32 @@ void TextureHolder::load_textures()
 	append(my_miner, "Images/units/miner/miner.png");
 	append(my_miner_blue, "Images/units/miner/miner_blue.png");
 	append(my_miner_orange, "Images/units/miner/miner_orange.png");
+	append(my_miner_purple, "Images/units/miner/miner_purple.png");
 	append(enemy_miner, "Images/units/miner/miner_enemy.png");
 
 	append(my_swordsman, "Images/units/swordsman/swordsman.png");
 	append(my_swordsman_blue, "Images/units/swordsman/swordsman_blue.png");
 	append(my_swordsman_orange, "Images/units/swordsman/swordsman_orange.png");
+	append(my_swordsman_purple, "Images/units/swordsman/swordsman_purple.png");
 	append(enemy_swordsman, "Images/units/swordsman/swordsman_enemy.png");
+
 
 	append(my_magikill, "Images/units/magikill/magikill.png");
 	append(my_magikill_blue, "Images/units/magikill/magikill_blue.png");
 	append(my_magikill_orange, "Images/units/magikill/magikill_orange.png");
+	append(my_magikill_purple, "Images/units/magikill/magikill_purple.png");
 	append(enemy_magikill, "Images/units/magikill/magikill_enemy.png");
 
 	append(my_spearton, "Images/units/spearton/spearton.png");
 	append(my_spearton_blue, "Images/units/spearton/spearton_blue.png");
 	append(my_spearton_orange, "Images/units/spearton/spearton_orange.png");
+	append(my_spearton_purple, "Images/units/spearton/spearton_purple.png");
 	append(enemy_spearton, "Images/units/spearton/spearton_enemy.png");
 
 	append(my_archer, "Images/units/archer/archer.png");
 	append(my_archer_blue, "Images/units/archer/archer_blue.png");
 	append(my_archer_orange, "Images/units/archer/archer_orange.png");
+	append(my_archer_purple, "Images/units/archer/archer_purple.png");
 	append(enemy_archer, "Images/units/archer/archer_enemy.png");
 
 	append(arrow, "Images/objects/arrow.png");
